@@ -60,6 +60,19 @@ module.exports = defineConfig({
         },
         optimizeDeps: {
           ...config.optimizeDeps,
+          // The plugin admin entry is excluded below so plugin rebuilds reload
+          // without a stale cache. Dependencies it imports are then not
+          // pre-bundled automatically, and CommonJS packages in their graph
+          // (e.g. deepmerge via @react-email/render → html-to-text) fail to
+          // load in the browser. Pre-bundle the plugin's admin dependencies
+          // explicitly.
+          include: [
+            ...(config.optimizeDeps?.include ?? []),
+            '@react-email/editor',
+            '@react-email/editor/core',
+            '@react-email/editor/extensions',
+            '@react-email/editor/plugins',
+          ],
           exclude: [
             ...(config.optimizeDeps?.exclude ?? []),
             'medusa-email-templates-plugin/admin',
