@@ -100,6 +100,7 @@ The dev container also provides Node.js 24, GitHub CLI, `cloudflared`, Yarn 4 vi
 | Command                   | Description                                               |
 | ------------------------- | --------------------------------------------------------- |
 | `yarn project:bootstrap`  | Bootstrap the example app and install the plugin locally  |
+| `yarn project:seed`       | Seed the example app with store, region and product data  |
 | `yarn plugin:dev`         | Rebuild and republish the plugin on change                |
 | `yarn plugin:dev:medusa`  | Run Medusa's raw plugin watcher directly, for comparison  |
 | `yarn project:dev`        | Start the example backend and Admin app                   |

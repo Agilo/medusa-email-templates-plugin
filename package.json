@@ -32,6 +32,7 @@
     "project:dev": "sh -c 'if test \"$DEVCONTAINER\" = \"true\"; then DATABASE_URL=postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable REDIS_URL=redis://redis:6379 node ./scripts/project-dev.mjs; else node ./scripts/project-dev.mjs; fi'",
     "project:dev:medusa": "sh -c 'if test \"$DEVCONTAINER\" = \"true\"; then DATABASE_URL=postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable REDIS_URL=redis://redis:6379 yarn --cwd apps/dev-app dev; else yarn --cwd apps/dev-app dev; fi'",
     "project:install": "yarn --cwd apps/dev-app install",
+    "project:seed": "sh -c 'if test \"$DEVCONTAINER\" = \"true\"; then DATABASE_URL=postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable REDIS_URL=redis://redis:6379 yarn --cwd apps/dev-app seed; else yarn --cwd apps/dev-app seed; fi'",
     "project:plugin:add": "yarn --cwd apps/dev-app plugin:add:local",
     "test": "yarn workspace medusa-email-templates-plugin test",
     "test:admin": "yarn workspace medusa-email-templates-plugin test:admin",
