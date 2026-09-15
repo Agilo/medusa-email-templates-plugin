@@ -1,0 +1,51 @@
+{
+  "name": "medusa-email-templates-monorepo",
+  "version": "0.0.1",
+  "private": true,
+  "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "yarn workspace medusa-email-templates-plugin build",
+    "dev": "yarn plugin:dev",
+    "docker:all:down": "docker compose down --remove-orphans",
+    "docker:all:up": "docker compose up -d postgres redis postgres_test redis_test",
+    "docker:down": "docker compose down --remove-orphans",
+    "docker:logs": "docker compose logs -f postgres redis",
+    "docker:status": "docker compose ps",
+    "docker:test:down": "docker compose stop postgres_test redis_test",
+    "docker:test:logs": "docker compose logs -f postgres_test redis_test",
+    "docker:test:up": "docker compose up -d postgres_test redis_test",
+    "docker:up": "docker compose up -d postgres redis",
+    "format": "prettier . --write --ignore-unknown",
+    "format:check": "prettier . --check --ignore-unknown",
+    "lint": "yarn workspace medusa-email-templates-plugin lint",
+    "lint:fix": "yarn workspace medusa-email-templates-plugin lint:fix",
+    "patch:dev": "yarn workspace medusa-email-templates-plugin patch:dev",
+    "plugin:build": "yarn workspace medusa-email-templates-plugin build",
+    "plugin:dev": "node ./scripts/plugin-dev.mjs",
+    "plugin:dev:medusa": "yarn workspace medusa-email-templates-plugin plugin:dev:medusa",
+    "plugin:publish:local": "yarn workspace medusa-email-templates-plugin plugin:publish:local",
+    "project:bootstrap": "yarn project:install && yarn plugin:publish:local && yarn project:plugin:add && yarn project:db:migrate",
+    "project:db:migrate": "sh -c 'if test \"$DEVCONTAINER\" = \"true\"; then DATABASE_URL=postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable REDIS_URL=redis://redis:6379 yarn --cwd apps/dev-app db:migrate; else yarn --cwd apps/dev-app db:migrate; fi'",
+    "project:dev": "sh -c 'if test \"$DEVCONTAINER\" = \"true\"; then DATABASE_URL=postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable REDIS_URL=redis://redis:6379 node ./scripts/project-dev.mjs; else node ./scripts/project-dev.mjs; fi'",
+    "project:dev:medusa": "sh -c 'if test \"$DEVCONTAINER\" = \"true\"; then DATABASE_URL=postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable REDIS_URL=redis://redis:6379 yarn --cwd apps/dev-app dev; else yarn --cwd apps/dev-app dev; fi'",
+    "project:install": "yarn --cwd apps/dev-app install",
+    "project:plugin:add": "yarn --cwd apps/dev-app plugin:add:local",
+    "test": "yarn workspace medusa-email-templates-plugin test",
+    "test:admin": "yarn workspace medusa-email-templates-plugin test:admin",
+    "test:backend": "yarn workspace medusa-email-templates-plugin test:backend",
+    "test:integration:http": "yarn workspace medusa-email-templates-plugin test:integration:http",
+    "test:integration:module": "yarn workspace medusa-email-templates-plugin test:integration:module",
+    "test:unit": "yarn workspace medusa-email-templates-plugin test:unit",
+    "typecheck": "yarn workspace medusa-email-templates-plugin typecheck"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.6"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "packageManager": "yarn@4.18.0+sha512.fcb8716fe7cd0eece141ffc18b92193a9df9204c1ba83189c288835223fc0bbe64af473bab0d5e9927a7daeb5caf2bb07eb2787cc9338ca040ea125f2a1f2f7e"
+}
