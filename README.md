@@ -1,0 +1,149 @@
+<p align="center">
+  <a href="https://www.medusajs.com">
+    <img alt="Medusa logo" src="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg">
+  </a>
+</p>
+<h1 align="center">
+  Medusa Email Templates Plugin
+</h1>
+
+<p align="center">
+  Manage email templates for your Medusa store from Medusa Admin.
+</p>
+
+## Overview
+
+The Medusa Email Templates Plugin adds email template management to the Medusa Admin dashboard.
+
+This repository is a Yarn workspace monorepo: the plugin lives in `packages/medusa-email-templates-plugin`, and an example Medusa app used for manual validation lives in `apps/dev-app`. It is not a full Medusa application and does not include a storefront.
+
+✅ Targets Medusa v2, currently aligned with `@medusajs/medusa` `2.21.0`
+
+## Features
+
+> Work in progress — features will be documented here as they land.
+
+## Getting Started
+
+The dev container is the primary development environment for this repository.
+
+### Requirements
+
+- VS Code with the Dev Containers extension
+- Docker
+
+### Quick Start
+
+1. Open the repository in VS Code and run **Dev Containers: Reopen in Container**.
+2. Wait for the post-create step to finish.
+3. From the repository root, bootstrap the example app and install the plugin locally:
+
+   ```bash
+   yarn project:bootstrap
+   ```
+
+4. Use two terminals:
+
+   Terminal 1 — rebuild and republish the plugin on change:
+
+   ```bash
+   yarn plugin:dev
+   ```
+
+   Terminal 2 — run the example backend and Admin app, restarting on plugin changes:
+
+   ```bash
+   yarn project:dev
+   ```
+
+   After a plugin admin change, wait for the restart to finish, then refresh the browser tab once.
+
+5. Open the Admin dashboard:
+
+   ```text
+   http://localhost:9000/app
+   ```
+
+### Adding the plugin to your own Medusa app
+
+Register it in the consuming application's `medusa-config.ts`:
+
+```typescript
+import { defineConfig } from '@medusajs/framework/utils';
+
+module.exports = defineConfig({
+  // ...projectConfig
+  plugins: [
+    {
+      resolve: 'medusa-email-templates-plugin',
+      options: {},
+    },
+  ],
+});
+```
+
+## Development Model
+
+This repo follows Medusa's plugin workflow:
+
+- the plugin project lives in `packages/medusa-email-templates-plugin`
+- the consuming Medusa app lives in `apps/dev-app`
+- the plugin is published locally into the example app through Yalc-backed Medusa CLI commands
+- the example app runs the Medusa server and Admin dashboard used for manual testing
+
+For day-to-day local development, `yarn plugin:dev` keeps the example app's local plugin installation updated as plugin sources change, without re-running `yarn install`, `project:plugin:add`, or restarting `project:dev` manually. Manual browser testing happens in the consuming app, not in the plugin package itself.
+
+The dev container also provides Node.js 24, GitHub CLI, `cloudflared`, Yarn 4 via Corepack, and separate development/test Postgres and Redis services. Inside the container the app talks to `postgres:5432` and `redis:6379`; integration tests use the separate `postgres_test` and `redis_test` services.
+
+## Commands
+
+| Command                   | Description                                               |
+| ------------------------- | --------------------------------------------------------- |
+| `yarn project:bootstrap`  | Bootstrap the example app and install the plugin locally  |
+| `yarn plugin:dev`         | Rebuild and republish the plugin on change                |
+| `yarn plugin:dev:medusa`  | Run Medusa's raw plugin watcher directly, for comparison  |
+| `yarn project:dev`        | Start the example backend and Admin app                   |
+| `yarn project:dev:medusa` | Run Medusa's raw backend watcher directly, for comparison |
+| `yarn test:backend`       | Run backend integration tests (module + HTTP)             |
+| `yarn typecheck`          | Run TypeScript validation                                 |
+| `yarn lint`               | Run ESLint                                                |
+| `yarn test:admin`         | Run Admin route and component tests                       |
+| `yarn test`               | Run the full validation suite (unit + backend + admin)    |
+
+`yarn test:backend` uses the dedicated `postgres_test` and `redis_test` services inside the dev container.
+
+## Environment
+
+Use [packages/medusa-email-templates-plugin/.env.example](packages/medusa-email-templates-plugin/.env.example) for the plugin's local database/Redis variables. The checked-in template targets host access, reaching the development services on `localhost:5433` and `localhost:6380` and the test services on `localhost:5434` and `localhost:6382`. Inside the dev container you do not need those values: the root `project:*` and `test:backend` scripts inject the container hostnames instead, so the app talks to `postgres:5432` and `redis:6379`, and integration tests talk to `postgres_test:5432` and `redis_test:6379`.
+
+## Testing
+
+For routine validation, run:
+
+```bash
+yarn typecheck
+yarn test
+```
+
+Outside the dev container, start the test services first with `yarn docker:test:up`, then run `yarn test:backend`. To run suites individually:
+
+```bash
+# Module/workflow-level tests
+yarn test:integration:module
+
+# HTTP-level tests (admin route auth, validation, status codes)
+yarn test:integration:http
+
+# Admin UI tests (Vitest + jsdom)
+yarn test:admin
+
+# Unit tests (pure logic, no DOM)
+yarn test:unit
+```
+
+The integration suites boot a full Medusa application against the `postgres_test` service (port `5434` on the host) and `redis_test` (port `6382`), both mapped in `docker-compose.yml`. The first run builds a migrated database template and is slower; subsequent runs are fast.
+
+## Contributing
+
+We welcome contributions and feedback.
+To get involved, [open an issue](https://github.com/Agilo/medusa-email-templates-plugin/issues) or [submit a pull request](https://github.com/Agilo/medusa-email-templates-plugin/pulls) on [GitHub →](https://github.com/Agilo/medusa-email-templates-plugin)
