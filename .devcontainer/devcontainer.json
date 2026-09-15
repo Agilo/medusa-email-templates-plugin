@@ -1,0 +1,79 @@
+{
+  "name": "medusa-email-templates-plugin",
+  "dockerComposeFile": ["../docker-compose.yml", "docker-compose.yml"],
+  "service": "workspace",
+  "features": {
+    "ghcr.io/devcontainers/features/node:2": {
+      "version": "24",
+      "npmVersion": "none"
+    },
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+    "ghcr.io/devcontainers-extra/features/cloudflared:1": {}
+  },
+  "runServices": [
+    "workspace",
+    "postgres",
+    "redis",
+    "postgres_test",
+    "redis_test"
+  ],
+  "workspaceFolder": "/workspaces/medusa-email-templates-plugin",
+  "shutdownAction": "stopCompose",
+  "remoteUser": "vscode",
+  "postCreateCommand": "bash .devcontainer/fix-cache-permissions.sh && bash .devcontainer/configure-shell.sh && corepack enable && COREPACK_ENABLE_DOWNLOAD_PROMPT=0 corepack install && COREPACK_ENABLE_DOWNLOAD_PROMPT=0 yarn install --immutable && (cd apps/dev-app && COREPACK_ENABLE_DOWNLOAD_PROMPT=0 yarn install) && (test -f apps/dev-app/.env || cp apps/dev-app/.env.template apps/dev-app/.env) && (test -f .devcontainer/.env || cp .devcontainer/.env.template .devcontainer/.env)",
+  "postStartCommand": "bash .devcontainer/fix-cache-permissions.sh && bash .devcontainer/configure-shell.sh",
+  "forwardPorts": [9000, 24678],
+  "portsAttributes": {
+    "9000": {
+      "label": "Medusa Server and Admin"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "debug.javascript.autoAttachFilter": "disabled",
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true,
+        "files.eol": "\n",
+        "js/ts.tsdk.path": "node_modules/typescript/lib",
+        "[json]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[jsonc]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[markdown]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[yaml]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[yml]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "prettier.requireConfig": true,
+        "terminal.integrated.shellIntegration.enabled": false,
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "/bin/bash"
+          },
+          "zsh": {
+            "path": "/usr/bin/zsh"
+          }
+        },
+        "terminal.integrated.suggest.enabled": true,
+        "terminal.integrated.suggest.suggestOnTriggerCharacters": true,
+        "terminal.integrated.suggest.showStatusBar": true
+      },
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml",
+        "vitest.explorer",
+        "Orta.vscode-jest"
+      ]
+    }
+  }
+}

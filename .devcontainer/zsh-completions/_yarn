@@ -1,0 +1,108 @@
+#compdef yarn
+
+_copilot_yarn_find_package_json() {
+  local dir="$PWD"
+
+  while [[ "$dir" != "/" ]]; do
+    if [[ -f "$dir/package.json" ]]; then
+      print -r -- "$dir/package.json"
+      return 0
+    fi
+
+    dir="${dir:h}"
+  done
+
+  return 1
+}
+
+_copilot_yarn_scripts() {
+  local package_json
+
+  package_json="$(_copilot_yarn_find_package_json)" || return 0
+
+  node -e 'const fs=require("fs"); const file=process.argv[1]; const pkg=JSON.parse(fs.readFileSync(file,"utf8")); console.log(Object.keys(pkg.scripts||{}).join("\n"));' "$package_json" 2>/dev/null
+}
+
+_yarn() {
+  local context state state_descr line
+  local -a yarn_commands yarn_scripts global_options
+
+  yarn_commands=(
+    'add:install dependencies'
+    'bin:show binary path'
+    'cache:manage cache'
+    'config:manage configuration'
+    'constraints:run constraints'
+    'dedupe:dedupe dependencies'
+    'dlx:run one-off package'
+    'exec:execute a command'
+    'explain:explain a value'
+    'info:show package info'
+    'init:initialize a package'
+    'install:install dependencies'
+    'link:link a package'
+    'node:run node'
+    'npm:access npm commands'
+    'pack:create package archive'
+    'patch:prepare a patch'
+    'patch-commit:commit a patch'
+    'plugin:manage plugins'
+    'rebuild:rebuild packages'
+    'remove:remove dependencies'
+    'run:run a script'
+    'set:set configuration'
+    'stage:stage files'
+    'up:upgrade dependencies'
+    'unplug:unplug packages'
+    'version:bump version'
+    'why:explain why a package is present'
+    'workspace:run command in one workspace'
+    'workspaces:run command in all workspaces'
+  )
+
+  yarn_scripts=( ${(f)"$(_copilot_yarn_scripts)"} )
+
+  global_options=(
+    '--cwd[run the command from a specific directory]:directory:_files -/'
+    '--top-level[run the command on the root package]'
+    '--immutable[refuse to change the lockfile]'
+    '--immutable-cache[refuse to change the cache]'
+    '--refresh-lockfile[refresh metadata in the lockfile]'
+    '--mode[change the install mode]:mode:(skip-build update-lockfile)'
+    '--verbose[enable verbose output]'
+    '--json[format output as JSON]'
+    '--help[show help]'
+    '--version[show version]'
+  )
+
+  _arguments -C \
+    $global_options \
+    '1:command or script:->command_or_script' \
+    '*::args:->args'
+
+  case "$state" in
+    command_or_script)
+      _describe -t yarn-commands 'yarn commands' yarn_commands
+      if (( ${#yarn_scripts[@]} > 0 )); then
+        compadd -Q -X 'yarn scripts' -- ${yarn_scripts[@]}
+      fi
+      return 0
+      ;;
+    args)
+      case "${words[2]}" in
+        run)
+          if (( CURRENT == 3 )); then
+            compadd -Q -X 'yarn scripts' -- ${yarn_scripts[@]}
+            return 0
+          fi
+          ;;
+        workspace)
+          if (( CURRENT == 3 )); then
+            _files -/
+            return 0
+          fi
+          ;;
+      esac
+      ;;
+  esac
+}

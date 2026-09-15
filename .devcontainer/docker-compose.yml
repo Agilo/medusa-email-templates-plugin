@@ -1,0 +1,42 @@
+services:
+  workspace:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    command: tail -f /dev/null
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres_test:
+        condition: service_healthy
+      redis_test:
+        condition: service_healthy
+    env_file:
+      - path: .devcontainer/.env
+        required: false
+    environment:
+      COOKIE_SECRET: test-cookie-secret
+      DEVCONTAINER: 'true'
+      DB_HOST: postgres
+      DB_PASSWORD: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable
+      JWT_SECRET: test-jwt-secret
+      REDIS_URL: redis://redis:6379
+    init: true
+    volumes:
+      - .:/workspaces/medusa-email-templates-plugin:cached
+      - devcontainer_node_modules:/workspaces/medusa-email-templates-plugin/node_modules
+      - devcontainer_dev_app_node_modules:/workspaces/medusa-email-templates-plugin/apps/dev-app/node_modules
+      - devcontainer_yarn_cache:/home/vscode/.yarn
+      - devcontainer_yalc_store:/home/vscode/.yalc
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  devcontainer_dev_app_node_modules:
+  devcontainer_node_modules:
+  devcontainer_yarn_cache:
+  devcontainer_yalc_store:
