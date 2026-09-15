@@ -2,7 +2,33 @@ import type { InputConfigWithArrayModules } from '@medusajs/types';
 import { defineConfig } from '@medusajs/framework/utils';
 
 export default defineConfig({
-  modules: [],
+  modules: [
+    {
+      resolve: './src/modules/email-templates',
+    },
+    {
+      resolve: '@medusajs/medusa/notification',
+      options: {
+        providers: [
+          {
+            resolve: '@medusajs/medusa/notification-local',
+            id: 'local',
+            options: {
+              name: 'Local Notification Provider',
+              channels: ['feed'],
+            },
+          },
+          {
+            resolve: './src/providers/email',
+            id: 'email-templates',
+            options: {
+              channels: ['email'],
+            },
+          },
+        ],
+      },
+    },
+  ],
   admin: {
     backendUrl: process.env.BACKEND_URL ?? 'http://localhost:9000',
     storefrontUrl: process.env.STOREFRONT_URL ?? 'http://localhost:8000',
