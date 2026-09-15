@@ -1,0 +1,62 @@
+{
+  "name": "dev-app",
+  "version": "0.0.1",
+  "description": "A starter for Medusa projects.",
+  "author": "Medusa (https://medusajs.com)",
+  "license": "MIT",
+  "keywords": [
+    "sqlite",
+    "postgres",
+    "typescript",
+    "ecommerce",
+    "headless",
+    "medusa"
+  ],
+  "scripts": {
+    "build": "medusa build",
+    "db:migrate": "medusa db:migrate",
+    "start": "medusa start",
+    "dev": "medusa develop",
+    "plugin:add:local": "medusa plugin:add medusa-email-templates-plugin",
+    "test:integration:http": "TEST_TYPE=integration:http NODE_OPTIONS=--experimental-vm-modules jest --silent=false --runInBand --forceExit",
+    "test:integration:modules": "TEST_TYPE=integration:modules NODE_OPTIONS=--experimental-vm-modules jest --silent=false --runInBand --forceExit",
+    "test:unit": "TEST_TYPE=unit NODE_OPTIONS=--experimental-vm-modules jest --silent --runInBand --forceExit"
+  },
+  "dependencies": {
+    "@medusajs/admin-sdk": "2.21.0",
+    "@medusajs/admin-shared": "2.21.0",
+    "@medusajs/caching": "2.21.0",
+    "@medusajs/cli": "2.21.0",
+    "@medusajs/dashboard": "2.21.0",
+    "@medusajs/draft-order": "2.21.0",
+    "@medusajs/framework": "2.21.0",
+    "@medusajs/medusa": "2.21.0",
+    "@medusajs/ui": "4.2.4",
+    "@tanstack/react-query": "5.64.2",
+    "medusa-email-templates-plugin": "file:.yalc/medusa-email-templates-plugin",
+    "react-i18next": "13.5.0",
+    "react-router-dom": "7.18.2",
+    "zod": "4.2.0"
+  },
+  "devDependencies": {
+    "@medusajs/test-utils": "2.21.0",
+    "@swc/core": "^1.16.2",
+    "@swc/jest": "^0.2.39",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.13.4",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "jest": "^30.5.1",
+    "prop-types": "^15.8.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.9.3",
+    "vite": "^7.3.6",
+    "yalc": "^1.0.0-pre.53"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "packageManager": "yarn@4.18.0+sha512.fcb8716fe7cd0eece141ffc18b92193a9df9204c1ba83189c288835223fc0bbe64af473bab0d5e9927a7daeb5caf2bb07eb2787cc9338ca040ea125f2a1f2f7e"
+}

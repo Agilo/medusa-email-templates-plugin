@@ -1,0 +1,66 @@
+{
+  "name": "medusa-email-templates-plugin",
+  "version": "0.0.1",
+  "description": "Email templates plugin for Medusa v2.",
+  "author": "Medusa (https://medusajs.com)",
+  "license": "MIT",
+  "files": [
+    ".medusa/server"
+  ],
+  "exports": {
+    "./package.json": "./package.json",
+    "./workflows": "./.medusa/server/src/workflows/index.js",
+    "./.medusa/server/src/modules/*": "./.medusa/server/src/modules/*/index.js",
+    "./modules/*": "./.medusa/server/src/modules/*/index.js",
+    "./providers/*": "./.medusa/server/src/providers/*/index.js",
+    "./*": "./.medusa/server/src/*.js",
+    "./admin": {
+      "import": "./.medusa/server/src/admin/index.mjs",
+      "require": "./.medusa/server/src/admin/index.js",
+      "default": "./.medusa/server/src/admin/index.js"
+    }
+  },
+  "keywords": [
+    "medusa",
+    "plugin",
+    "medusa-plugin-other",
+    "medusa-plugin",
+    "medusa-v2"
+  ],
+  "scripts": {
+    "build": "yarn plugin:build",
+    "format": "prettier . --write --ignore-unknown",
+    "format:check": "prettier . --check --ignore-unknown",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "patch:dev": "node ../../scripts/apply-dev-patches.cjs",
+    "plugin:build": "medusa plugin:build",
+    "plugin:dev:medusa": "medusa plugin:develop",
+    "plugin:publish:local": "medusa plugin:publish",
+    "prepublishOnly": "medusa plugin:build",
+    "test": "yarn test:unit && yarn test:backend && yarn test:admin",
+    "test:admin": "yarn patch:dev && vitest run --passWithNoTests",
+    "test:unit": "yarn patch:dev && vitest run --config vitest.config.unit.ts --passWithNoTests",
+    "test:backend": "sh -c 'if test \"$DEVCONTAINER\" = \"true\"; then DB_HOST=postgres_test DB_PORT=5432 DB_USERNAME=postgres DB_PASSWORD=postgres DATABASE_URL=postgres://postgres:postgres@postgres_test:5432/postgres?sslmode=disable REDIS_URL=redis://redis_test:6379 yarn test:integration:module && DB_HOST=postgres_test DB_PORT=5432 DB_USERNAME=postgres DB_PASSWORD=postgres DATABASE_URL=postgres://postgres:postgres@postgres_test:5432/postgres?sslmode=disable REDIS_URL=redis://redis_test:6379 yarn test:integration:http; else yarn test:integration:module && yarn test:integration:http; fi'",
+    "test:integration:http": "yarn patch:dev && TEST_TYPE=integration:http NODE_OPTIONS=--experimental-vm-modules jest --silent=false --forceExit --maxWorkers=4",
+    "test:integration:module": "yarn patch:dev && TEST_TYPE=integration:module NODE_OPTIONS=--experimental-vm-modules jest --silent=false --runInBand --forceExit --passWithNoTests",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p src/admin/tsconfig.json"
+  },
+  "peerDependencies": {
+    "@medusajs/admin-sdk": "2.21.0",
+    "@medusajs/cli": "2.21.0",
+    "@medusajs/framework": "2.21.0",
+    "@medusajs/icons": "2.21.0",
+    "@medusajs/medusa": "2.21.0",
+    "@medusajs/test-utils": "2.21.0",
+    "@medusajs/ui": "4.2.4"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "packageManager": "yarn@4.18.0+sha512.fcb8716fe7cd0eece141ffc18b92193a9df9204c1ba83189c288835223fc0bbe64af473bab0d5e9927a7daeb5caf2bb07eb2787cc9338ca040ea125f2a1f2f7e",
+  "dependencies": {
+    "@medusajs/dashboard": "^2.21.0"
+  },
+  "yalcSig": "30a10971758cd2b3b881f80de9f26249"
+}

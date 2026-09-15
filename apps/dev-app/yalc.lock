@@ -1,0 +1,9 @@
+{
+  "version": "v1",
+  "packages": {
+    "medusa-email-templates-plugin": {
+      "signature": "30a10971758cd2b3b881f80de9f26249",
+      "file": true
+    }
+  }
+}
