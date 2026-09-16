@@ -103,6 +103,8 @@
   "dependencies": {
     "@medusajs/dashboard": "^2.21.0",
     "@react-email/editor": "1.7.7",
-    "liquidjs": "^10.29.0"
+    "liquidjs": "^10.29.0",
+    "resend": "6.28.0",
+    "zod": "4.2.0"
   }
 }
