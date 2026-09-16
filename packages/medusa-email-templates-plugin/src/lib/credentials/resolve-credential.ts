@@ -1,3 +1,4 @@
+import { decryptCredential } from '../crypto/credential-cipher';
 import { providerNotReadyError } from '../errors';
 import type { CredentialSource, ResolvedCredential } from '../transports/types';
 
@@ -5,13 +6,12 @@ export const ENV_VAR_NAME_PATTERN = /^[A-Z_][A-Z0-9_]*$/;
 
 export interface StoredCredential {
   id?: string;
+  transport_id?: string;
   source: CredentialSource;
   env_var_name?: string | null;
   ciphertext?: string | null;
   key_fingerprint?: string | null;
 }
-
-type Env = Record<string, string | undefined>;
 
 /**
  * Resolves a stored credential to its secret at send time. Returns null for
@@ -19,7 +19,7 @@ type Env = Record<string, string | undefined>;
  */
 export const resolveCredential = (
   credential: StoredCredential | null | undefined,
-  env: Env = process.env,
+  env: NodeJS.ProcessEnv = process.env,
 ): ResolvedCredential | null => {
   if (!credential || credential.source === 'managed') {
     return null;
@@ -38,6 +38,25 @@ export const resolveCredential = (
     }
 
     return { api_key: value };
+  }
+
+  if (credential.source === 'encrypted_database') {
+    if (!credential.ciphertext) {
+      throw providerNotReadyError('No API key is stored for this transport.');
+    }
+
+    const secret = decryptCredential(
+      credential.ciphertext,
+      credential.transport_id ?? '',
+      credential.key_fingerprint,
+      env,
+    );
+
+    if (!secret.api_key) {
+      throw providerNotReadyError('The stored credential has no API key.');
+    }
+
+    return { api_key: secret.api_key };
   }
 
   throw providerNotReadyError(

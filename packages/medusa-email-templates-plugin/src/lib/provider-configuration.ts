@@ -2,6 +2,7 @@ import type { Logger } from '@medusajs/framework/types';
 
 import type EmailTemplatesModuleService from '../modules/email-templates/service';
 import { maskCredential, type MaskedCredential } from './credentials/mask';
+import { isEncryptionAvailable } from './crypto/encryption-key';
 import {
   resolveCredential,
   type StoredCredential,
@@ -35,7 +36,7 @@ export interface EmailProviderTransportState {
 
 export interface EmailProviderState {
   selected_transport_id: string | null;
-  // Stored API keys arrive in Phase 3 (PLAN.md §5).
+  /** Whether MEDUSA_EMAIL_ENCRYPTION_KEY is set, enabling stored API keys. */
   encryption_available: boolean;
   transports: EmailProviderTransportState[];
 }
@@ -156,7 +157,7 @@ export const getEmailProviderState = async (
     selected_transport_id:
       configurations.find((configuration) => configuration.is_selected)
         ?.transport_id ?? null,
-    encryption_available: false,
+    encryption_available: isEncryptionAvailable(),
     transports,
   };
 };

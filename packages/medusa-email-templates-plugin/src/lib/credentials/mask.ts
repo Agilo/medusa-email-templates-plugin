@@ -1,7 +1,13 @@
+import { readEncryptionKey } from '../crypto/encryption-key';
 import type { CredentialSource } from '../transports/types';
 import type { StoredCredential } from './resolve-credential';
 
-export type CredentialUnavailableReason = 'env_var_missing' | 'not_supported';
+export type CredentialUnavailableReason =
+  | 'env_var_missing'
+  | 'encryption_key_missing'
+  | 'key_mismatch'
+  | 'missing'
+  | 'not_supported';
 
 /** The only credential shape admin APIs may return: never the secret. */
 export interface MaskedCredential {
@@ -11,9 +17,41 @@ export interface MaskedCredential {
   reason?: CredentialUnavailableReason;
 }
 
+const maskStoredKey = (
+  credential: StoredCredential,
+  env: NodeJS.ProcessEnv,
+): MaskedCredential => {
+  const base = { source: 'encrypted_database' as const };
+
+  if (!credential.ciphertext) {
+    return { ...base, configured: false, reason: 'missing' };
+  }
+
+  const encryptionKey = (() => {
+    try {
+      return readEncryptionKey(env);
+    } catch {
+      return null;
+    }
+  })();
+
+  if (!encryptionKey) {
+    return { ...base, configured: false, reason: 'encryption_key_missing' };
+  }
+
+  if (
+    credential.key_fingerprint &&
+    credential.key_fingerprint !== encryptionKey.fingerprint
+  ) {
+    return { ...base, configured: false, reason: 'key_mismatch' };
+  }
+
+  return { ...base, configured: true };
+};
+
 export const maskCredential = (
   credential: StoredCredential | null | undefined,
-  env: Record<string, string | undefined> = process.env,
+  env: NodeJS.ProcessEnv = process.env,
 ): MaskedCredential | null => {
   if (!credential) {
     return null;
@@ -33,6 +71,8 @@ export const maskCredential = (
         ...(configured ? {} : { reason: 'env_var_missing' as const }),
       };
     }
+    case 'encrypted_database':
+      return maskStoredKey(credential, env);
     default:
       return {
         source: credential.source,
