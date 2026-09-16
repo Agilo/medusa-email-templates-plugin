@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["src/**/__tests__/**/*.ts", "src/**/__tests__/**/*.tsx"],
+  "exclude": ["node_modules", ".medusa", ".cache", "src/admin"]
+}
