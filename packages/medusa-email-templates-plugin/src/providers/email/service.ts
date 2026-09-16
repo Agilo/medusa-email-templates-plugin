@@ -1,4 +1,5 @@
 import type {
+  ConfigModule,
   Logger,
   ProviderSendNotificationDTO,
   ProviderSendNotificationResultsDTO,
@@ -17,12 +18,14 @@ import {
 import { resolveSelectedTransport } from '../../lib/provider-configuration';
 import { redactSecrets } from '../../lib/redact';
 import { resolveEmailContent } from '../../lib/resolve-email-content';
+import { readCloudEmailConfig } from '../../lib/transports/cloud-config';
 import type { RenderedEmail } from '../../lib/transports/types';
 import { EMAIL_TEMPLATES_MODULE } from '../../modules/email-templates';
 import type EmailTemplatesModuleService from '../../modules/email-templates/service';
 
 type InjectedDependencies = {
   logger: Logger;
+  configModule: ConfigModule;
 };
 
 // The notification module passes the stored notification row, which also
@@ -35,10 +38,12 @@ export default class EmailTemplatesProviderService extends AbstractNotificationP
   static identifier = 'email-templates';
 
   protected logger_: Logger;
+  protected configModule_: ConfigModule;
 
-  constructor({ logger }: InjectedDependencies) {
+  constructor({ logger, configModule }: InjectedDependencies) {
     super();
     this.logger_ = logger;
+    this.configModule_ = configModule;
   }
 
   async send(
@@ -58,6 +63,7 @@ export default class EmailTemplatesProviderService extends AbstractNotificationP
     const { transport, context } = await resolveSelectedTransport(service, {
       logger: this.logger_,
       idempotencyKey: notification.idempotency_key,
+      cloud: readCloudEmailConfig(this.configModule_),
     });
 
     const email: RenderedEmail = {

@@ -1,18 +1,18 @@
 import type { Logger } from '@medusajs/framework/types';
 
-import type EmailTemplatesModuleService from '../modules/email-templates/service';
 import { maskCredential, type MaskedCredential } from './credentials/mask';
-import { isEncryptionAvailable } from './crypto/encryption-key';
 import {
   resolveCredential,
   type StoredCredential,
 } from './credentials/resolve-credential';
+import { isEncryptionAvailable } from './crypto/encryption-key';
 import { getErrorMessage, providerNotReadyError } from './errors';
 import { getEmailTransport, listEmailTransports } from './transports/registry';
 import type {
+  CloudEmailConfig,
+  CredentialSource,
   EmailTransport,
   EmailTransportContext,
-  CredentialSource,
 } from './transports/types';
 
 export interface EmailProviderConfigurationRecord {
@@ -41,21 +41,35 @@ export interface EmailProviderState {
   transports: EmailProviderTransportState[];
 }
 
+export type TransportContextOptions = {
+  logger?: Logger;
+  idempotencyKey?: string | null;
+  /** Medusa Cloud settings, when the app runs on Cloud. */
+  cloud?: CloudEmailConfig | null;
+};
+
+type ModuleServiceLike = {
+  listEmailProviderConfigurations: (
+    filters: Record<string, unknown>,
+    options: Record<string, unknown>,
+  ) => Promise<unknown>;
+};
+
 export const listEmailProviderConfigurations = async (
-  service: EmailTemplatesModuleService,
+  service: ModuleServiceLike,
   filters: { is_selected?: boolean; transport_id?: string } = {},
 ): Promise<EmailProviderConfigurationRecord[]> =>
   (await service.listEmailProviderConfigurations(filters, {
     relations: ['credential'],
-  })) as unknown as EmailProviderConfigurationRecord[];
+  })) as EmailProviderConfigurationRecord[];
 
 export const buildTransportContext = (
   configuration: EmailProviderConfigurationRecord,
-  options: { logger?: Logger; idempotencyKey?: string | null } = {},
+  options: TransportContextOptions = {},
 ): EmailTransportContext => ({
   config: configuration.config ?? {},
   credential: resolveCredential(configuration.credential),
-  cloud: null,
+  cloud: options.cloud ?? null,
   idempotencyKey: options.idempotencyKey ?? null,
   logger: options.logger,
 });
@@ -65,8 +79,8 @@ export const buildTransportContext = (
  * "provider not ready" error when email can't be sent.
  */
 export const resolveSelectedTransport = async (
-  service: EmailTemplatesModuleService,
-  options: { logger?: Logger; idempotencyKey?: string | null } = {},
+  service: ModuleServiceLike,
+  options: TransportContextOptions = {},
 ): Promise<{
   configuration: EmailProviderConfigurationRecord;
   transport: EmailTransport;
@@ -104,21 +118,30 @@ export const resolveSelectedTransport = async (
 const getAvailability = async (
   transport: EmailTransport,
   configuration: EmailProviderConfigurationRecord | undefined,
+  options: TransportContextOptions,
 ): Promise<{ available: boolean; unavailable_reason?: string }> => {
-  if (!configuration) {
+  // Managed transports (Medusa Cloud) need no stored configuration: their
+  // availability depends only on the environment.
+  const isManaged = transport.credentialSources.includes('managed');
+
+  if (!configuration && !isManaged) {
     return { available: false, unavailable_reason: 'Not configured.' };
   }
 
   try {
-    const available = await transport.isAvailable(
-      buildTransportContext(configuration),
-    );
+    const context = configuration
+      ? buildTransportContext(configuration, options)
+      : { config: {}, credential: null, cloud: options.cloud ?? null };
+
+    const available = await transport.isAvailable(context);
 
     return available
       ? { available: true }
       : {
           available: false,
-          unavailable_reason: 'Credentials are not configured.',
+          unavailable_reason: isManaged
+            ? 'Not available in this environment.'
+            : 'Credentials are not configured.',
         };
   } catch (error) {
     return { available: false, unavailable_reason: getErrorMessage(error) };
@@ -127,7 +150,8 @@ const getAvailability = async (
 
 /** Admin-facing provider state. Credentials are always masked. */
 export const getEmailProviderState = async (
-  service: EmailTemplatesModuleService,
+  service: ModuleServiceLike,
+  options: TransportContextOptions = {},
 ): Promise<EmailProviderState> => {
   const configurations = await listEmailProviderConfigurations(service);
   const byTransport = new Map(
@@ -145,7 +169,7 @@ export const getEmailProviderState = async (
         id: transport.id,
         label: transport.label,
         selected: Boolean(configuration?.is_selected),
-        ...(await getAvailability(transport, configuration)),
+        ...(await getAvailability(transport, configuration, options)),
         credential_sources: transport.credentialSources,
         config: configuration?.config ?? {},
         credential: maskCredential(configuration?.credential),

@@ -1,10 +1,13 @@
+import type { ConfigModule } from '@medusajs/framework/types';
+import { ContainerRegistrationKeys } from '@medusajs/framework/utils';
 import { createStep, StepResponse } from '@medusajs/framework/workflows-sdk';
 
 import {
   ENCRYPTION_KEY_ENV,
   readEncryptionKey,
 } from '../../lib/crypto/encryption-key';
-import { invalidDataError } from '../../lib/errors';
+import { invalidDataError, providerNotReadyError } from '../../lib/errors';
+import { readCloudEmailConfig } from '../../lib/transports/cloud-config';
 import { getEmailTransport } from '../../lib/transports/registry';
 
 export type EmailProviderCredentialInput =
@@ -30,7 +33,7 @@ export const validateEmailProviderConfigurationStepId =
 
 export const validateEmailProviderConfigurationStep = createStep(
   validateEmailProviderConfigurationStepId,
-  async (input: SaveEmailProviderConfigurationInput) => {
+  async (input: SaveEmailProviderConfigurationInput, { container }) => {
     const transport = getEmailTransport(input.transport_id);
 
     if (!transport) {
@@ -40,7 +43,7 @@ export const validateEmailProviderConfigurationStep = createStep(
     }
 
     const config = await transport.validateConfiguration(input.config ?? {});
-    const needsCredential = !transport.credentialSources.includes('managed');
+    const isManaged = transport.credentialSources.includes('managed');
     let credential: NormalizedEmailProviderCredential | null = null;
 
     if (input.credential) {
@@ -60,8 +63,27 @@ export const validateEmailProviderConfigurationStep = createStep(
       }
 
       credential = input.credential;
-    } else if (needsCredential) {
+    } else if (!isManaged) {
       throw invalidDataError(`${transport.label} requires a credential.`);
+    }
+
+    // A managed transport carries no credential, so it can only be selected
+    // when the environment provides it (Medusa Cloud).
+    if (isManaged) {
+      const configModule = container.resolve<ConfigModule>(
+        ContainerRegistrationKeys.CONFIG_MODULE,
+      );
+      const available = await transport.isAvailable({
+        config,
+        credential: null,
+        cloud: readCloudEmailConfig(configModule),
+      });
+
+      if (!available) {
+        throw providerNotReadyError(
+          `${transport.label} is not available in this environment.`,
+        );
+      }
     }
 
     return new StepResponse<ValidatedEmailProviderConfiguration>({

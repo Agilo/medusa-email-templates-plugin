@@ -1,6 +1,9 @@
+import type { ConfigModule } from '@medusajs/framework/types';
+import { ContainerRegistrationKeys } from '@medusajs/framework/utils';
 import { createStep, StepResponse } from '@medusajs/framework/workflows-sdk';
 
 import { resolveSelectedTransport } from '../../lib/provider-configuration';
+import { readCloudEmailConfig } from '../../lib/transports/cloud-config';
 import { EMAIL_TEMPLATES_MODULE } from '../../modules/email-templates';
 import type EmailTemplatesModuleService from '../../modules/email-templates/service';
 
@@ -13,7 +16,13 @@ export const assertEmailProviderReadyStep = createStep(
     const service = container.resolve<EmailTemplatesModuleService>(
       EMAIL_TEMPLATES_MODULE,
     );
-    const { transport } = await resolveSelectedTransport(service);
+    const configModule = container.resolve<ConfigModule>(
+      ContainerRegistrationKeys.CONFIG_MODULE,
+    );
+
+    const { transport } = await resolveSelectedTransport(service, {
+      cloud: readCloudEmailConfig(configModule),
+    });
 
     return new StepResponse({
       transport_id: transport.id,
