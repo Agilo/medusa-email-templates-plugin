@@ -130,7 +130,31 @@ curl -X POST http://localhost:9000/admin/email/provider/send-test \
   -d '{"to":"you@example.com"}'
 ```
 
-Only the environment variable's **name** is stored. Use a Resend API key with **sending access**, ideally restricted to your sending domain.
+Mailgun works the same way, with a domain and region:
+
+```bash
+curl -X POST http://localhost:9000/admin/email/provider \
+  -H "Authorization: Bearer <admin token>" -H "Content-Type: application/json" \
+  -d '{"transport_id":"mailgun","config":{"domain":"mg.example.com","region":"eu","from_address":"Shop <orders@mg.example.com>"},"credential":{"source":"environment","env_var_name":"MAILGUN_API_KEY"}}'
+```
+
+Use a Resend API key with **sending access**, ideally restricted to your sending domain, and a Mailgun **Domain Sending Key** rather than your account key. The plugin only ever calls the send endpoint.
+
+#### Credentials
+
+Two credential sources are supported:
+
+- **`environment`** — only the variable's **name** is stored, and the key is read from the environment when an email is sent.
+- **`encrypted_database`** — the key is encrypted with AES-256-GCM and stored in the database. This needs an encryption key:
+
+  ```bash
+  # 32 random bytes, as base64 (44 characters) or hex (64 characters)
+  MEDUSA_EMAIL_ENCRYPTION_KEY=$(openssl rand -base64 32)
+  ```
+
+  Pass the key as `credential.api_key`; omit it when saving again to keep the stored one. Without `MEDUSA_EMAIL_ENCRYPTION_KEY`, storing a key returns 400 and `encryption_available` is `false`, while environment credentials keep working. If the encryption key is later changed, stored keys report `key_mismatch` and have to be re-entered.
+
+The admin API never returns API keys or ciphertext, only the source, the variable name, and whether the credential is usable.
 
 #### Managed templates
 
