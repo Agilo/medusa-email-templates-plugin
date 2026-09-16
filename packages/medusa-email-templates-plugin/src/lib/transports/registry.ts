@@ -1,3 +1,4 @@
+import { mailgunTransport } from './mailgun';
 import { resendTransport } from './resend';
 import type { EmailTransport } from './types';
 
@@ -22,3 +23,4 @@ export const listEmailTransports = (): EmailTransport[] => [
 ];
 
 registerEmailTransport(resendTransport);
+registerEmailTransport(mailgunTransport);

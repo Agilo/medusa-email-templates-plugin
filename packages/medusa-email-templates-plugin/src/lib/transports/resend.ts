@@ -7,15 +7,10 @@ import {
   providerNotReadyError,
   transportFailedError,
 } from '../errors';
-import { isEmailAddress } from './address';
+import { emailAddressSchema } from './address';
 import type { EmailTransport, RenderedEmail } from './types';
 
 export const RESEND_TRANSPORT_ID = 'resend';
-
-const emailAddressSchema = z.string().trim().refine(isEmailAddress, {
-  message:
-    'Expected an email address such as "orders@example.com" or "Shop <orders@example.com>"',
-});
 
 export const resendConfigSchema = z.object({
   from_address: emailAddressSchema,
