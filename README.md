@@ -140,6 +140,16 @@ curl -X POST http://localhost:9000/admin/email/provider \
 
 Use a Resend API key with **sending access**, ideally restricted to your sending domain, and a Mailgun **Domain Sending Key** rather than your account key. The plugin only ever calls the send endpoint.
 
+Medusa Cloud needs no credential at all, because Cloud manages it:
+
+```bash
+curl -X POST http://localhost:9000/admin/email/provider \
+  -H "Authorization: Bearer <admin token>" -H "Content-Type: application/json" \
+  -d '{"transport_id":"medusa-cloud","config":{}}'
+```
+
+It can only be selected when the application runs on Medusa Cloud, which injects the `MEDUSA_CLOUD_*` settings; elsewhere the API answers 409 and the transport reports itself unavailable. A `from_address` is optional and best left unset, since a custom sender needs a verified domain on a paid plan. Because this plugin owns the `email` channel, Medusa's built-in Cloud email provider is not registered, and this transport takes its place by calling the same endpoint.
+
 #### Credentials
 
 Two credential sources are supported:
