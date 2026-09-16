@@ -1,4 +1,5 @@
 import { mailgunTransport } from './mailgun';
+import { medusaCloudTransport } from './medusa-cloud';
 import { resendTransport } from './resend';
 import type { EmailTransport } from './types';
 
@@ -22,5 +23,6 @@ export const listEmailTransports = (): EmailTransport[] => [
   ...transports.values(),
 ];
 
+registerEmailTransport(medusaCloudTransport);
 registerEmailTransport(resendTransport);
 registerEmailTransport(mailgunTransport);
