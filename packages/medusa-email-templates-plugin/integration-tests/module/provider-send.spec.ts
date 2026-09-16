@@ -82,7 +82,24 @@ pluginIntegrationSuite(({ getContainer }) => {
     });
   });
 
-  it('fails clearly when the notification has no rendered content', async () => {
+  it('fails clearly for an unknown template with no rendered content', async () => {
+    await selectResend();
+
+    await expect(
+      getContainer()
+        .resolve(Modules.NOTIFICATION)
+        .createNotifications({
+          to: 'customer@example.com',
+          channel: 'email',
+          template: 'not-a-registered-template',
+          data: { order_id: 'order_1' },
+        }),
+    ).rejects.toThrow('No managed email template "not-a-registered-template"');
+
+    expect(capture.requests).toHaveLength(0);
+  });
+
+  it('fails clearly when a managed template is disabled', async () => {
     await selectResend();
 
     await expect(
@@ -92,9 +109,9 @@ pluginIntegrationSuite(({ getContainer }) => {
           to: 'customer@example.com',
           channel: 'email',
           template: 'order-placed',
-          data: { order_id: 'order_1' },
+          data: { order: { display_id: 1 } },
         }),
-    ).rejects.toThrow('No managed email template "order-placed"');
+    ).rejects.toThrow('The email template "order-placed" is disabled.');
 
     expect(capture.requests).toHaveLength(0);
   });
