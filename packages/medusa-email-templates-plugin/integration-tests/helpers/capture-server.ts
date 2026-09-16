@@ -1,0 +1,69 @@
+import { createServer, type IncomingHttpHeaders, type Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
+
+export type CapturedRequest = {
+  method: string;
+  url: string;
+  headers: IncomingHttpHeaders;
+  body: string;
+  json: <T = Record<string, unknown>>() => T;
+};
+
+export type CaptureServer = {
+  url: string;
+  requests: CapturedRequest[];
+  /** Sets the response for every following request. */
+  respondWith: (status: number, body: unknown) => void;
+  reset: () => void;
+  close: () => Promise<void>;
+};
+
+const DEFAULT_RESPONSE = { status: 200, body: { id: 'captured_email_id' } };
+
+/**
+ * Local HTTP server that records requests, used in place of external email
+ * APIs (for example via RESEND_BASE_URL).
+ */
+export const startCaptureServer = async (): Promise<CaptureServer> => {
+  const requests: CapturedRequest[] = [];
+  let response = DEFAULT_RESPONSE;
+
+  const server: Server = createServer((req, res) => {
+    const chunks: Buffer[] = [];
+
+    req.on('data', (chunk: Buffer) => chunks.push(chunk));
+    req.on('end', () => {
+      const body = Buffer.concat(chunks).toString('utf8');
+
+      requests.push({
+        method: req.method ?? '',
+        url: req.url ?? '',
+        headers: req.headers,
+        body,
+        json: () => JSON.parse(body),
+      });
+
+      res.writeHead(response.status, { 'content-type': 'application/json' });
+      res.end(JSON.stringify(response.body));
+    });
+  });
+
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const { port } = server.address() as AddressInfo;
+
+  return {
+    url: `http://127.0.0.1:${port}`,
+    requests,
+    respondWith: (status, body) => {
+      response = { status, body: body as typeof DEFAULT_RESPONSE.body };
+    },
+    reset: () => {
+      requests.length = 0;
+      response = DEFAULT_RESPONSE;
+    },
+    close: () =>
+      new Promise<void>((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve())),
+      ),
+  };
+};
