@@ -44,7 +44,7 @@
     "test:backend": "sh -c 'if test \"$DEVCONTAINER\" = \"true\"; then DB_HOST=postgres_test DB_PORT=5432 DB_USERNAME=postgres DB_PASSWORD=postgres DATABASE_URL=postgres://postgres:postgres@postgres_test:5432/postgres?sslmode=disable REDIS_URL=redis://redis_test:6379 yarn test:integration:module && DB_HOST=postgres_test DB_PORT=5432 DB_USERNAME=postgres DB_PASSWORD=postgres DATABASE_URL=postgres://postgres:postgres@postgres_test:5432/postgres?sslmode=disable REDIS_URL=redis://redis_test:6379 yarn test:integration:http; else yarn test:integration:module && yarn test:integration:http; fi'",
     "test:integration:http": "yarn patch:dev && TEST_TYPE=integration:http NODE_OPTIONS=--experimental-vm-modules jest --silent=false --forceExit --maxWorkers=4",
     "test:integration:module": "yarn patch:dev && TEST_TYPE=integration:module NODE_OPTIONS=--experimental-vm-modules jest --silent=false --runInBand --forceExit --passWithNoTests",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p src/admin/tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json && tsc --noEmit -p src/admin/tsconfig.json"
   },
   "devDependencies": {
     "@medusajs/admin-sdk": "2.21.0",
@@ -61,6 +61,7 @@
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",
     "@tiptap/core": "3.31.3",
+    "@types/html-to-text": "^9.0.4",
     "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.13.4",
@@ -103,6 +104,7 @@
   "dependencies": {
     "@medusajs/dashboard": "^2.21.0",
     "@react-email/editor": "1.7.7",
+    "html-to-text": "^9.0.5",
     "liquidjs": "^10.29.0",
     "resend": "6.28.0",
     "zod": "4.2.0"
