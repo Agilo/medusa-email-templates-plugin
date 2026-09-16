@@ -66,13 +66,39 @@ The dev container is the primary development environment for this repository.
 
 ### Adding the plugin to your own Medusa app
 
-Register it in the consuming application's `medusa-config.ts`:
+Register the plugin **and** its notification provider in the consuming application's `medusa-config.ts`. Plugin modules are registered automatically, but module providers are not:
 
 ```typescript
 import { defineConfig } from '@medusajs/framework/utils';
 
 module.exports = defineConfig({
   // ...projectConfig
+  modules: [
+    {
+      resolve: '@medusajs/medusa/notification',
+      options: {
+        providers: [
+          // Overriding the notification module replaces Medusa's default
+          // providers, so re-add the local feed provider.
+          {
+            resolve: '@medusajs/medusa/notification-local',
+            id: 'local',
+            options: {
+              name: 'Local Notification Provider',
+              channels: ['feed'],
+            },
+          },
+          {
+            resolve: 'medusa-email-templates-plugin/providers/email',
+            id: 'email-templates',
+            options: {
+              channels: ['email'],
+            },
+          },
+        ],
+      },
+    },
+  ],
   plugins: [
     {
       resolve: 'medusa-email-templates-plugin',
@@ -81,6 +107,30 @@ module.exports = defineConfig({
   ],
 });
 ```
+
+Then run `npx medusa db:migrate` to create the plugin's tables.
+
+- The Notification Module allows **one provider per channel**. Remove any other `email` provider (for example SendGrid), or Medusa fails at startup with `Multiple providers are configured for the same channel: email`.
+- Because the plugin owns the `email` channel, Medusa Cloud's automatic email provider is not registered.
+- Notifications created with rendered `content` (`subject` plus `html` or `text`) are sent unchanged through the selected transport.
+
+#### Configure a transport
+
+Choose the transport through the admin API (the Settings → Email page follows in a later release):
+
+```bash
+# Resend, with the API key read from an environment variable at send time
+curl -X POST http://localhost:9000/admin/email/provider \
+  -H "Authorization: Bearer <admin token>" -H "Content-Type: application/json" \
+  -d '{"transport_id":"resend","config":{"from_address":"Shop <orders@example.com>"},"credential":{"source":"environment","env_var_name":"RESEND_API_KEY"}}'
+
+# Send a test email through the selected transport
+curl -X POST http://localhost:9000/admin/email/provider/send-test \
+  -H "Authorization: Bearer <admin token>" -H "Content-Type: application/json" \
+  -d '{"to":"you@example.com"}'
+```
+
+Only the environment variable's **name** is stored. Use a Resend API key with **sending access**, ideally restricted to your sending domain.
 
 ## Development Model
 

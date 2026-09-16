@@ -6361,6 +6361,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@stablelib/base64@npm:^1.0.0":
+  version: 1.0.1
+  resolution: "@stablelib/base64@npm:1.0.1"
+  checksum: 10c0/6330720f021819d19cecfe274111b79a256caa81df478d6b0ae7effc8842b96915b6aeed85926ff05b4d48ec1fc78ad043d928b730ee4e6cc6e8cba6aa097bed
+  languageName: node
+  linkType: hard
+
 "@standard-schema/utils@npm:^0.3.0":
   version: 0.3.0
   resolution: "@standard-schema/utils@npm:0.3.0"
@@ -9783,6 +9790,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fast-sha256@npm:^1.3.0":
+  version: 1.3.0
+  resolution: "fast-sha256@npm:1.3.0"
+  checksum: 10c0/87f9e4baa7639576cf60a2b6235c9f436e1a1c52323abbd8a705b5bea8355500acf176f2aed0c14f2ecd6d6007e26151461bab2f27b8953bcca8d9d6b76a86e4
+  languageName: node
+  linkType: hard
+
 "fast-uri@npm:^3.0.1":
   version: 3.1.7
   resolution: "fast-uri@npm:3.1.7"
@@ -11995,11 +12009,13 @@ __metadata:
 
 "medusa-email-templates-plugin@file:.yalc/medusa-email-templates-plugin::locator=dev-app%40workspace%3A.":
   version: 0.0.1
-  resolution: "medusa-email-templates-plugin@file:.yalc/medusa-email-templates-plugin#.yalc/medusa-email-templates-plugin::hash=14492c&locator=dev-app%40workspace%3A."
+  resolution: "medusa-email-templates-plugin@file:.yalc/medusa-email-templates-plugin#.yalc/medusa-email-templates-plugin::hash=100730&locator=dev-app%40workspace%3A."
   dependencies:
     "@medusajs/dashboard": "npm:^2.21.0"
     "@react-email/editor": "npm:1.7.7"
     liquidjs: "npm:^10.29.0"
+    resend: "npm:6.28.0"
+    zod: "npm:4.2.0"
   peerDependencies:
     "@medusajs/admin-sdk": 2.21.0
     "@medusajs/cli": 2.21.0
@@ -12008,7 +12024,7 @@ __metadata:
     "@medusajs/medusa": 2.21.0
     "@medusajs/test-utils": 2.21.0
     "@medusajs/ui": 4.2.4
-  checksum: 10c0/2b66254b0bb920d905e4e3b143171208e5fe7ad892a3198010dad6a645b51a6ea744223856655199a1d7178e17785d996dfed9c488b8eb0bb1e80380c35ca46c
+  checksum: 10c0/91dd91fc98267b6b36d35b252b6864c1224e2c2da424ff6d5402e4c19bd1525e78e45b10729fffd599518af515b6de4761c6668083bf66058d2b83a2957f0ba4
   languageName: node
   linkType: hard
 
@@ -13059,6 +13075,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"postal-mime@npm:2.7.5":
+  version: 2.7.5
+  resolution: "postal-mime@npm:2.7.5"
+  checksum: 10c0/cb258498d67529fed3fa69af98eabf6c53cbc4dd060db0a550af9952e65ffe93046a384765e2ee0269d090564ef2c66a00aec02418036bbf6aa14390d0af1955
+  languageName: node
+  linkType: hard
+
 "postcss-import@npm:^15.1.0":
   version: 15.1.0
   resolution: "postcss-import@npm:15.1.0"
@@ -13996,6 +14019,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"resend@npm:6.28.0":
+  version: 6.28.0
+  resolution: "resend@npm:6.28.0"
+  dependencies:
+    postal-mime: "npm:2.7.5"
+    standardwebhooks: "npm:1.0.0"
+  peerDependencies:
+    "@react-email/render": "*"
+  peerDependenciesMeta:
+    "@react-email/render":
+      optional: true
+  checksum: 10c0/0132be69cd85d7ceaadea6730767237da7aed6be31a8e21b88b4fe5090a2c21be938ef4762a44b66f8f1d268e18c9f220fbb265edbceaa52c7c0e0022d1d5bf7
+  languageName: node
+  linkType: hard
+
 "resolve-cwd@npm:^3.0.0":
   version: 3.0.0
   resolution: "resolve-cwd@npm:3.0.0"
@@ -14575,6 +14613,16 @@ __metadata:
   version: 2.1.0
   resolution: "standard-as-callback@npm:2.1.0"
   checksum: 10c0/012677236e3d3fdc5689d29e64ea8a599331c4babe86956bf92fc5e127d53f85411c5536ee0079c52c43beb0026b5ce7aa1d834dd35dd026e82a15d1bcaead1f
+  languageName: node
+  linkType: hard
+
+"standardwebhooks@npm:1.0.0":
+  version: 1.0.0
+  resolution: "standardwebhooks@npm:1.0.0"
+  dependencies:
+    "@stablelib/base64": "npm:^1.0.0"
+    fast-sha256: "npm:^1.3.0"
+  checksum: 10c0/aee097d0f3c05172c19b80df1ed9596a2ce92f8956957650d0bbe47c2ca6d36515796b51d523333cb4a48c889b2ab130d789e7879e14975c4381bc7a61274327
   languageName: node
   linkType: hard
 

@@ -95,6 +95,30 @@ module.exports = defineConfig({
       };
     },
   },
+  modules: [
+    {
+      resolve: '@medusajs/medusa/notification',
+      options: {
+        providers: [
+          {
+            resolve: '@medusajs/medusa/notification-local',
+            id: 'local',
+            options: {
+              name: 'Local Notification Provider',
+              channels: ['feed'],
+            },
+          },
+          {
+            resolve: 'medusa-email-templates-plugin/providers/email',
+            id: 'email-templates',
+            options: {
+              channels: ['email'],
+            },
+          },
+        ],
+      },
+    },
+  ],
   plugins: [
     {
       resolve: 'medusa-email-templates-plugin',
