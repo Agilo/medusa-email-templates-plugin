@@ -1,5 +1,9 @@
 import { createStep, StepResponse } from '@medusajs/framework/workflows-sdk';
 
+import {
+  ENCRYPTION_KEY_ENV,
+  readEncryptionKey,
+} from '../../lib/crypto/encryption-key';
 import { invalidDataError } from '../../lib/errors';
 import { getEmailTransport } from '../../lib/transports/registry';
 
@@ -13,10 +17,7 @@ export type SaveEmailProviderConfigurationInput = {
   credential?: EmailProviderCredentialInput;
 };
 
-export type NormalizedEmailProviderCredential = {
-  source: 'environment';
-  env_var_name: string;
-};
+export type NormalizedEmailProviderCredential = EmailProviderCredentialInput;
 
 export type ValidatedEmailProviderConfiguration = {
   transport_id: string;
@@ -49,17 +50,16 @@ export const validateEmailProviderConfigurationStep = createStep(
         );
       }
 
-      // Stored API keys arrive in Phase 3 (PLAN.md §5).
-      if (input.credential.source !== 'environment') {
-        throw invalidDataError(
-          'Stored API keys are not supported yet. Use an environment variable.',
-        );
+      // Storing an API key needs the encryption key up front (PLAN.md §5).
+      if (input.credential.source === 'encrypted_database') {
+        if (input.credential.api_key && !readEncryptionKey()) {
+          throw invalidDataError(
+            `${ENCRYPTION_KEY_ENV} is not configured, so API keys cannot be stored. Set it, or use an environment variable credential instead.`,
+          );
+        }
       }
 
-      credential = {
-        source: 'environment',
-        env_var_name: input.credential.env_var_name,
-      };
+      credential = input.credential;
     } else if (needsCredential) {
       throw invalidDataError(`${transport.label} requires a credential.`);
     }
