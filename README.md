@@ -132,6 +132,20 @@ curl -X POST http://localhost:9000/admin/email/provider/send-test \
 
 Only the environment variable's **name** is stored. Use a Resend API key with **sending access**, ideally restricted to your sending domain.
 
+#### Managed templates
+
+Registered events have one editable template each, written in [Liquid](https://liquidjs.com). Templates are **disabled until an admin enables them**, so the plugin never sends email a host application already sends itself.
+
+- `order-placed` — sent to the customer on `order.placed`, with the order number, line items and totals.
+
+Rendering happens when the email is sent: the subject and text body are rendered as-is, the HTML body is HTML-escaped, and the plain-text body is derived from the rendered HTML when no text template is set. Templates cannot read files or run JavaScript, and they run under parse, render and memory limits.
+
+Until the Settings → Email page ships, enable a template in the example app with:
+
+```bash
+yarn --cwd apps/dev-app email:template:enable order-placed
+```
+
 ## Development Model
 
 This repo follows Medusa's plugin workflow:

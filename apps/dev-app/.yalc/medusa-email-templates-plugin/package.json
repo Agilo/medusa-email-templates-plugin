@@ -44,7 +44,7 @@
     "test:backend": "sh -c 'if test \"$DEVCONTAINER\" = \"true\"; then DB_HOST=postgres_test DB_PORT=5432 DB_USERNAME=postgres DB_PASSWORD=postgres DATABASE_URL=postgres://postgres:postgres@postgres_test:5432/postgres?sslmode=disable REDIS_URL=redis://redis_test:6379 yarn test:integration:module && DB_HOST=postgres_test DB_PORT=5432 DB_USERNAME=postgres DB_PASSWORD=postgres DATABASE_URL=postgres://postgres:postgres@postgres_test:5432/postgres?sslmode=disable REDIS_URL=redis://redis_test:6379 yarn test:integration:http; else yarn test:integration:module && yarn test:integration:http; fi'",
     "test:integration:http": "yarn patch:dev && TEST_TYPE=integration:http NODE_OPTIONS=--experimental-vm-modules jest --silent=false --forceExit --maxWorkers=4",
     "test:integration:module": "yarn patch:dev && TEST_TYPE=integration:module NODE_OPTIONS=--experimental-vm-modules jest --silent=false --runInBand --forceExit --passWithNoTests",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p src/admin/tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json && tsc --noEmit -p src/admin/tsconfig.json"
   },
   "peerDependencies": {
     "@medusajs/admin-sdk": "2.21.0",
@@ -62,9 +62,10 @@
   "dependencies": {
     "@medusajs/dashboard": "^2.21.0",
     "@react-email/editor": "1.7.7",
+    "html-to-text": "^9.0.5",
     "liquidjs": "^10.29.0",
     "resend": "6.28.0",
     "zod": "4.2.0"
   },
-  "yalcSig": "47ec60c298af89e8db82ee6c79c5b5b8"
+  "yalcSig": "60bf55f260195c4253e0a943a61f2edc"
 }
