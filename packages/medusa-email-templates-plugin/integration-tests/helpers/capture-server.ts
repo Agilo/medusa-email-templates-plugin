@@ -18,13 +18,23 @@ export type CaptureServer = {
   close: () => Promise<void>;
 };
 
+export type StartCaptureServerOptions = {
+  /**
+   * Fixed port. Needed when the URL must be known before the server starts,
+   * as with MEDUSA_CLOUD_EMAILS_ENDPOINT, which the app reads at boot.
+   */
+  port?: number;
+};
+
 const DEFAULT_RESPONSE = { status: 200, body: { id: 'captured_email_id' } };
 
 /**
  * Local HTTP server that records requests, used in place of external email
  * APIs (for example via RESEND_BASE_URL).
  */
-export const startCaptureServer = async (): Promise<CaptureServer> => {
+export const startCaptureServer = async ({
+  port = 0,
+}: StartCaptureServerOptions = {}): Promise<CaptureServer> => {
   const requests: CapturedRequest[] = [];
   let response = DEFAULT_RESPONSE;
 
@@ -48,11 +58,13 @@ export const startCaptureServer = async (): Promise<CaptureServer> => {
     });
   });
 
-  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const { port } = server.address() as AddressInfo;
+  await new Promise<void>((resolve) =>
+    server.listen(port, '127.0.0.1', resolve),
+  );
+  const address = server.address() as AddressInfo;
 
   return {
-    url: `http://127.0.0.1:${port}`,
+    url: `http://127.0.0.1:${address.port}`,
     requests,
     respondWith: (status, body) => {
       response = { status, body: body as typeof DEFAULT_RESPONSE.body };

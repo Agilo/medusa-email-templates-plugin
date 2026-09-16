@@ -12,6 +12,10 @@ type TestSuite = Parameters<typeof medusaIntegrationTestRunner>[0]['testSuite'];
  * `postgres_test` docker hostname and does not speak SSL, so we strip the forced
  * SSL in `beforeServerStart` — which runs after the runner's config override but
  * before the app opens its connection.
+ *
+ * Note: the runner's own `env` option is applied *after* the config file is
+ * evaluated, so variables that `medusa-config.ts` reads at load time (such as
+ * MEDUSA_CLOUD_*) have to be set at module scope in the spec instead.
  */
 export function pluginIntegrationSuite(testSuite: TestSuite) {
   medusaIntegrationTestRunner({

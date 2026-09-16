@@ -97,8 +97,34 @@ pluginIntegrationSuite(({ api, getContainer }) => {
             credential: null,
           }),
           expect.objectContaining({ id: 'mailgun', selected: false }),
+          // No MEDUSA_CLOUD_* settings here, so Cloud is unavailable.
+          expect.objectContaining({
+            id: 'medusa-cloud',
+            available: false,
+            credential_sources: ['managed'],
+          }),
         ]),
       );
+    });
+  });
+
+  describe('Medusa Cloud outside Cloud', () => {
+    it('refuses to select Medusa Cloud (409)', async () => {
+      const headers = await createAdminHeaders(getContainer());
+
+      const res = await api
+        .post(
+          '/admin/email/provider',
+          { transport_id: 'medusa-cloud', config: {} },
+          { headers },
+        )
+        .catch(catchResponse);
+
+      expect(res.status).toEqual(409);
+      expect(res.data).toMatchObject({
+        code: 'email_provider_not_ready',
+        message: expect.stringContaining('not available in this environment'),
+      });
     });
   });
 
