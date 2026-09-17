@@ -3,6 +3,7 @@ import { ContainerRegistrationKeys } from '@medusajs/framework/utils';
 
 import { defineEmailEvent } from '../define-email-event';
 import { orderPlacedDefaultTemplate } from './default-templates/order-placed';
+import { retrieveStoreName } from './store';
 
 export type OrderPlacedEventData = { id: string };
 
@@ -63,15 +64,6 @@ const retrieveOrder = async (
   });
 
   return (data[0] as OrderRecord | undefined) ?? null;
-};
-
-const retrieveStoreName = async (
-  container: MedusaContainer,
-): Promise<string> => {
-  const query = container.resolve(ContainerRegistrationKeys.QUERY);
-  const { data } = await query.graph({ entity: 'store', fields: ['name'] });
-
-  return (data[0]?.name as string | undefined) ?? 'Medusa Store';
 };
 
 const customerName = (order: OrderRecord): string =>
