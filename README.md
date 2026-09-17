@@ -175,6 +175,34 @@ Registered events have one editable template each, written in [Liquid](https://l
 - `password-reset-user` and `password-reset-customer` — both handle Medusa's single `auth.password_reset` event, chosen by who asked: admins get an Admin link, customers get a storefront link.
 - `email-verification` — sent on `auth.verification_requested` when the entity is an email address, containing the verification code.
 
+Templates are edited through the admin API, addressed by their template key (the Settings → Email page follows in a later release):
+
+```bash
+# Every registered template, whether or not it has been saved
+curl http://localhost:9000/admin/email/templates \
+  -H "Authorization: Bearer <admin token>"
+
+# One template, with its variables and the built-in default
+curl http://localhost:9000/admin/email/templates/order-placed \
+  -H "Authorization: Bearer <admin token>"
+
+# Save and enable it
+curl -X POST http://localhost:9000/admin/email/templates/order-placed \
+  -H "Authorization: Bearer <admin token>" -H "Content-Type: application/json" \
+  -d '{"enabled":true,"subject_template":"Your order #{{ order.display_id }}","html_template":"<p>Hi {{ order.customer_name }}</p>"}'
+
+# Render it with sample data, without sending
+curl -X POST http://localhost:9000/admin/email/templates/order-placed/preview \
+  -H "Authorization: Bearer <admin token>" -H "Content-Type: application/json" -d '{}'
+
+# Send it to yourself, even while it is disabled
+curl -X POST http://localhost:9000/admin/email/templates/order-placed/send-test \
+  -H "Authorization: Bearer <admin token>" -H "Content-Type: application/json" \
+  -d '{"to":"you@example.com"}'
+```
+
+Saving parses the subject and both bodies, so a template with broken Liquid is rejected with 400 rather than failing when an order is placed. Preview and test sends fill the variables from their documented examples; `data` overrides those values and `draft` renders unsaved edits, so the editor can preview before saving. Both render through the same code path as a real send.
+
 #### Plugin options
 
 ```typescript
