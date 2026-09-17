@@ -171,6 +171,64 @@ The admin API never returns API keys or ciphertext, only the source, the variabl
 Registered events have one editable template each, written in [Liquid](https://liquidjs.com). Templates are **disabled until an admin enables them**, so the plugin never sends email a host application already sends itself.
 
 - `order-placed` — sent to the customer on `order.placed`, with the order number, line items and totals.
+- `invite-created` and `invite-resent` — sent on `invite.created` and `invite.resent`, with a link that accepts the invitation in Medusa Admin.
+- `password-reset-user` and `password-reset-customer` — both handle Medusa's single `auth.password_reset` event, chosen by who asked: admins get an Admin link, customers get a storefront link.
+- `email-verification` — sent on `auth.verification_requested` when the entity is an email address, containing the verification code.
+
+#### Plugin options
+
+```typescript
+plugins: [
+  {
+    resolve: 'medusa-email-templates-plugin',
+    options: {
+      // Defaults to the app's admin URL (backendUrl + admin path)
+      admin_url: 'https://admin.example.com/app',
+      // Required for customer password resets
+      storefront_url: 'https://shop.example.com',
+      // Defaults to /reset-password
+      storefront_reset_password_path: '/account/new-password',
+    },
+  },
+],
+```
+
+Without `storefront_url`, the customer password reset is skipped rather than sending a link that goes nowhere.
+
+#### Custom events
+
+Host applications can add their own emails. Register the event from a subscriber file, which Medusa loads at startup:
+
+```typescript
+// src/subscribers/email-review-approved.ts
+import {
+  defineEmailEvent,
+  sendEmailEventWorkflow,
+} from 'medusa-email-templates-plugin/registry';
+
+defineEmailEvent<{ id: string }>({
+  event: 'review.approved',
+  templateKey: 'review-approved',
+  label: 'Review approved',
+  defaultTemplate: {
+    subject: 'Thanks for your review',
+    html: '<p>Hi {{ name }}</p>',
+  },
+  getRecipient: async (data, container) => 'customer@example.com',
+  getContext: async (data, container) => ({ name: 'Jane' }),
+  variables: [{ key: 'name', label: 'Name', example: 'Jane' }],
+});
+
+export default async function handler({ event, container }) {
+  await sendEmailEventWorkflow(container).run({
+    input: { event: event.name, data: event.data },
+  });
+}
+
+export const config = { event: 'review.approved' };
+```
+
+The same module exports `registerEmailTransport` for adding a transport of your own; it takes the `EmailTransport` interface, so templates and events stay untouched.
 
 Rendering happens when the email is sent: the subject and text body are rendered as-is, the HTML body is HTML-escaped, and the plain-text body is derived from the rendered HTML when no text template is set. Templates cannot read files or run JavaScript, and they run under parse, render and memory limits.
 

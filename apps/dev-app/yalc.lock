@@ -2,7 +2,7 @@
   "version": "v1",
   "packages": {
     "medusa-email-templates-plugin": {
-      "signature": "30537b6d726c30d60f09b5f6f146fe1b",
+      "signature": "76f0a72fa8d18e51e67490f2f08c2381",
       "file": true
     }
   }
