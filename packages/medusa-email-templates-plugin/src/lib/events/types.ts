@@ -44,4 +44,9 @@ export interface EmailEventDefinition<TData = unknown> {
     resource_id?: string;
     resource_type?: string;
   };
+  /**
+   * Configuration problems that stop this template from sending, surfaced in
+   * the admin list. For example a customer link with no storefront URL.
+   */
+  getWarnings?: (container: MedusaContainer) => string[];
 }

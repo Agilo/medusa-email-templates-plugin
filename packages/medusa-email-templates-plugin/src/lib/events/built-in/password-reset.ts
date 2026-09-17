@@ -108,4 +108,13 @@ export const passwordResetCustomerEmailEvent =
     },
 
     variables: variables('Link to your storefront that sets a new password.'),
+
+    getWarnings: (container) => {
+      try {
+        getStorefrontUrl(container);
+        return [];
+      } catch {
+        return ['storefront_url_not_configured'];
+      }
+    },
   });
