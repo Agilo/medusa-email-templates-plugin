@@ -1,6 +1,9 @@
 import { createStep, StepResponse } from '@medusajs/framework/workflows-sdk';
 
-import { getEmailEventDefinitionForPayload } from '../../lib/events';
+import {
+  getEmailEventDefinitionForPayload,
+  StorefrontUrlNotConfiguredError,
+} from '../../lib/events';
 import { findEmailTemplate } from '../../lib/templates';
 import { EMAIL_TEMPLATES_MODULE } from '../../modules/email-templates';
 import type EmailTemplatesModuleService from '../../modules/email-templates/service';
@@ -10,8 +13,11 @@ export type ResolveEmailEventInput = {
   data: Record<string, unknown>;
 };
 
+export type EmailEventSkipReason =
+  'no_definition' | 'disabled' | 'no_recipient' | 'storefront_not_configured';
+
 export type ResolvedEmailEvent =
-  | { send: false; skipped: 'no_definition' | 'disabled' | 'no_recipient' }
+  | { send: false; skipped: EmailEventSkipReason }
   | {
       send: true;
       skipped: null;
@@ -69,15 +75,28 @@ export const resolveEmailEventStep = createStep(
 
     const resource = definition.getResource?.(payload) ?? {};
 
-    return new StepResponse<ResolvedEmailEvent>({
-      send: true,
-      skipped: null,
-      to,
-      template_key: definition.templateKey,
-      data: await definition.getContext(payload, container),
-      idempotency_key: definition.getIdempotencyKey?.(payload) ?? null,
-      resource_id: resource.resource_id ?? null,
-      resource_type: resource.resource_type ?? null,
-    });
+    try {
+      return new StepResponse<ResolvedEmailEvent>({
+        send: true,
+        skipped: null,
+        to,
+        template_key: definition.templateKey,
+        data: await definition.getContext(payload, container),
+        idempotency_key: definition.getIdempotencyKey?.(payload) ?? null,
+        resource_id: resource.resource_id ?? null,
+        resource_type: resource.resource_type ?? null,
+      });
+    } catch (error) {
+      // A link that needs the storefront URL cannot be built without it, so
+      // skip instead of sending a broken link.
+      if (error instanceof StorefrontUrlNotConfiguredError) {
+        return new StepResponse<ResolvedEmailEvent>({
+          send: false,
+          skipped: 'storefront_not_configured',
+        });
+      }
+
+      throw error;
+    }
   },
 );
