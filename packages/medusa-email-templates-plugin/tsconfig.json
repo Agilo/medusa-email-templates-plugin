@@ -8,7 +8,9 @@
     "experimentalDecorators": true,
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
-    "declaration": false,
+    // Emitted so host applications get types for the public API exported
+    // from `medusa-email-templates-plugin/registry`.
+    "declaration": true,
     "sourceMap": false,
     "inlineSourceMap": true,
     "outDir": "./.medusa/server",
