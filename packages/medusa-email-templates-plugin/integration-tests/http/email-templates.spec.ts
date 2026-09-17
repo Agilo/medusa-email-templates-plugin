@@ -1,0 +1,348 @@
+import { createAdminHeaders } from '../helpers/admin';
+import {
+  startCaptureServer,
+  type CaptureServer,
+} from '../helpers/capture-server';
+import { pluginIntegrationSuite } from '../helpers/run';
+
+jest.setTimeout(60000);
+
+const API_KEY_ENV = 'EMAIL_TEMPLATES_HTTP_TEMPLATE_KEY';
+const API_KEY = 're_templates_secret_value_123';
+
+type ErrorResponse = { status: number; data: Record<string, unknown> };
+type TemplateListItem = { template_key: string };
+
+const savedTemplate = (overrides: Record<string, unknown> = {}) => ({
+  enabled: true,
+  subject_template: 'Your order #{{ order.display_id }}',
+  html_template: '<p>Hi {{ order.customer_name }}</p>',
+  editor_content: { type: 'doc', content: [] },
+  ...overrides,
+});
+
+pluginIntegrationSuite(({ api, getContainer }) => {
+  let capture: CaptureServer;
+
+  beforeAll(async () => {
+    capture = await startCaptureServer();
+    process.env.RESEND_BASE_URL = capture.url;
+    process.env[API_KEY_ENV] = API_KEY;
+  });
+
+  afterAll(async () => {
+    delete process.env.RESEND_BASE_URL;
+    delete process.env[API_KEY_ENV];
+    await capture.close();
+  });
+
+  beforeEach(() => capture.reset());
+
+  const catchResponse = (error: { response: ErrorResponse }) => error.response;
+
+  const selectResend = (headers: Record<string, string>) =>
+    api.post(
+      '/admin/email/provider',
+      {
+        transport_id: 'resend',
+        config: { from_address: 'Shop <orders@example.com>' },
+        credential: { source: 'environment', env_var_name: API_KEY_ENV },
+      },
+      { headers },
+    );
+
+  describe('authentication', () => {
+    it('rejects unauthenticated requests (401)', async () => {
+      const responses = await Promise.all([
+        api.get('/admin/email/templates').catch(catchResponse),
+        api.get('/admin/email/templates/order-placed').catch(catchResponse),
+        api
+          .post('/admin/email/templates/order-placed', savedTemplate())
+          .catch(catchResponse),
+        api
+          .post('/admin/email/templates/order-placed/preview', {})
+          .catch(catchResponse),
+        api
+          .post('/admin/email/templates/order-placed/send-test', {
+            to: 'me@example.com',
+          })
+          .catch(catchResponse),
+      ]);
+
+      responses.forEach((response) => expect(response.status).toEqual(401));
+    });
+  });
+
+  describe('GET /admin/email/templates', () => {
+    it('lists every registered template, saved or not', async () => {
+      const headers = await createAdminHeaders(getContainer());
+
+      const res = await api.get('/admin/email/templates', { headers });
+
+      expect(res.status).toEqual(200);
+      const keys = res.data.templates.map(
+        (template: TemplateListItem) => template.template_key,
+      );
+      expect(keys).toEqual(
+        expect.arrayContaining([
+          'order-placed',
+          'invite-created',
+          'invite-resent',
+          'password-reset-user',
+          'password-reset-customer',
+          'email-verification',
+        ]),
+      );
+      expect(res.data.count).toEqual(res.data.templates.length);
+
+      const orderPlaced = res.data.templates.find(
+        (template: TemplateListItem) =>
+          template.template_key === 'order-placed',
+      );
+      expect(orderPlaced).toMatchObject({
+        id: null,
+        enabled: false,
+        is_customized: false,
+        event: 'order.placed',
+      });
+    });
+
+    it('warns when a customer link cannot be built', async () => {
+      const headers = await createAdminHeaders(getContainer());
+
+      const res = await api.get('/admin/email/templates', { headers });
+
+      expect(
+        res.data.templates.find(
+          (template: TemplateListItem) =>
+            template.template_key === 'password-reset-customer',
+        ).warnings,
+      ).toEqual(['storefront_url_not_configured']);
+    });
+  });
+
+  describe('GET /admin/email/templates/:id', () => {
+    it('returns the variables and the built-in default', async () => {
+      const headers = await createAdminHeaders(getContainer());
+
+      const res = await api.get('/admin/email/templates/order-placed', {
+        headers,
+      });
+
+      expect(res.status).toEqual(200);
+      expect(res.data.template).toMatchObject({
+        template_key: 'order-placed',
+        is_customized: false,
+        html_template: null,
+      });
+      expect(res.data.template.default_template.subject).toContain(
+        '{{ order.display_id }}',
+      );
+      expect(
+        res.data.template.variables.map((v: { key: string }) => v.key),
+      ).toEqual(expect.arrayContaining(['order.display_id', 'store.name']));
+    });
+
+    it('returns 404 for an unregistered template', async () => {
+      const headers = await createAdminHeaders(getContainer());
+
+      const res = await api
+        .get('/admin/email/templates/not-a-template', { headers })
+        .catch(catchResponse);
+
+      expect(res.status).toEqual(404);
+    });
+  });
+
+  describe('POST /admin/email/templates/:id', () => {
+    it('saves a template and reads it back', async () => {
+      const headers = await createAdminHeaders(getContainer());
+
+      const saved = await api.post(
+        '/admin/email/templates/order-placed',
+        savedTemplate(),
+        { headers },
+      );
+
+      expect(saved.status).toEqual(200);
+      expect(saved.data.template).toMatchObject({
+        enabled: true,
+        is_customized: true,
+        subject_template: 'Your order #{{ order.display_id }}',
+        html_template: '<p>Hi {{ order.customer_name }}</p>',
+      });
+      expect(saved.data.template.id).toEqual(expect.any(String));
+
+      const fetched = await api.get('/admin/email/templates/order-placed', {
+        headers,
+      });
+      expect(fetched.data.template).toMatchObject({
+        enabled: true,
+        editor_content: { type: 'doc', content: [] },
+      });
+    });
+
+    it.each([
+      ['a broken subject', { subject_template: '{{ order.display_id' }],
+      ['a broken body', { html_template: '{% for item in %}' }],
+      ['a forbidden tag', { html_template: '{% include "other" %}' }],
+    ])('rejects %s (400)', async (_name, overrides) => {
+      const headers = await createAdminHeaders(getContainer());
+
+      const res = await api
+        .post('/admin/email/templates/order-placed', savedTemplate(overrides), {
+          headers,
+        })
+        .catch(catchResponse);
+
+      expect(res.status).toEqual(400);
+      expect(String(res.data.message)).toContain('Liquid');
+    });
+
+    it.each([
+      ['an empty subject', { subject_template: '' }],
+      ['a missing enabled flag', { enabled: undefined }],
+      ['an unknown field', { nope: true }],
+    ])('rejects %s (400)', async (_name, overrides) => {
+      const headers = await createAdminHeaders(getContainer());
+
+      const res = await api
+        .post('/admin/email/templates/order-placed', savedTemplate(overrides), {
+          headers,
+        })
+        .catch(catchResponse);
+
+      expect(res.status).toEqual(400);
+    });
+
+    it('returns 404 for an unregistered template', async () => {
+      const headers = await createAdminHeaders(getContainer());
+
+      const res = await api
+        .post('/admin/email/templates/not-a-template', savedTemplate(), {
+          headers,
+        })
+        .catch(catchResponse);
+
+      expect(res.status).toEqual(404);
+    });
+  });
+
+  describe('POST /admin/email/templates/:id/preview', () => {
+    it('renders with sample data without sending anything', async () => {
+      const headers = await createAdminHeaders(getContainer());
+
+      const res = await api.post(
+        '/admin/email/templates/order-placed/preview',
+        {},
+        { headers },
+      );
+
+      expect(res.status).toEqual(200);
+      expect(res.data.preview.subject).toContain('1001');
+      expect(res.data.preview.html).toContain('Medusa T-Shirt');
+      expect(res.data.preview.html).not.toContain('{{');
+      expect(res.data.preview.text).toBeTruthy();
+      expect(capture.requests).toHaveLength(0);
+    });
+
+    it('previews unsaved edits and data overrides', async () => {
+      const headers = await createAdminHeaders(getContainer());
+
+      const res = await api.post(
+        '/admin/email/templates/order-placed/preview',
+        {
+          data: { order: { display_id: 4242 } },
+          draft: { subject_template: 'Draft #{{ order.display_id }}' },
+        },
+        { headers },
+      );
+
+      expect(res.data.preview.subject).toEqual('Draft #4242');
+    });
+
+    it('reports a broken draft (400)', async () => {
+      const headers = await createAdminHeaders(getContainer());
+
+      const res = await api
+        .post(
+          '/admin/email/templates/order-placed/preview',
+          { draft: { subject_template: '{{ oops' } },
+          { headers },
+        )
+        .catch(catchResponse);
+
+      expect(res.status).toEqual(400);
+    });
+  });
+
+  describe('POST /admin/email/templates/:id/send-test', () => {
+    it('sends a rendered template even while it is disabled', async () => {
+      const headers = await createAdminHeaders(getContainer());
+      await selectResend(headers);
+      capture.respondWith(200, { id: 're_template_test' });
+
+      const res = await api.post(
+        '/admin/email/templates/order-placed/send-test',
+        { to: 'me@example.com' },
+        { headers },
+      );
+
+      expect(res.status).toEqual(200);
+      expect(res.data.result).toMatchObject({
+        external_id: 're_template_test',
+        transport_id: 'resend',
+      });
+
+      const payload = capture.requests[0].json<{ to: string; html: string }>();
+      expect(payload.to).toEqual('me@example.com');
+      expect(payload.html).toContain('Medusa T-Shirt');
+    });
+
+    it('returns 409 when no provider is selected', async () => {
+      const headers = await createAdminHeaders(getContainer());
+
+      const res = await api
+        .post(
+          '/admin/email/templates/order-placed/send-test',
+          { to: 'me@example.com' },
+          { headers },
+        )
+        .catch(catchResponse);
+
+      expect(res.status).toEqual(409);
+      expect(res.data).toMatchObject({ code: 'email_provider_not_ready' });
+    });
+
+    it('returns 502 when the transport fails', async () => {
+      const headers = await createAdminHeaders(getContainer());
+      await selectResend(headers);
+      capture.respondWith(403, { message: 'nope' });
+
+      const res = await api
+        .post(
+          '/admin/email/templates/order-placed/send-test',
+          { to: 'me@example.com' },
+          { headers },
+        )
+        .catch(catchResponse);
+
+      expect(res.status).toEqual(502);
+      expect(res.data).toMatchObject({ code: 'email_transport_failed' });
+    });
+
+    it('rejects an invalid recipient (400)', async () => {
+      const headers = await createAdminHeaders(getContainer());
+
+      const res = await api
+        .post(
+          '/admin/email/templates/order-placed/send-test',
+          { to: 'nope' },
+          { headers },
+        )
+        .catch(catchResponse);
+
+      expect(res.status).toEqual(400);
+    });
+  });
+});
