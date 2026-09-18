@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { sdk } from '../../../lib/sdk';
 import type { EmailProviderState } from '../../../lib/types';
 import { createQueryWrapper } from '../../../test/render';
-import ProviderSection from '../provider-section';
+import ProvidersSection from '../providers-section';
 
 vi.mock('../../../lib/sdk', () => ({
   sdk: { client: { fetch: vi.fn() } },
@@ -66,7 +66,7 @@ const providerState = (): EmailProviderState => ({
 const renderSection = () => {
   const { wrapper } = createQueryWrapper();
 
-  return render(<ProviderSection />, { wrapper });
+  return render(<ProvidersSection />, { wrapper });
 };
 
 /** The action column renders one Radix menu trigger per row. */
@@ -76,7 +76,7 @@ const openRowMenu = async (rowName: string) => {
   await userEvent.click(within(row).getByRole('button'));
 };
 
-describe('ProviderSection', () => {
+describe('ProvidersSection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

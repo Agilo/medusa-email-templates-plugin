@@ -1,7 +1,7 @@
 import { defineRouteConfig } from '@medusajs/admin-sdk';
 import { Container, Heading, Text } from '@medusajs/ui';
 import { Envelope } from '@medusajs/icons';
-import ProviderSection from '../../../components/provider/provider-section';
+import ProvidersSection from '../../../components/providers/providers-section';
 
 const EmailSettingsPage = () => {
   return (
@@ -16,7 +16,7 @@ const EmailSettingsPage = () => {
         </div>
       </Container>
 
-      <ProviderSection />
+      <ProvidersSection />
     </div>
   );
 };

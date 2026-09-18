@@ -19,7 +19,7 @@ import {
 import { getApiErrorMessage } from '../../lib/api-error';
 import type { EmailProviderTransportState } from '../../lib/types';
 import TestEmailDrawer from './test-email-drawer';
-import TransportDrawer from './transport-drawer';
+import TransportDrawer from './provider-drawer';
 
 type StatusColor = 'green' | 'red' | 'blue' | 'orange' | 'grey';
 
@@ -85,7 +85,7 @@ const SectionHeading = () => (
   </>
 );
 
-const ProviderSection = () => {
+const ProvidersSection = () => {
   const { data: provider, isPending, isError, error } = useEmailProvider();
   const saveProvider = useSaveEmailProvider();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -241,4 +241,4 @@ const ProviderSection = () => {
   );
 };
 
-export default ProviderSection;
+export default ProvidersSection;
