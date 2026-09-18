@@ -32,6 +32,8 @@ export type PostEmailProviderBody = z.infer<typeof PostEmailProviderSchema>;
 
 export const PostEmailProviderTestSchema = z.strictObject({
   to: z.email(),
+  /** Defaults to the selected transport. */
+  transport_id: z.string().min(1).optional(),
 });
 
 export type PostEmailProviderTestBody = z.infer<

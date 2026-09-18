@@ -115,6 +115,56 @@ export const resolveSelectedTransport = async (
   return { configuration, transport, context };
 };
 
+/**
+ * Loads one transport by id, whether or not it is the selected one. Used by
+ * test sends, so a configured transport can be verified before switching to
+ * it. Real email always goes through `resolveSelectedTransport`.
+ */
+export const resolveTransportById = async (
+  service: ModuleServiceLike,
+  transportId: string,
+  options: TransportContextOptions = {},
+): Promise<{
+  configuration: EmailProviderConfigurationRecord | null;
+  transport: EmailTransport;
+  context: EmailTransportContext;
+}> => {
+  const transport = getEmailTransport(transportId);
+
+  if (!transport) {
+    throw providerNotReadyError(
+      `The email transport "${transportId}" is not registered.`,
+    );
+  }
+
+  const [configuration] = await listEmailProviderConfigurations(service, {
+    transport_id: transportId,
+  });
+
+  // A managed transport (Medusa Cloud) needs no stored configuration.
+  if (!configuration && !transport.credentialSources.includes('managed')) {
+    throw providerNotReadyError(`${transport.label} is not configured yet.`);
+  }
+
+  const context = configuration
+    ? buildTransportContext(configuration, options)
+    : {
+        config: {},
+        credential: null,
+        cloud: options.cloud ?? null,
+        idempotencyKey: options.idempotencyKey ?? null,
+        logger: options.logger,
+      };
+
+  if (!(await transport.isAvailable(context))) {
+    throw providerNotReadyError(
+      `${transport.label} is not available. Check its configuration and credentials.`,
+    );
+  }
+
+  return { configuration: configuration ?? null, transport, context };
+};
+
 const getAvailability = async (
   transport: EmailTransport,
   configuration: EmailProviderConfigurationRecord | undefined,

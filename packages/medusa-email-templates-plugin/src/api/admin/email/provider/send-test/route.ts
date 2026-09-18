@@ -13,7 +13,10 @@ export const POST = async (
 ) => {
   try {
     const { result } = await sendProviderTestEmailWorkflow(req.scope).run({
-      input: { to: req.validatedBody.to },
+      input: {
+        to: req.validatedBody.to,
+        transport_id: req.validatedBody.transport_id,
+      },
     });
 
     res.json({ result });

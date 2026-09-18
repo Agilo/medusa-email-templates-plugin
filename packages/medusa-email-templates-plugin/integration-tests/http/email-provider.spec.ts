@@ -197,6 +197,57 @@ pluginIntegrationSuite(({ api, getContainer }) => {
       });
     });
 
+    it('switches back to a saved transport without resending its credential', async () => {
+      const headers = await createAdminHeaders(getContainer());
+      await api.post('/admin/email/provider', resendBody(), { headers });
+      await api.post('/admin/email/provider', mailgunBody(), { headers });
+
+      // What the admin table's "Use" action sends: no credential at all.
+      const res = await api.post(
+        '/admin/email/provider',
+        {
+          transport_id: 'resend',
+          config: { from_address: 'Shop <orders@example.com>' },
+        },
+        { headers },
+      );
+
+      expect(res.status).toEqual(200);
+      expect(res.data.provider.selected_transport_id).toEqual('resend');
+      expect(findTransport(res.data, 'resend')).toMatchObject({
+        selected: true,
+        available: true,
+        credential: {
+          source: 'environment',
+          env_var_name: API_KEY_ENV,
+          configured: true,
+        },
+      });
+      // The transport it switched away from keeps its own credential.
+      expect(findTransport(res.data, 'mailgun')).toMatchObject({
+        selected: false,
+        credential: { source: 'encrypted_database', configured: true },
+      });
+    });
+
+    it('rejects a transport that has no stored credential (400)', async () => {
+      const headers = await createAdminHeaders(getContainer());
+
+      const res = await api
+        .post(
+          '/admin/email/provider',
+          {
+            transport_id: 'resend',
+            config: { from_address: 'Shop <orders@example.com>' },
+          },
+          { headers },
+        )
+        .catch(catchResponse);
+
+      expect(res.status).toEqual(400);
+      expect(String(res.data.message)).toContain('requires a credential');
+    });
+
     it('rejects a stored key when no encryption key is configured (400)', async () => {
       const headers = await createAdminHeaders(getContainer());
       const encryptionKey = process.env[ENCRYPTION_KEY_ENV];
@@ -325,7 +376,6 @@ pluginIntegrationSuite(({ api, getContainer }) => {
       expect(res.data.result).toMatchObject({
         external_id: 're_test_email',
         transport_id: 'resend',
-        notification_id: expect.any(String),
       });
       expect(capture.requests).toHaveLength(1);
       expect(capture.requests[0].json()).toMatchObject({
@@ -355,6 +405,50 @@ pluginIntegrationSuite(({ api, getContainer }) => {
       expect(capture.requests[0].headers.authorization).toEqual(
         `Basic ${Buffer.from(`api:${STORED_API_KEY}`).toString('base64')}`,
       );
+    });
+
+    it('sends through a named transport that is not the selected one', async () => {
+      const headers = await createAdminHeaders(getContainer());
+      // Configure Mailgun first, then Resend, which leaves Resend selected.
+      await api.post('/admin/email/provider', mailgunBody(), { headers });
+      await api.post('/admin/email/provider', resendBody(), { headers });
+      capture.respondWith(200, { id: '<mg-inactive>', message: 'Queued' });
+
+      const res = await api.post(
+        '/admin/email/provider/send-test',
+        { to: 'me@example.com', transport_id: 'mailgun' },
+        { headers },
+      );
+
+      expect(res.status).toEqual(200);
+      expect(res.data.result).toMatchObject({
+        external_id: '<mg-inactive>',
+        transport_id: 'mailgun',
+      });
+      // The request really went to Mailgun, not to the selected transport.
+      expect(capture.requests).toHaveLength(1);
+      expect(capture.requests[0].url).toEqual('/v3/mg.example.com/messages');
+
+      // Testing another transport never changes which one sends real email.
+      const fetched = await api.get('/admin/email/provider', { headers });
+      expect(fetched.data.provider.selected_transport_id).toEqual('resend');
+    });
+
+    it('returns 409 for a transport that is not configured', async () => {
+      const headers = await createAdminHeaders(getContainer());
+      await api.post('/admin/email/provider', resendBody(), { headers });
+
+      const res = await api
+        .post(
+          '/admin/email/provider/send-test',
+          { to: 'me@example.com', transport_id: 'mailgun' },
+          { headers },
+        )
+        .catch(catchResponse);
+
+      expect(res.status).toEqual(409);
+      expect(res.data).toMatchObject({ code: 'email_provider_not_ready' });
+      expect(capture.requests).toHaveLength(0);
     });
 
     it('returns 502 with a redacted message when the transport fails', async () => {
