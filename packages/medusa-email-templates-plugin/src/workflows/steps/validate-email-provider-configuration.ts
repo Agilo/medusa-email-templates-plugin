@@ -7,8 +7,11 @@ import {
   readEncryptionKey,
 } from '../../lib/crypto/encryption-key';
 import { invalidDataError, providerNotReadyError } from '../../lib/errors';
+import { listEmailProviderConfigurations } from '../../lib/provider-configuration';
 import { readCloudEmailConfig } from '../../lib/transports/cloud-config';
 import { getEmailTransport } from '../../lib/transports/registry';
+import { EMAIL_TEMPLATES_MODULE } from '../../modules/email-templates';
+import type EmailTemplatesModuleService from '../../modules/email-templates/service';
 
 export type EmailProviderCredentialInput =
   | { source: 'environment'; env_var_name: string }
@@ -64,7 +67,20 @@ export const validateEmailProviderConfigurationStep = createStep(
 
       credential = input.credential;
     } else if (!isManaged) {
-      throw invalidDataError(`${transport.label} requires a credential.`);
+      // Omitting the credential keeps whatever is already stored, so a
+      // transport configured earlier can be re-selected without resending its
+      // secret. `credential` stays null, which makes the upsert step leave the
+      // existing row untouched.
+      const service = container.resolve<EmailTemplatesModuleService>(
+        EMAIL_TEMPLATES_MODULE,
+      );
+      const [stored] = await listEmailProviderConfigurations(service, {
+        transport_id: transport.id,
+      });
+
+      if (!stored?.credential) {
+        throw invalidDataError(`${transport.label} requires a credential.`);
+      }
     }
 
     // A managed transport carries no credential, so it can only be selected
