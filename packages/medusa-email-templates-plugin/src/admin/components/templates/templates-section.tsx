@@ -17,13 +17,15 @@ import {
   Tooltip,
   useDataTable,
 } from '@medusajs/ui';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useToggleEmailTemplate } from '../../hooks/use-email-template';
 import { useEmailTemplates } from '../../hooks/use-email-templates';
 import { getApiErrorMessage } from '../../lib/api-error';
 import type { EmailTemplateListItem } from '../../lib/types';
+import TemplatePreviewDrawer from './template-preview-drawer';
+import TemplateTestEmailDrawer from './template-test-email-drawer';
 
 /** Warnings are codes; only the ones we can explain get friendly text. */
 const WARNING_TEXT: Record<string, string> = {
@@ -92,8 +94,14 @@ const TemplatesSection = () => {
   const { data, isPending, isError, error } = useEmailTemplates();
   const toggleTemplate = useToggleEmailTemplate();
   const navigate = useNavigate();
+  const [previewKey, setPreviewKey] = useState<string | null>(null);
+  const [testKey, setTestKey] = useState<string | null>(null);
 
   const templates = useMemo(() => data?.templates ?? [], [data?.templates]);
+
+  const previewing =
+    templates.find((it) => it.template_key === previewKey) ?? null;
+  const testing = templates.find((it) => it.template_key === testKey) ?? null;
 
   const openTemplate = useCallback(
     (event: React.MouseEvent, row: EmailTemplateListItem) => {
@@ -189,8 +197,7 @@ const TemplatesSection = () => {
         header: 'Last edited',
       }),
       columnHelper.action({
-        // TODO: wire these up. Preview and Send test can use the existing
-        // endpoints; Reset to default needs DELETE /admin/email/templates/:id,
+        // TODO: Reset to default needs DELETE /admin/email/templates/:id,
         // which does not exist yet.
         actions: (ctx) => {
           const template = ctx.row.original;
@@ -202,8 +209,16 @@ const TemplatesSection = () => {
               icon: <PencilSquare />,
               onClick: () => navigate(editorPath(template.template_key)),
             },
-            { label: 'Preview', icon: <Eye />, onClick: noop },
-            { label: 'Send test', icon: <PaperPlane />, onClick: noop },
+            {
+              label: 'Preview',
+              icon: <Eye />,
+              onClick: () => setPreviewKey(template.template_key),
+            },
+            {
+              label: 'Send test',
+              icon: <PaperPlane />,
+              onClick: () => setTestKey(template.template_key),
+            },
           ];
 
           // Resetting a template nobody has saved would do nothing.
@@ -256,6 +271,22 @@ const TemplatesSection = () => {
         </DataTable.Toolbar>
         <DataTable.Table />
       </DataTable>
+
+      {previewing && (
+        <TemplatePreviewDrawer
+          key={`preview-${previewing.template_key}`}
+          template={previewing}
+          onClose={() => setPreviewKey(null)}
+        />
+      )}
+
+      {testing && (
+        <TemplateTestEmailDrawer
+          key={`test-${testing.template_key}`}
+          template={testing}
+          onClose={() => setTestKey(null)}
+        />
+      )}
     </Container>
   );
 };

@@ -253,6 +253,68 @@ describe('TemplatesSection', () => {
     );
   });
 
+  it('renders a preview without sending anything', async () => {
+    // `fetch` accepts string | URL | Request, so normalise before matching.
+    fetchMock.mockImplementation((input) =>
+      String(input) === '/admin/email/templates'
+        ? Promise.resolve({ templates: templates(), count: 3 })
+        : Promise.resolve({
+            preview: {
+              subject: 'Your order #1001',
+              html: '<p>Hi Jane</p>',
+              text: 'Hi Jane',
+            },
+          }),
+    );
+
+    renderSection();
+    await screen.findByText('Order placed');
+
+    await userEvent.click(within(row('Order placed')).getByRole('button'));
+    await userEvent.click(
+      await screen.findByRole('menuitem', { name: 'Preview' }),
+    );
+
+    expect(await screen.findByText('Your order #1001')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/admin/email/templates/order-placed/preview',
+        { method: 'POST', body: {} },
+      ),
+    );
+  });
+
+  it('sends a test of the template from its drawer', async () => {
+    fetchMock.mockResolvedValue({ templates: templates(), count: 3 });
+
+    renderSection();
+    await screen.findByText('Admin invite');
+
+    await userEvent.click(within(row('Admin invite')).getByRole('button'));
+    await userEvent.click(
+      await screen.findByRole('menuitem', { name: 'Send test' }),
+    );
+
+    const drawer = await screen.findByRole('dialog');
+    await userEvent.type(
+      within(drawer).getByLabelText('Recipient'),
+      'me@example.com',
+    );
+    await userEvent.click(within(drawer).getByRole('button', { name: 'Send' }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/admin/email/templates/invite-created/send-test',
+        { method: 'POST', body: { to: 'me@example.com' } },
+      ),
+    );
+    await waitFor(() =>
+      expect(vi.mocked(toast.success)).toHaveBeenCalledWith(
+        'Test email sent to me@example.com.',
+      ),
+    );
+  });
+
   it('shows the error message when the request fails', async () => {
     fetchMock.mockRejectedValue({ message: 'Not allowed to view templates' });
 
