@@ -54,22 +54,26 @@ export const useSaveEmailTemplate = (templateKey: string) => {
 
 /**
  * Turns a template on or off from the list, without opening the editor.
- * Needs the rest of the row, since saving replaces the whole template.
+ * Saving is a partial update, so sending `enabled` alone leaves the subject
+ * and bodies untouched.
  */
-export const useToggleEmailTemplate = (templateKey: string) => {
-  const save = useSaveEmailTemplate(templateKey);
+export const useToggleEmailTemplate = () => {
+  const queryClient = useQueryClient();
 
-  return {
-    ...save,
-    toggle: (template: EmailTemplateDetail, enabled: boolean) =>
-      save.mutateAsync({
-        enabled,
-        subject_template: template.subject_template,
-        editor_content: template.editor_content,
-        html_template: template.html_template,
-        text_template: template.text_template,
-      }),
-  };
+  return useMutation({
+    mutationFn: (variables: { template_key: string; enabled: boolean }) =>
+      sdk.client.fetch<{ template: EmailTemplateDetail }>(
+        templatePath(variables.template_key),
+        { method: 'POST', body: { enabled: variables.enabled } },
+      ),
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(
+        emailTemplateQueryKey(variables.template_key),
+        data,
+      );
+      queryClient.invalidateQueries({ queryKey: emailTemplatesQueryKey });
+    },
+  });
 };
 
 type RenderVariables = {
