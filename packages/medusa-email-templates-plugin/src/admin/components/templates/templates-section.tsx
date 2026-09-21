@@ -16,11 +16,15 @@ import {
   toast,
   Tooltip,
   useDataTable,
+  usePrompt,
 } from '@medusajs/ui';
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { useToggleEmailTemplate } from '../../hooks/use-email-template';
+import {
+  useResetEmailTemplate,
+  useToggleEmailTemplate,
+} from '../../hooks/use-email-template';
 import { useEmailTemplates } from '../../hooks/use-email-templates';
 import { getApiErrorMessage } from '../../lib/api-error';
 import type { EmailTemplateListItem } from '../../lib/types';
@@ -93,7 +97,9 @@ const isInteractive = (target: EventTarget | null): boolean =>
 const TemplatesSection = () => {
   const { data, isPending, isError, error } = useEmailTemplates();
   const toggleTemplate = useToggleEmailTemplate();
+  const resetTemplate = useResetEmailTemplate();
   const navigate = useNavigate();
+  const prompt = usePrompt();
   const [previewKey, setPreviewKey] = useState<string | null>(null);
   const [testKey, setTestKey] = useState<string | null>(null);
 
@@ -119,6 +125,32 @@ const TemplatesSection = () => {
       navigate(editorPath(template.template_key));
     },
     [navigate],
+  );
+
+  const confirmReset = useCallback(
+    async (template: EmailTemplateListItem) => {
+      const confirmed = await prompt({
+        title: `Reset ${template.label}?`,
+        description:
+          'The saved subject and body are discarded, and this event goes back to the built-in template. This cannot be undone.',
+        variant: 'danger',
+        confirmText: 'Reset',
+      });
+
+      if (!confirmed) {
+        return;
+      }
+
+      resetTemplate.mutate(
+        { template_key: template.template_key },
+        {
+          onSuccess: () =>
+            toast.success(`${template.label} is back to the default.`),
+          onError: (error: unknown) => toast.error(getApiErrorMessage(error)),
+        },
+      );
+    },
+    [prompt, resetTemplate],
   );
 
   const columns = useMemo(
@@ -197,11 +229,8 @@ const TemplatesSection = () => {
         header: 'Last edited',
       }),
       columnHelper.action({
-        // TODO: Reset to default needs DELETE /admin/email/templates/:id,
-        // which does not exist yet.
         actions: (ctx) => {
           const template = ctx.row.original;
-          const noop = () => undefined;
 
           const edit = [
             {
@@ -229,7 +258,7 @@ const TemplatesSection = () => {
                   {
                     label: 'Reset to default',
                     icon: <ArrowPath />,
-                    onClick: noop,
+                    onClick: () => confirmReset(template),
                   },
                 ],
               ]
@@ -237,7 +266,7 @@ const TemplatesSection = () => {
         },
       }),
     ],
-    [navigate, toggleTemplate],
+    [confirmReset, navigate, toggleTemplate],
   );
 
   const table = useDataTable({

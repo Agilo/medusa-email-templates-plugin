@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { EmailEventDefinition } from '../events/types';
 import {
+  buildEmailTemplateDetail,
   buildSampleData,
   resolveEmailTemplateSource,
   type EmailTemplateRecord,
@@ -54,6 +55,53 @@ describe('buildSampleData', () => {
       extra: true,
       store: { name: 'Medusa Store' },
     });
+  });
+});
+
+describe('buildEmailTemplateDetail', () => {
+  const detail = (overrides: Partial<EmailTemplateRecord> | null) =>
+    buildEmailTemplateDetail(
+      definition,
+      overrides === null ? null : { ...row, ...overrides },
+      {} as never,
+    );
+
+  it('treats a row that still matches the default as uncustomised', () => {
+    // What enabling a template stores: default subject, no bodies.
+    expect(
+      detail({
+        subject_template: definition.defaultTemplate.subject,
+        html_template: null,
+        text_template: null,
+        editor_content: null,
+        enabled: true,
+      }),
+    ).toMatchObject({ enabled: true, is_customized: false });
+  });
+
+  it('counts an edited subject or body as customised', () => {
+    expect(detail({ subject_template: 'Changed' })).toMatchObject({
+      is_customized: true,
+    });
+
+    expect(
+      detail({
+        subject_template: definition.defaultTemplate.subject,
+        html_template: '<p>Changed</p>',
+      }),
+    ).toMatchObject({ is_customized: true });
+
+    expect(
+      detail({
+        subject_template: definition.defaultTemplate.subject,
+        html_template: null,
+        editor_content: { type: 'doc' },
+      }),
+    ).toMatchObject({ is_customized: true });
+  });
+
+  it('is never customised without a saved row', () => {
+    expect(detail(null)).toMatchObject({ id: null, is_customized: false });
   });
 });
 

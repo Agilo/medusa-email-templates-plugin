@@ -11,6 +11,7 @@ import {
 } from '../../../../../lib/templates';
 import { EMAIL_TEMPLATES_MODULE } from '../../../../../modules/email-templates';
 import type EmailTemplatesModuleService from '../../../../../modules/email-templates/service';
+import { resetEmailTemplateWorkflow } from '../../../../../workflows/reset-email-template';
 import { upsertEmailTemplateWorkflow } from '../../../../../workflows/upsert-email-template';
 import type { PostEmailTemplateBody } from '../validators';
 
@@ -54,6 +55,25 @@ export const POST = async (
 
   await upsertEmailTemplateWorkflow(req.scope).run({
     input: { template_key: templateKey, ...req.validatedBody },
+  });
+
+  await respondWithTemplate(req, res);
+};
+
+/**
+ * Discards the saved template so the built-in default applies again. The
+ * template itself still exists — it is defined in code — so this answers with
+ * the reverted template rather than a `deleted: true` envelope.
+ */
+export const DELETE = async (
+  req: AuthenticatedMedusaRequest,
+  res: MedusaResponse,
+) => {
+  const { id: templateKey } = req.params;
+  requireDefinition(templateKey);
+
+  await resetEmailTemplateWorkflow(req.scope).run({
+    input: { template_key: templateKey },
   });
 
   await respondWithTemplate(req, res);

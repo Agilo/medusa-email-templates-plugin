@@ -95,6 +95,29 @@ export const findEnabledEmailTemplate = async (
   };
 };
 
+/**
+ * Whether anyone has actually changed this template.
+ *
+ * Not the same as "a row exists": enabling a template stores a row whose
+ * content still matches the built-in default, and calling that customised
+ * would be misleading.
+ */
+const isCustomized = (
+  definition: EmailEventDefinition<never>,
+  row: EmailTemplateRecord | undefined,
+): boolean => {
+  if (!row) {
+    return false;
+  }
+
+  return (
+    row.subject_template !== definition.defaultTemplate.subject ||
+    row.html_template !== null ||
+    row.text_template !== null ||
+    row.editor_content !== null
+  );
+};
+
 const toListItem = (
   definition: EmailEventDefinition<never>,
   row: EmailTemplateRecord | undefined,
@@ -108,7 +131,7 @@ const toListItem = (
   // A template that was never saved counts as disabled (PLAN.md D4).
   enabled: Boolean(row?.enabled),
   subject_template: row?.subject_template ?? definition.defaultTemplate.subject,
-  is_customized: Boolean(row),
+  is_customized: isCustomized(definition, row),
   updated_at: row?.updated_at ?? null,
   warnings: definition.getWarnings?.(container) ?? [],
 });

@@ -76,6 +76,30 @@ export const useToggleEmailTemplate = () => {
   });
 };
 
+/**
+ * Discards the saved template, so the event falls back to the built-in
+ * default defined in code. Idempotent: resetting an untouched template is a
+ * no-op rather than an error.
+ */
+export const useResetEmailTemplate = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (variables: { template_key: string }) =>
+      sdk.client.fetch<{ template: EmailTemplateDetail }>(
+        templatePath(variables.template_key),
+        { method: 'DELETE' },
+      ),
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(
+        emailTemplateQueryKey(variables.template_key),
+        data,
+      );
+      queryClient.invalidateQueries({ queryKey: emailTemplatesQueryKey });
+    },
+  });
+};
+
 type RenderVariables = {
   /** Overrides for the variables' example values. */
   data?: Record<string, unknown>;

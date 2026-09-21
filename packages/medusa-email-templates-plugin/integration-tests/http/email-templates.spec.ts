@@ -228,6 +228,27 @@ pluginIntegrationSuite(({ api, getContainer }) => {
       expect(res.status).toEqual(404);
     });
 
+    it('enabling a default template does not make it customised', async () => {
+      const headers = await createAdminHeaders(getContainer());
+
+      // Turning a template on stores a row, but its content still matches the
+      // built-in default, so the list must not claim it was edited.
+      const res = await api.post(
+        '/admin/email/templates/order-placed',
+        { enabled: true },
+        { headers },
+      );
+
+      expect(res.status).toEqual(200);
+      expect(res.data.template).toMatchObject({
+        enabled: true,
+        is_customized: false,
+      });
+      expect(res.data.template.subject_template).toEqual(
+        res.data.template.default_template.subject,
+      );
+    });
+
     it('toggles enabled without clearing the saved body', async () => {
       const headers = await createAdminHeaders(getContainer());
       await api.post('/admin/email/templates/order-placed', savedTemplate(), {
@@ -270,6 +291,108 @@ pluginIntegrationSuite(({ api, getContainer }) => {
         enabled: true,
         subject_template: 'Your order #{{ order.display_id }}',
       });
+    });
+  });
+
+  describe('DELETE /admin/email/templates/:id', () => {
+    it('reverts the content but keeps a live template sending', async () => {
+      const headers = await createAdminHeaders(getContainer());
+      await api.post('/admin/email/templates/order-placed', savedTemplate(), {
+        headers,
+      });
+
+      const res = await api.delete('/admin/email/templates/order-placed', {
+        headers,
+      });
+
+      expect(res.status).toEqual(200);
+      expect(res.data.template).toMatchObject({
+        is_customized: false,
+        html_template: null,
+        editor_content: null,
+        // Resetting the content must not silently stop the email.
+        enabled: true,
+      });
+      // Back to what the event definition declares in code.
+      expect(res.data.template.subject_template).toEqual(
+        res.data.template.default_template.subject,
+      );
+
+      const fetched = await api.get('/admin/email/templates/order-placed', {
+        headers,
+      });
+      expect(fetched.data.template).toMatchObject({
+        is_customized: false,
+        enabled: true,
+      });
+    });
+
+    it('drops the row when the template is not sending', async () => {
+      const headers = await createAdminHeaders(getContainer());
+      await api.post(
+        '/admin/email/templates/order-placed',
+        savedTemplate({ enabled: false }),
+        { headers },
+      );
+
+      const res = await api.delete('/admin/email/templates/order-placed', {
+        headers,
+      });
+
+      expect(res.status).toEqual(200);
+      expect(res.data.template).toMatchObject({
+        id: null,
+        is_customized: false,
+        enabled: false,
+      });
+    });
+
+    it('can be saved again after a reset', async () => {
+      const headers = await createAdminHeaders(getContainer());
+      await api.post(
+        '/admin/email/templates/order-placed',
+        savedTemplate({ enabled: false }),
+        { headers },
+      );
+      await api.delete('/admin/email/templates/order-placed', { headers });
+
+      // The unique index on template_key is partial, so the soft-deleted row
+      // does not block a new one.
+      const res = await api.post(
+        '/admin/email/templates/order-placed',
+        savedTemplate({ subject_template: 'Second attempt' }),
+        { headers },
+      );
+
+      expect(res.status).toEqual(200);
+      expect(res.data.template).toMatchObject({
+        is_customized: true,
+        subject_template: 'Second attempt',
+      });
+    });
+
+    it('is a no-op for a template that was never saved', async () => {
+      const headers = await createAdminHeaders(getContainer());
+
+      const res = await api.delete('/admin/email/templates/invite-created', {
+        headers,
+      });
+
+      expect(res.status).toEqual(200);
+      expect(res.data.template).toMatchObject({
+        is_customized: false,
+        id: null,
+      });
+    });
+
+    it('returns 404 for an unregistered template', async () => {
+      const headers = await createAdminHeaders(getContainer());
+
+      const res = await api
+        .delete('/admin/email/templates/not-a-template', { headers })
+        .catch(catchResponse);
+
+      expect(res.status).toEqual(404);
     });
   });
 

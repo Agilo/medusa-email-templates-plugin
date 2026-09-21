@@ -18,6 +18,8 @@ vi.mock('react-router-dom', () => ({
   useNavigate: () => navigate,
 }));
 
+const confirm = vi.fn(async () => true);
+
 vi.mock('@medusajs/ui', async () => {
   const actual =
     await vi.importActual<typeof import('@medusajs/ui')>('@medusajs/ui');
@@ -25,6 +27,8 @@ vi.mock('@medusajs/ui', async () => {
   return {
     ...actual,
     toast: { success: vi.fn(), error: vi.fn() },
+    // The prompt renders its own dialog outside the component tree.
+    usePrompt: () => confirm,
   };
 });
 
@@ -78,6 +82,7 @@ const row = (name: string) =>
 describe('TemplatesSection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    confirm.mockResolvedValue(true);
   });
 
   it('lists every registered template with its event', async () => {
@@ -312,6 +317,50 @@ describe('TemplatesSection', () => {
       expect(vi.mocked(toast.success)).toHaveBeenCalledWith(
         'Test email sent to me@example.com.',
       ),
+    );
+  });
+
+  it('resets a template to its default once confirmed', async () => {
+    fetchMock.mockResolvedValue({ templates: templates(), count: 3 });
+
+    renderSection();
+    await screen.findByText('Order placed');
+
+    await userEvent.click(within(row('Order placed')).getByRole('button'));
+    await userEvent.click(
+      await screen.findByRole('menuitem', { name: 'Reset to default' }),
+    );
+
+    expect(confirm).toHaveBeenCalled();
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/admin/email/templates/order-placed',
+        { method: 'DELETE' },
+      ),
+    );
+    await waitFor(() =>
+      expect(vi.mocked(toast.success)).toHaveBeenCalledWith(
+        'Order placed is back to the default.',
+      ),
+    );
+  });
+
+  it('leaves the template alone when the reset is dismissed', async () => {
+    fetchMock.mockResolvedValue({ templates: templates(), count: 3 });
+    confirm.mockResolvedValue(false);
+
+    renderSection();
+    await screen.findByText('Order placed');
+
+    await userEvent.click(within(row('Order placed')).getByRole('button'));
+    await userEvent.click(
+      await screen.findByRole('menuitem', { name: 'Reset to default' }),
+    );
+
+    expect(confirm).toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      '/admin/email/templates/order-placed',
+      { method: 'DELETE' },
     );
   });
 
