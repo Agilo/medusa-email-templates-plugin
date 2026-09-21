@@ -83,14 +83,13 @@ const TemplatePreviewDrawer = ({
                 </Tabs.Content>
 
                 <Tabs.Content value="text" className="min-h-0 flex-1 pt-4">
-                  {/* Mirrors the HTML tab, where the email's own styling puts
-                      a white message on a grey page. */}
-                  <div className="bg-ui-bg-subtle h-full w-full overflow-auto rounded-lg border p-6">
-                    <div className="bg-ui-bg-base rounded-lg p-4">
-                      <pre className="txt-compact-small text-ui-fg-base whitespace-pre-wrap">
-                        {rendered.text}
-                      </pre>
-                    </div>
+                  {/* Neutral surface on purpose: any background here would be
+                      the drawer's, not the email's. Only the HTML tab shows
+                      the template's own page styling. */}
+                  <div className="bg-ui-bg-base h-full w-full overflow-auto rounded-lg border p-4">
+                    <pre className="txt-compact-small text-ui-fg-base whitespace-pre-wrap">
+                      {rendered.text}
+                    </pre>
                   </div>
                 </Tabs.Content>
               </Tabs>
