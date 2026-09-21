@@ -29,4 +29,13 @@ export const config = defineRouteConfig({
   icon: Envelope,
 });
 
+/**
+ * The dashboard builds the trail from every matched route, so this only
+ * contributes its own crumb: Settings comes from the parent route. It must
+ * return a non-empty string, or the crumb is dropped.
+ */
+export const handle = {
+  breadcrumb: () => 'Email',
+};
+
 export default EmailSettingsPage;
