@@ -199,9 +199,10 @@ pluginIntegrationSuite(({ api, getContainer }) => {
       expect(String(res.data.message)).toContain('Liquid');
     });
 
+    // `enabled` is deliberately absent here: omitting a field is a partial
+    // update, covered by the toggle tests above.
     it.each([
       ['an empty subject', { subject_template: '' }],
-      ['a missing enabled flag', { enabled: undefined }],
       ['an unknown field', { nope: true }],
     ])('rejects %s (400)', async (_name, overrides) => {
       const headers = await createAdminHeaders(getContainer());
@@ -225,6 +226,50 @@ pluginIntegrationSuite(({ api, getContainer }) => {
         .catch(catchResponse);
 
       expect(res.status).toEqual(404);
+    });
+
+    it('toggles enabled without clearing the saved body', async () => {
+      const headers = await createAdminHeaders(getContainer());
+      await api.post('/admin/email/templates/order-placed', savedTemplate(), {
+        headers,
+      });
+
+      // What the templates list sends when the switch is flipped.
+      const res = await api.post(
+        '/admin/email/templates/order-placed',
+        { enabled: false },
+        { headers },
+      );
+
+      expect(res.status).toEqual(200);
+      expect(res.data.template).toMatchObject({
+        enabled: false,
+        subject_template: 'Your order #{{ order.display_id }}',
+        html_template: '<p>Hi {{ order.customer_name }}</p>',
+        editor_content: { type: 'doc', content: [] },
+        is_customized: true,
+      });
+    });
+
+    it('clears a body only when explicitly sent as null', async () => {
+      const headers = await createAdminHeaders(getContainer());
+      await api.post('/admin/email/templates/order-placed', savedTemplate(), {
+        headers,
+      });
+
+      const res = await api.post(
+        '/admin/email/templates/order-placed',
+        { html_template: null },
+        { headers },
+      );
+
+      expect(res.status).toEqual(200);
+      expect(res.data.template).toMatchObject({
+        html_template: null,
+        // Untouched fields survive.
+        enabled: true,
+        subject_template: 'Your order #{{ order.display_id }}',
+      });
     });
   });
 
