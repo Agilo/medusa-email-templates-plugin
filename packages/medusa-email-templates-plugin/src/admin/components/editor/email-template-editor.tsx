@@ -15,7 +15,6 @@ import { EditorContent, EditorContext, useEditor } from '@tiptap/react';
 import { forwardRef, useImperativeHandle, useMemo, type FC } from 'react';
 
 import type { EmailTemplateDetail } from '../../lib/types';
-import { OrderItemsNode } from './order-items-node';
 import { VariableInspector } from './variable-inspector';
 import { VariableNode } from './variable-node';
 import { variableSlashCommand } from './variable-slash-command';
@@ -61,7 +60,6 @@ const EmailTemplateEditor = forwardRef<
       // Each pill resolves its own label from this list, so the canvas shows
       // "Order total · Money" rather than the generated Liquid.
       VariableNode.configure({ variables: template.variables }),
-      OrderItemsNode,
     ],
     // `editor_content` is the only faithful source, because it is this
     // editor's own document format. Both `html_template` and

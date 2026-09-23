@@ -10,11 +10,6 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { createEmailLiquid } from '../../../../lib/rendering/liquid';
 import { toLiquidExpression } from '../../../../lib/rendering/variable-format';
 
-import {
-  ORDER_ITEMS_LOOP_END,
-  ORDER_ITEMS_LOOP_START,
-  OrderItemsNode,
-} from '../order-items-node';
 import { UNSET_VARIABLE_LABEL, VariableNode } from '../variable-node';
 
 const content: JSONContent = {
@@ -25,9 +20,10 @@ const content: JSONContent = {
       content: [
         { type: 'text', text: 'Order #' },
         { type: 'variable', attrs: { key: 'order.display_id' } },
+        { type: 'text', text: ' from ' },
+        { type: 'variable', attrs: { key: 'store.name' } },
       ],
     },
-    { type: 'orderItems' },
   ],
 };
 
@@ -39,7 +35,6 @@ const exportEmail = async (doc: JSONContent = content) => {
       StarterKit.configure(),
       EmailTheming.configure({ theme: 'basic' }),
       VariableNode,
-      OrderItemsNode,
     ],
     content: doc,
   });
@@ -66,31 +61,20 @@ describe('email editor nodes export', () => {
     expect(text).toContain('{{ order.display_id }}');
   });
 
-  it('exports the order items block with an intact Liquid loop', async () => {
-    const { html } = await exportEmail();
-
-    expect(html).toContain(ORDER_ITEMS_LOOP_START);
-    expect(html).toContain(ORDER_ITEMS_LOOP_END);
-    expect(html).toContain('{{ item.title }}');
-  });
-
   it('produces HTML that liquidjs parses and renders', async () => {
     const { html } = await exportEmail();
     const liquid = createEmailLiquid({ escapeOutput: true });
 
     const rendered = await liquid.parseAndRender(html, {
-      order: {
-        display_id: 1001,
-        items: [
-          { title: 'Medusa T-Shirt', quantity: 2, total: '40.00' },
-          { title: 'Sweatpants <XL>', quantity: 1, total: '35.00' },
-        ],
-      },
+      order: { display_id: 1001 },
+      // Angle brackets on purpose: this is the only assertion proving
+      // `outputEscape` is on, and a value that reached the inbox unescaped
+      // would break the markup around it.
+      store: { name: 'Shop <XL>' },
     });
 
     expect(rendered).toContain('1001');
-    expect(rendered).toContain('Medusa T-Shirt');
-    expect(rendered).toContain('Sweatpants &lt;XL&gt;');
+    expect(rendered).toContain('Shop &lt;XL&gt;');
     expect(rendered).not.toContain('{{');
     expect(rendered).not.toContain('{%');
   });

@@ -79,8 +79,6 @@ export interface EmailTemplateVariable {
   type?: 'text' | 'number' | 'money' | 'date';
   /** For `money` values, the key holding the currency code. */
   currencyKey?: string;
-  /** For a collection, the fields one element exposes, keyed relative to the loop alias. */
-  itemVariables?: EmailTemplateVariable[];
 }
 
 export interface EmailTemplateListItem {
