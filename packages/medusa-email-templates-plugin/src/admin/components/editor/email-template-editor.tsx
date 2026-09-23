@@ -153,11 +153,18 @@ const EmailTemplateEditor = forwardRef<
   return (
     <EditorContext.Provider value={{ editor }}>
       <div className="flex gap-x-4">
-        <div className="bg-ui-bg-base min-w-0 flex-1 overflow-hidden rounded-lg border">
+        {/* `border-ui-border-base` is not optional dressing: a width class on
+            its own inherits preflight's hardcoded #e5e7eb, which is invisible
+            here and stays near-white in dark mode instead of following
+            --border-base. */}
+        <div className="bg-ui-bg-base border-ui-border-base min-w-0 flex-1 overflow-hidden rounded-lg border">
           <EditorContent editor={editor} className="p-4" />
         </div>
 
-        <Inspector.Root className="w-60 shrink-0 overflow-y-auto border-l p-4">
+        {/* A card, not a divider. `border-l` drew a single rule on the left
+            edge, which the parent's gap-x-4 left stranded in the gutter rather
+            than sitting between the two panes. */}
+        <Inspector.Root className="bg-ui-bg-base border-ui-border-base w-60 shrink-0 overflow-y-auto rounded-lg border p-4">
           <InspectorBreadcrumb />
           <Inspector.Document />
           {/* Stands in for `Inspector.Node`: variables get their own panel,

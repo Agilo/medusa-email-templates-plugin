@@ -78,7 +78,7 @@ const TemplatePreviewDrawer = ({
                     title={`${template.label} preview`}
                     srcDoc={rendered.html}
                     sandbox=""
-                    className="bg-ui-bg-base h-full w-full rounded-lg border"
+                    className="bg-ui-bg-base border-ui-border-base h-full w-full rounded-lg border"
                   />
                 </Tabs.Content>
 
@@ -86,7 +86,7 @@ const TemplatePreviewDrawer = ({
                   {/* Neutral surface on purpose: any background here would be
                       the drawer's, not the email's. Only the HTML tab shows
                       the template's own page styling. */}
-                  <div className="bg-ui-bg-base h-full w-full overflow-auto rounded-lg border p-4">
+                  <div className="bg-ui-bg-base border-ui-border-base h-full w-full overflow-auto rounded-lg border p-4">
                     <pre className="txt-compact-small text-ui-fg-base whitespace-pre-wrap">
                       {rendered.text}
                     </pre>
