@@ -19,18 +19,6 @@ export const orderPlacedDefaultTemplate: EmailEventDefaultTemplate = {
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
               <tbody>
                 <tr>
-                  <th align="left" style="padding:8px 0;border-bottom:1px solid #e5e7eb;font-size:12px;text-transform:uppercase;color:#6b7280">Item</th>
-                  <th align="center" style="padding:8px 0;border-bottom:1px solid #e5e7eb;font-size:12px;text-transform:uppercase;color:#6b7280">Qty</th>
-                  <th align="right" style="padding:8px 0;border-bottom:1px solid #e5e7eb;font-size:12px;text-transform:uppercase;color:#6b7280">Total</th>
-                </tr>
-                {% for item in order.items %}
-                <tr>
-                  <td style="padding:8px 0;border-bottom:1px solid #f3f4f6">{{ item.title }}</td>
-                  <td align="center" style="padding:8px 0;border-bottom:1px solid #f3f4f6">{{ item.quantity }}</td>
-                  <td align="right" style="padding:8px 0;border-bottom:1px solid #f3f4f6">{{ item.total | money: order.currency_code }}</td>
-                </tr>
-                {% endfor %}
-                <tr>
                   <td colspan="2" style="padding:8px 0">Subtotal</td>
                   <td align="right" style="padding:8px 0">{{ order.subtotal | money: order.currency_code }}</td>
                 </tr>

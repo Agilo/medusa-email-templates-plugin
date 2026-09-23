@@ -153,27 +153,13 @@ export const orderPlacedEmailEvent = defineEmailEvent<OrderPlacedEventData>({
       type: 'date',
       group: 'Order',
     },
-    {
-      key: 'order.items',
-      label: 'Items',
-      description: 'Line items. Use the Order items block to list them.',
-      example: [{ title: 'Medusa T-Shirt', quantity: 2, total: 40 }],
-      group: 'Order',
-      // Keys are relative to the loop alias: `total` renders as `item.total`.
-      itemVariables: [
-        { key: 'title', label: 'Item', example: 'Medusa T-Shirt' },
-        { key: 'quantity', label: 'Qty', example: 2, type: 'number' },
-        {
-          key: 'total',
-          label: 'Line total',
-          example: 40,
-          type: 'money',
-          // Absolute on purpose: items carry no currency, and `order` is still
-          // in scope inside the loop.
-          currencyKey: 'order.currency_code',
-        },
-      ],
-    },
+    /*
+     * `order.items` is deliberately absent, though `getContext` still builds
+     * it. The editor has no way to repeat a row, so the only thing an admin
+     * could do with it is insert `{{ order.items }}` — which renders as
+     * "[object Object][object Object]" in a sent email. It stays in the
+     * context so a hand-written template can still loop over it.
+     */
     {
       key: 'order.subtotal',
       label: 'Subtotal',

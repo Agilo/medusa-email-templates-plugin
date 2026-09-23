@@ -20,11 +20,6 @@ export interface EmailTemplateVariable {
    * a quoted literal would be corrupted on export.
    */
   currencyKey?: string;
-  /**
-   * For a collection such as `order.items`, the fields one element exposes.
-   * Keys are relative to the loop alias, so `total` becomes `item.total`.
-   */
-  itemVariables?: EmailTemplateVariable[];
 }
 
 export interface EmailEventDefaultTemplate {
