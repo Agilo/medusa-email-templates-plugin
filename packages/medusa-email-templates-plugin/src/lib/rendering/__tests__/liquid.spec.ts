@@ -72,6 +72,49 @@ describe('money filter', () => {
   });
 });
 
+describe('date filters', () => {
+  const render = (filter: string, value: unknown) =>
+    liquid.parseAndRender(`{{ value | ${filter} }}`, { value });
+
+  const iso = '2026-10-01T10:00:00.000Z';
+
+  // Exact output for the numeric format, which is stable across ICU versions.
+  it('formats a short date', async () => {
+    await expect(render('date_short', iso)).resolves.toBe('10/01/2026');
+  });
+
+  // The written formats vary between ICU versions (the "at" separator in
+  // particular), so these assert on the parts rather than the whole string.
+  it('formats a long date', async () => {
+    const result = await render('date_long', iso);
+
+    expect(result).toContain('October');
+    expect(result).toContain('2026');
+  });
+
+  it('formats a date and time', async () => {
+    const result = await render('date_time', iso);
+
+    expect(result).toContain('October');
+    expect(result).toContain('2026');
+    expect(result).toContain('10:00');
+  });
+
+  it('renders in UTC rather than the machine timezone', async () => {
+    // 23:30 UTC would be the following day in any positive offset.
+    await expect(
+      render('date_short', '2026-10-01T23:30:00.000Z'),
+    ).resolves.toBe('10/01/2026');
+  });
+
+  it.each([['not a date'], [''], [null], [undefined], [{ nested: true }]])(
+    'renders %s as an empty string',
+    async (value) => {
+      await expect(render('date_long', value)).resolves.toBe('');
+    },
+  );
+});
+
 describe('sanitizeTemplateContext', () => {
   it('drops functions and class instances but keeps plain data', () => {
     class Order {

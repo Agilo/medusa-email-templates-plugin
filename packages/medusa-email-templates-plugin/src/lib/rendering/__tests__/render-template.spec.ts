@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
+import {
+  emailVerificationDefaultTemplate,
+  inviteCreatedDefaultTemplate,
+} from '../../events/built-in/default-templates/account';
 import { renderEmailTemplate } from '../render-template';
 
 const template = {
@@ -75,5 +79,57 @@ describe('renderEmailTemplate', () => {
     ).catch((e: Error) => e);
 
     expect((error as Error).message).not.toContain('1001');
+  });
+});
+
+/**
+ * The built-in defaults rendered as shipped, rather than a hand-written
+ * template. Nothing covered these before, which is how they came to show a
+ * raw ISO timestamp to recipients: every spec asserted on the context going
+ * in, never on the email coming out.
+ */
+describe('built-in default templates', () => {
+  const expiresAt = '2026-10-01T10:00:00.000Z';
+  const store = { name: 'Test Store' };
+
+  it('formats the expiry date in the invite email', async () => {
+    const rendered = await renderEmailTemplate(
+      {
+        template_key: 'invite-created',
+        subject_template: inviteCreatedDefaultTemplate.subject,
+        html_template: inviteCreatedDefaultTemplate.html,
+      },
+      {
+        store,
+        invite: { email: 'teammate@example.com', expires_at: expiresAt },
+        invite_url: 'https://admin.example.com/app/invite?token=abc',
+      },
+    );
+
+    expect(rendered.html).toContain('October');
+    expect(rendered.html).toContain('2026');
+    expect(rendered.html).not.toContain(expiresAt);
+    expect(rendered.html).not.toContain('{{');
+  });
+
+  it('formats the expiry date in the verification email', async () => {
+    const rendered = await renderEmailTemplate(
+      {
+        template_key: 'email-verification',
+        subject_template: emailVerificationDefaultTemplate.subject,
+        html_template: emailVerificationDefaultTemplate.html,
+      },
+      {
+        store,
+        email: 'jane@example.com',
+        code: '482913',
+        expires_at: expiresAt,
+      },
+    );
+
+    expect(rendered.html).toContain('482913');
+    expect(rendered.html).toContain('October');
+    expect(rendered.html).not.toContain(expiresAt);
+    expect(rendered.html).not.toContain('{{');
   });
 });

@@ -1,5 +1,7 @@
 import { Liquid } from 'liquidjs';
 
+import { DATE_FORMAT_NAMES, formatDate, formatMoney } from './format-value';
+
 /** Tags that read files from disk. Templates are admin-authored, not files. */
 const BLOCKED_TAGS = ['include', 'render', 'layout', 'block'];
 
@@ -32,27 +34,6 @@ const deniedFileSystem = {
   sep: '/',
 };
 
-const formatMoney = (value: unknown, currencyCode?: unknown): string => {
-  const amount = typeof value === 'string' ? Number(value) : value;
-
-  if (typeof amount !== 'number' || !Number.isFinite(amount)) {
-    return '';
-  }
-
-  const currency =
-    typeof currencyCode === 'string' && currencyCode.length === 3
-      ? currencyCode.toUpperCase()
-      : undefined;
-
-  if (!currency) {
-    return amount.toFixed(2);
-  }
-
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(
-    amount,
-  );
-};
-
 export type CreateEmailLiquidOptions = {
   /** HTML-escape output values. Use for HTML bodies, not for subject/text. */
   escapeOutput?: boolean;
@@ -79,6 +60,10 @@ export const createEmailLiquid = ({
 
   BLOCKED_TAGS.forEach((name) => liquid.registerTag(name, blockedTag(name)));
   liquid.registerFilter('money', formatMoney);
+
+  DATE_FORMAT_NAMES.forEach((name) => {
+    liquid.registerFilter(name, (value: unknown) => formatDate(value, name));
+  });
 
   return liquid;
 };
