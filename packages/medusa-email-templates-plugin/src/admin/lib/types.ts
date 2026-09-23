@@ -75,6 +75,12 @@ export interface EmailTemplateVariable {
   description?: string;
   example: unknown;
   group?: string;
+  /** Omitted means plain text. Decides which formats the editor offers. */
+  type?: 'text' | 'number' | 'money' | 'date';
+  /** For `money` values, the key holding the currency code. */
+  currencyKey?: string;
+  /** For a collection, the fields one element exposes, keyed relative to the loop alias. */
+  itemVariables?: EmailTemplateVariable[];
 }
 
 export interface EmailTemplateListItem {
@@ -104,9 +110,13 @@ export interface EmailTemplateDetail extends EmailTemplateListItem {
   };
 }
 
+/**
+ * A partial update: omitted fields keep their stored values, and `null`
+ * explicitly clears one. Sending the subject alone leaves the bodies intact.
+ */
 export interface SaveEmailTemplatePayload {
-  enabled: boolean;
-  subject_template: string;
+  enabled?: boolean;
+  subject_template?: string;
   editor_content?: Record<string, unknown> | null;
   html_template?: string | null;
   text_template?: string | null;
