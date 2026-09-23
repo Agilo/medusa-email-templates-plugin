@@ -79,3 +79,101 @@ export const toLiquidExpression = (
 
   return `{{ ${key} | ${format} }}`;
 };
+
+/** What one output tag in a template resolves to. */
+export type ParsedLiquidExpression = {
+  key: string;
+  format: VariableFormat;
+  currencySource?: string;
+};
+
+/** A parsed expression together with where it sat in the surrounding text. */
+export type LiquidExpressionMatch = ParsedLiquidExpression & {
+  /** The whole `{{ … }}` tag, exactly as it appeared. */
+  source: string;
+  start: number;
+  end: number;
+};
+
+/*
+ * Deliberately narrow: `{{ key }}`, `{{ key | filter }}` or
+ * `{{ key | filter: argument }}`, with identifiers on both sides and nothing
+ * else. It is the inverse of `toLiquidExpression`, so it recognises only what
+ * that could have produced — anything richer is left as text rather than
+ * guessed at, because a variable pill claiming to be an expression it cannot
+ * regenerate would silently rewrite the template on the next save.
+ */
+const EXPRESSION_PATTERN =
+  /\{\{\s*([a-z0-9_]+(?:\.[a-z0-9_]+)*)\s*(?:\|\s*([a-z0-9_]+)\s*(?::\s*([a-z0-9_]+(?:\.[a-z0-9_]+)*)\s*)?)?\}\}/g;
+
+/**
+ * Reads one output tag back into the attributes that produce it.
+ *
+ * Returns null for anything this module could not have generated, which
+ * includes an unknown filter, a quoted argument, or a `money` argument that is
+ * not a bare identifier path.
+ */
+export const fromLiquidExpression = (
+  expression: string,
+): ParsedLiquidExpression | null => {
+  // `exec` on a global regex is stateful, so this match is taken from a
+  // one-shot copy rather than the shared pattern.
+  const match = new RegExp(`^${EXPRESSION_PATTERN.source}$`, 's').exec(
+    expression.trim(),
+  );
+
+  if (!match) {
+    return null;
+  }
+
+  const [, key, filter, argument] = match;
+
+  if (!filter) {
+    return { key, format: 'text' };
+  }
+
+  if (!isVariableFormat(filter) || filter === 'text') {
+    return null;
+  }
+
+  if (filter === 'money') {
+    return argument
+      ? { key, format: filter, currencySource: argument }
+      : { key, format: filter };
+  }
+
+  // Every remaining format is a no-argument filter; an argument means this is
+  // something else wearing a familiar name.
+  return argument ? null : { key, format: filter };
+};
+
+/**
+ * Every expression inside a run of text, with its position.
+ *
+ * Positions matter because an expression is often embedded in prose —
+ * `Hi {{ order.customer_name }},` — so importing a template has to split the
+ * run around it rather than replace the run wholesale.
+ */
+export const findLiquidExpressions = (
+  text: string,
+): LiquidExpressionMatch[] => {
+  const matches: LiquidExpressionMatch[] = [];
+  const pattern = new RegExp(EXPRESSION_PATTERN.source, 'g');
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(text)) !== null) {
+    const parsed = fromLiquidExpression(match[0]);
+
+    // Skip what cannot be regenerated, leaving it as literal text.
+    if (parsed) {
+      matches.push({
+        ...parsed,
+        source: match[0],
+        start: match.index,
+        end: match.index + match[0].length,
+      });
+    }
+  }
+
+  return matches;
+};
