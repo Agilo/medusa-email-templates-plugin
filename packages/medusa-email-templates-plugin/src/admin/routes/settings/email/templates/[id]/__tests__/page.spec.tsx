@@ -105,6 +105,21 @@ describe('EmailTemplatePage', () => {
     expect(screen.queryByText('Unsaved changes')).toBeNull();
   });
 
+  it('opens showing the default template rather than a blank body', async () => {
+    fetchMock.mockResolvedValue({ template: template() });
+
+    renderPage();
+
+    /*
+     * Derived from `default_template.html`, because this template has no
+     * stored `editor_content`. Opening blank was the dangerous state: the
+     * canvas looked empty, one keystroke marked it dirty, and saving exported
+     * that blankness over a designed email. Without the seeding this assertion
+     * finds nothing.
+     */
+    expect(await screen.findByText('Default')).toBeInTheDocument();
+  });
+
   it('only enables Save once something changes', async () => {
     fetchMock.mockResolvedValue({ template: template() });
 

@@ -15,6 +15,7 @@ import { EditorContent, EditorContext, useEditor } from '@tiptap/react';
 import { forwardRef, useImperativeHandle, useMemo, type FC } from 'react';
 
 import type { EmailTemplateDetail } from '../../lib/types';
+import { deriveEditorContent } from './derive-document';
 import { VariableInspector } from './variable-inspector';
 import { VariableNode } from './variable-node';
 import { variableSlashCommand } from './variable-slash-command';
@@ -53,27 +54,57 @@ const EmailTemplateEditor = forwardRef<
   EmailTemplateEditorHandle,
   EmailTemplateEditorProps
 >(({ template, onDirty }, ref) => {
-  const editor = useEditor({
-    extensions: [
+  /*
+   * Built once and shared, because the derived document has to be generated
+   * against the very schema the editor will load it into. Two separately
+   * assembled arrays could drift, and a document generated against one schema
+   * throws on `nodeFromJSON` in another.
+   */
+  const extensions = useMemo(
+    () => [
       StarterKit,
       EmailTheming,
       // Each pill resolves its own label from this list, so the canvas shows
-      // "Order total · Money" rather than the generated Liquid.
+      // "Total | Money" rather than the generated Liquid.
       VariableNode.configure({ variables: template.variables }),
     ],
-    // `editor_content` is the only faithful source, because it is this
-    // editor's own document format. Both `html_template` and
-    // `default_template.html` are *output* HTML: Liquid control flow sits as
-    // bare text between `</tr>` and `<tr>`, which is invalid inside `<tbody>`,
-    // so parsing hoists `{% for %}` and `{% endfor %}` out of the table they
-    // wrap and merges them into a paragraph above it. The loop then iterates
-    // over nothing and the row it guarded renders once, out of scope — an
-    // order email that silently loses its line items.
-    //
-    // A template with no stored document therefore opens empty. Its stored
-    // HTML keeps sending untouched, because the body is only ever written
-    // back when someone actually edits here.
-    content: template.editor_content ?? '',
+    [template.variables],
+  );
+
+  /*
+   * A template nobody has edited has no `editor_content`, only the HTML its
+   * event declared, so the body is derived from that HTML rather than opening
+   * blank. Blank was the dangerous state: the canvas looked empty, the first
+   * keystroke marked it dirty, and saving then exported that blankness over a
+   * designed email.
+   *
+   * Nothing derived is persisted. `editor_content` stays null until someone
+   * actually edits, so a derived document cannot go stale against an HTML
+   * default that changed underneath it.
+   */
+  const content = useMemo(() => {
+    if (template.editor_content) {
+      return template.editor_content;
+    }
+
+    try {
+      return deriveEditorContent(template.default_template.html, extensions);
+    } catch {
+      /*
+       * Untested, and kept deliberately. Empty strings, bare text, unclosed
+       * tags, malformed markup and script tags all parse into a document
+       * rather than throwing, so no input has been found that reaches this
+       * branch. It guards a third-party parser running over a host
+       * application's arbitrary HTML, where a blank body beats a white
+       * settings page.
+       */
+      return '';
+    }
+  }, [template.editor_content, template.default_template.html, extensions]);
+
+  const editor = useEditor({
+    extensions,
+    content,
     // The admin is a client-only Vite SPA, so there is no hydration to guard
     // against. `false` would defer creation to an effect and cost an extra
     // render for nothing.
