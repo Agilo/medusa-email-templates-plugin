@@ -8,6 +8,7 @@
     ".medusa/server"
   ],
   "exports": {
+    ".": "./.medusa/server/src/registry.js",
     "./package.json": "./package.json",
     "./workflows": "./.medusa/server/src/workflows/index.js",
     "./.medusa/server/src/modules/*": "./.medusa/server/src/modules/*/index.js",
@@ -62,10 +63,11 @@
   "dependencies": {
     "@medusajs/dashboard": "^2.21.0",
     "@react-email/editor": "1.7.7",
+    "@tiptap/react": "3.31.3",
     "html-to-text": "^9.0.5",
     "liquidjs": "^10.29.0",
     "resend": "6.28.0",
     "zod": "4.2.0"
   },
-  "yalcSig": "398f2762757a258da731332b43475d3f"
+  "yalcSig": "937c568268efb6c413ee53670add20b7"
 }

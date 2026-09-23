@@ -72,6 +72,8 @@ module.exports = defineConfig({
             '@react-email/editor/core',
             '@react-email/editor/extensions',
             '@react-email/editor/plugins',
+            '@react-email/editor/ui',
+            '@tiptap/react',
           ],
           exclude: [
             ...(config.optimizeDeps?.exclude ?? []),
