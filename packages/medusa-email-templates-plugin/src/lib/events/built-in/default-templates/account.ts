@@ -26,7 +26,7 @@ export const inviteCreatedDefaultTemplate: EmailEventDefaultTemplate = {
     "You've been invited",
     `<p style="margin:0 0 16px">You have been invited to join {{ store.name }} in Medusa Admin.</p>
             ${button('{{ invite_url }}', 'Accept the invitation')}
-            <p style="margin:0;color:#6b7280;font-size:12px">This invitation expires on {{ invite.expires_at }}.</p>`,
+            <p style="margin:0;color:#6b7280;font-size:12px">This invitation expires on {{ invite.expires_at | date_long }}.</p>`,
   ),
 };
 
@@ -36,7 +36,7 @@ export const inviteResentDefaultTemplate: EmailEventDefaultTemplate = {
     'Here is your invitation again',
     `<p style="margin:0 0 16px">Your invitation to join {{ store.name }} in Medusa Admin was renewed.</p>
             ${button('{{ invite_url }}', 'Accept the invitation')}
-            <p style="margin:0;color:#6b7280;font-size:12px">This invitation expires on {{ invite.expires_at }}.</p>`,
+            <p style="margin:0;color:#6b7280;font-size:12px">This invitation expires on {{ invite.expires_at | date_long }}.</p>`,
   ),
 };
 
@@ -66,6 +66,6 @@ export const emailVerificationDefaultTemplate: EmailEventDefaultTemplate = {
     'Verify your email address',
     `<p style="margin:0 0 16px">Use this code to verify {{ email }}:</p>
             <p style="margin:0 0 24px;font-size:28px;font-weight:600;letter-spacing:4px">{{ code }}</p>
-            <p style="margin:0;color:#6b7280;font-size:12px">The code expires on {{ expires_at }}.</p>`,
+            <p style="margin:0;color:#6b7280;font-size:12px">The code expires on {{ expires_at | date_long }}.</p>`,
   ),
 };

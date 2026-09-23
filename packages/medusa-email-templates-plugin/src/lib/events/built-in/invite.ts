@@ -45,6 +45,7 @@ const inviteVariables: EmailTemplateVariable[] = [
     key: 'invite.expires_at',
     label: 'Expires at',
     example: '2026-10-01T10:00:00.000Z',
+    type: 'date',
     group: 'Invite',
   },
   {

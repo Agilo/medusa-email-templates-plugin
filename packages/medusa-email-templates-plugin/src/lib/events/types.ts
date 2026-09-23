@@ -7,6 +7,24 @@ export interface EmailTemplateVariable {
   description?: string;
   example: unknown;
   group?: string;
+  /**
+   * What the value holds, which decides the display formats the editor offers
+   * for it. Omitted means plain text. Marking a value `money` or `date` when
+   * it is neither renders an empty string, so the editor uses this to stop an
+   * impossible choice being made rather than to decorate the picker.
+   */
+  type?: 'text' | 'number' | 'money' | 'date';
+  /**
+   * For a `money` value, the key holding its currency code. The editor emits
+   * this as a Liquid filter argument, so it must be a bare identifier path —
+   * a quoted literal would be corrupted on export.
+   */
+  currencyKey?: string;
+  /**
+   * For a collection such as `order.items`, the fields one element exposes.
+   * Keys are relative to the loop alias, so `total` becomes `item.total`.
+   */
+  itemVariables?: EmailTemplateVariable[];
 }
 
 export interface EmailEventDefaultTemplate {
