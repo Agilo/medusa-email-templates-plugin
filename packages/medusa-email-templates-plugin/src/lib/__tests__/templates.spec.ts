@@ -105,6 +105,87 @@ describe('buildEmailTemplateDetail', () => {
   });
 });
 
+describe('subject variable warnings', () => {
+  const warningsFor = (subject: string) =>
+    buildEmailTemplateDetail(
+      definition,
+      { ...row, subject_template: subject },
+      {} as never,
+    ).warnings;
+
+  it('stays quiet when every variable is declared', () => {
+    expect(
+      warningsFor('Your {{ store.name }} order #{{ order.display_id }}'),
+    ).toEqual([]);
+  });
+
+  it('stays quiet for a subject with no variables at all', () => {
+    expect(warningsFor('Thanks for your order')).toEqual([]);
+  });
+
+  /*
+   * The corruption the editor cannot prevent. `strictVariables` is off, so
+   * this renders as empty text rather than failing — the subject reaches a
+   * real inbox reading "Your  order".
+   */
+  it('names a mistyped key', () => {
+    const [warning] = warningsFor('Your {{ store.nme }} order');
+
+    expect(warning).toContain('store.nme');
+    expect(warning).toContain('empty text');
+  });
+
+  it('names every unknown key, not just the first', () => {
+    const [warning] = warningsFor('{{ store.nme }} {{ order.totl }}');
+
+    expect(warning).toContain('store.nme');
+    expect(warning).toContain('order.totl');
+  });
+
+  /*
+   * A filter argument is a variable reference too, so a typo there is just as
+   * silent as one in the output itself.
+   */
+  it('checks filter arguments', () => {
+    const [warning] = warningsFor('{{ order.total | money: order.currncy }}');
+
+    expect(warning).toContain('order.currncy');
+  });
+
+  /*
+   * The global form excludes loop aliases. Without it `item.title` would be
+   * reported as unknown, flagging a template that works.
+   */
+  it('ignores a loop alias', () => {
+    expect(
+      warningsFor(
+        '{% for item in order.display_id %}{{ item.title }}{% endfor %}',
+      ),
+    ).toEqual([]);
+  });
+
+  it('keeps the definition warnings alongside its own', () => {
+    const withWarning = {
+      ...definition,
+      getWarnings: () => ['storefront_url_not_configured'],
+    } as unknown as EmailEventDefinition<never>;
+
+    expect(
+      buildEmailTemplateDetail(
+        withWarning,
+        { ...row, subject_template: '{{ store.nme }}' },
+        {} as never,
+      ).warnings,
+    ).toHaveLength(2);
+  });
+
+  it('checks the built-in default when nothing is saved', () => {
+    expect(
+      buildEmailTemplateDetail(definition, null, {} as never).warnings,
+    ).toEqual([]);
+  });
+});
+
 describe('resolveEmailTemplateSource', () => {
   it('prefers a draft, so unsaved edits can be previewed', () => {
     expect(

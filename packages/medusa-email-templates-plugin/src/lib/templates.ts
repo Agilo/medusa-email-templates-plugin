@@ -6,7 +6,11 @@ import type {
   EmailEventDefinition,
   EmailTemplateVariable,
 } from './events/types';
+import { createEmailLiquid } from './rendering/liquid';
 import type { EmailTemplateSource } from './rendering/render-template';
+
+/** Parse-only, for reading which variables a subject references. */
+const subjectLiquid = createEmailLiquid();
 
 export type EmailTemplateRecord = {
   id: string;
@@ -118,6 +122,61 @@ const isCustomized = (
   );
 };
 
+/**
+ * Variables a subject uses that its event does not publish.
+ *
+ * A mistyped key is the one corruption the editor cannot prevent: the body is
+ * built from pills that generate their own Liquid, but the subject is a plain
+ * text field holding raw Liquid. `strictVariables` is off, so liquidjs renders
+ * an unknown variable as an empty string — `Your {{ store.nme }} order` sends
+ * as `Your  order`, with nothing raised anywhere.
+ *
+ * Reported rather than rejected. The declared list is what the editor *offers*,
+ * not everything the context holds: `order.shipping_address.city` renders
+ * correctly today and is not declared, so refusing to save on an undeclared key
+ * would block working templates.
+ *
+ * `globalFullVariablesSync`, not `fullVariablesSync`: the global form leaves out
+ * loop aliases and `assign` locals, so `{% for item in … %}{{ item.title }}`
+ * reports only the collection rather than a phantom `item.title`.
+ */
+const unknownSubjectVariables = (
+  definition: EmailEventDefinition<never>,
+  subject: string,
+): string[] => {
+  const declared = new Set(
+    definition.variables.map((variable) => variable.key),
+  );
+
+  try {
+    return subjectLiquid
+      .globalFullVariablesSync(subject)
+      .filter((key) => !declared.has(key));
+  } catch {
+    // Unparseable Liquid is already refused when saving, and a stored template
+    // that somehow got past that is the parser's problem to report, not this
+    // one's. Staying quiet keeps the list rendering.
+    return [];
+  }
+};
+
+const subjectWarnings = (
+  definition: EmailEventDefinition<never>,
+  subject: string,
+): string[] => {
+  const unknown = unknownSubjectVariables(definition, subject);
+
+  if (unknown.length === 0) {
+    return [];
+  }
+
+  // Plain prose, not a code: both admin surfaces render an unrecognised
+  // warning verbatim, so naming the keys needs no change there.
+  return [
+    `The subject uses ${unknown.length === 1 ? 'a variable' : 'variables'} this event does not provide: ${unknown.join(', ')}. ${unknown.length === 1 ? 'It renders' : 'They render'} as empty text.`,
+  ];
+};
+
 const toListItem = (
   definition: EmailEventDefinition<never>,
   row: EmailTemplateRecord | undefined,
@@ -133,7 +192,13 @@ const toListItem = (
   subject_template: row?.subject_template ?? definition.defaultTemplate.subject,
   is_customized: isCustomized(definition, row),
   updated_at: row?.updated_at ?? null,
-  warnings: definition.getWarnings?.(container) ?? [],
+  warnings: [
+    ...(definition.getWarnings?.(container) ?? []),
+    ...subjectWarnings(
+      definition,
+      row?.subject_template ?? definition.defaultTemplate.subject,
+    ),
+  ],
 });
 
 /** Every registered template, whether or not it has been saved. */
