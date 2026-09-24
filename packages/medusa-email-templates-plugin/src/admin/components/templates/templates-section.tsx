@@ -203,11 +203,16 @@ const TemplatesSection = () => {
                 }
               />
               {/* A warning belongs with the state it affects: enabled or
-                  not, this template will not send until it is resolved. */}
+                  not, this template will not send until it is resolved.
+
+                  Amber rather than `text-ui-fg-warning`, which looks right but
+                  does not exist: Medusa's theme has no `warning` foreground at
+                  all, so that class generated nothing and the icon rendered in
+                  the inherited body colour. */}
               {warning && (
                 <Tooltip content={warning}>
                   <span
-                    className="text-ui-fg-warning flex"
+                    className="text-ui-tag-orange-text flex"
                     aria-label={`${template.label} cannot send`}
                   >
                     <ExclamationCircle />
