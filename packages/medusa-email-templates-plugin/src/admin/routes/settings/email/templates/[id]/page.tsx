@@ -1,4 +1,4 @@
-import { ArrowLeft, Eye, PaperPlane } from '@medusajs/icons';
+import { ArrowLeft, Eye, PaperPlane, Plus } from '@medusajs/icons';
 import {
   Alert,
   Button,
@@ -275,15 +275,30 @@ const EmailTemplatePage = () => {
               </Suspense>
             </div>
             <DropdownMenu>
-              {/* Sized to its label, and never squeezed as the field grows. */}
+              {/*
+                Icon plus a visible label. `aria-label` repeats that label and
+                takes precedence over the text in the accessible name, so it is
+                what a screen reader announces and what the tests query by.
+                `shrink-0` stops the field beside it squeezing the button as it
+                grows.
+              */}
               <DropdownMenu.Trigger asChild>
-                <Button size="small" variant="secondary" className="shrink-0">
-                  Insert variable
+                <Button
+                  size="small"
+                  variant="secondary"
+                  className="flex items-center gap-x-2 shrink-0"
+                  aria-label="Insert variable"
+                >
+                  <Plus />
+                  <span>Insert variable</span>
                 </Button>
               </DropdownMenu.Trigger>
               <DropdownMenu.Content>
                 {groups.map(([group, variables], index) => (
-                  <div key={group}>
+                  // `Group`, not a bare `div`: it renders the same element but
+                  // with `role="group"`, so the label names a group of items
+                  // rather than floating above a flat list.
+                  <DropdownMenu.Group key={group}>
                     {index > 0 && <DropdownMenu.Separator />}
                     <DropdownMenu.Label>{group}</DropdownMenu.Label>
                     {variables.map((variable) => {
@@ -327,7 +342,7 @@ const EmailTemplatePage = () => {
                         </DropdownMenu.SubMenu>
                       );
                     })}
-                  </div>
+                  </DropdownMenu.Group>
                 ))}
               </DropdownMenu.Content>
             </DropdownMenu>
