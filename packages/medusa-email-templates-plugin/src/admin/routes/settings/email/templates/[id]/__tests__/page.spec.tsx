@@ -75,6 +75,31 @@ const renderPage = () => {
   return render(<EmailTemplatePage />, { wrapper });
 };
 
+/**
+ * The subject is a contenteditable now, not an input, so `toHaveValue` and
+ * `userEvent.type` no longer apply. Its own behaviour — serialising pills back
+ * to Liquid, insertion, single-line enforcement — is covered in
+ * `components/editor/__tests__/subject-editor.spec.tsx`. What stays here is
+ * what only the page knows: Save enabling and the discard prompt.
+ */
+const subjectField = () => screen.getByLabelText('Subject');
+
+/**
+ * Marks the subject dirty the way a user does.
+ *
+ * Insertion rather than typing: `userEvent.type` against ProseMirror in jsdom
+ * does not reliably produce a document transaction, and the dropdown path is
+ * both realistic and deterministic.
+ */
+const editSubject = async () => {
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Insert variable' }),
+  );
+  await userEvent.click(
+    await screen.findByRole('menuitem', { name: 'Order number' }),
+  );
+};
+
 describe('EmailTemplatePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -88,9 +113,13 @@ describe('EmailTemplatePage', () => {
 
     expect(await screen.findByText('Order placed')).toBeInTheDocument();
     expect(screen.getByText('order.placed')).toBeInTheDocument();
-    expect(screen.getByLabelText('Subject')).toHaveValue(
-      'Your order #{{ order.display_id }}',
-    );
+
+    // The stored subject arrives as a pill plus its surrounding text, so the
+    // field shows the variable's label rather than the raw expression.
+    await waitFor(() => {
+      expect(subjectField().textContent).toContain('Order number');
+    });
+    expect(subjectField().textContent).not.toContain('{{');
   });
 
   it('opens clean, even though the editor loads its content', async () => {
@@ -128,7 +157,7 @@ describe('EmailTemplatePage', () => {
 
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
 
-    await userEvent.type(screen.getByLabelText('Subject'), '!');
+    await editSubject();
 
     expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
     expect(screen.getByText('Unsaved changes')).toBeInTheDocument();
@@ -140,16 +169,24 @@ describe('EmailTemplatePage', () => {
     renderPage();
     await screen.findByText('Order placed');
 
-    const subject = screen.getByLabelText('Subject');
-    await userEvent.clear(subject);
-    await userEvent.type(subject, 'Rewritten');
+    await editSubject();
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-    // A full replace here would blank html_template and editor_content.
+    /*
+     * Two things at once. A full replace would blank html_template and
+     * editor_content — and the subject arrives as Liquid, proving the pills
+     * serialised back through the node's own `renderText` on the way out.
+     */
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
         '/admin/email/templates/order-placed',
-        { method: 'POST', body: { subject_template: 'Rewritten' } },
+        {
+          method: 'POST',
+          body: {
+            subject_template:
+              'Your order #{{ order.display_id }}{{ order.display_id }}',
+          },
+        },
       ),
     );
     await waitFor(() =>
@@ -157,62 +194,56 @@ describe('EmailTemplatePage', () => {
     );
   });
 
-  it('inserts a variable at the cursor', async () => {
+  /*
+   * Insertion and filter generation moved to the subject editor's own spec:
+   * they are its behaviour, and testing them through a page render meant
+   * driving ProseMirror at arm's length.
+   *
+   * The old "appends when the subject was never focused" test went with them
+   * rather than being ported. It guarded a real bug — an unfocused input
+   * reports `selectionStart` as 0, so every insertion silently prepended — but
+   * that arithmetic no longer exists. The editor places a pill at its own
+   * selection, and the equivalent guard now lives in the component spec.
+   */
+
+  /*
+   * A total's default is Money, but a subject may well want the bare number —
+   * and a date has four shapes. Picking one has to reach storage, not just the
+   * menu, so this asserts the saved payload rather than what the field shows.
+   *
+   * Radix backs a submenu trigger with the same primitive as an item, so it is
+   * also `role="menuitem"`, and clicking it opens the submenu synchronously —
+   * the 100ms timer only guards the hover path.
+   */
+  it('lets a format be chosen for a variable that has several', async () => {
     fetchMock.mockResolvedValue({ template: template() });
 
     renderPage();
     await screen.findByText('Order placed');
 
-    const subject = screen.getByLabelText('Subject');
-    await userEvent.clear(subject);
-    await userEvent.type(subject, 'Order ');
-
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Insert variable' }),
-    );
-    await userEvent.click(
-      await screen.findByRole('menuitem', { name: 'Order number' }),
-    );
-
-    expect(subject).toHaveValue('Order {{ order.display_id }}');
-  });
-
-  it('generates the filter for a formatted variable', async () => {
-    fetchMock.mockResolvedValue({ template: template() });
-
-    renderPage();
-    await screen.findByText('Order placed');
-
-    await userEvent.clear(screen.getByLabelText('Subject'));
     await userEvent.click(
       screen.getByRole('button', { name: 'Insert variable' }),
     );
     await userEvent.click(
       await screen.findByRole('menuitem', { name: 'Total' }),
     );
-
-    // Without the filter the subject renders a bare number, not a price.
-    expect(screen.getByLabelText('Subject')).toHaveValue(
-      '{{ order.total | money: order.currency_code }}',
-    );
-  });
-
-  it('appends when the subject was never focused, rather than prepending', async () => {
-    fetchMock.mockResolvedValue({ template: template() });
-
-    renderPage();
-    await screen.findByText('Order placed');
-
-    // No typing first: an unfocused input reports selectionStart 0.
     await userEvent.click(
-      screen.getByRole('button', { name: 'Insert variable' }),
+      await screen.findByRole('menuitem', { name: 'Text' }),
     );
-    await userEvent.click(
-      await screen.findByRole('menuitem', { name: 'Order number' }),
-    );
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-    expect(screen.getByLabelText('Subject')).toHaveValue(
-      'Your order #{{ order.display_id }}{{ order.display_id }}',
+    // Text, not the money filter the default would have applied.
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/admin/email/templates/order-placed',
+        {
+          method: 'POST',
+          body: {
+            subject_template:
+              'Your order #{{ order.display_id }}{{ order.total }}',
+          },
+        },
+      ),
     );
   });
 
@@ -222,7 +253,7 @@ describe('EmailTemplatePage', () => {
     renderPage();
     await screen.findByText('Order placed');
 
-    await userEvent.type(screen.getByLabelText('Subject'), '!');
+    await editSubject();
     await userEvent.click(
       screen.getByRole('button', { name: 'Back to email settings' }),
     );
@@ -240,7 +271,7 @@ describe('EmailTemplatePage', () => {
     renderPage();
     await screen.findByText('Order placed');
 
-    await userEvent.type(screen.getByLabelText('Subject'), '!');
+    await editSubject();
     await userEvent.click(
       screen.getByRole('button', { name: 'Back to email settings' }),
     );

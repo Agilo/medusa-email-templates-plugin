@@ -61,8 +61,10 @@ export const defaultFormatFor = (
 /** Attributes for a variable pill, derived from the chosen variable. */
 export const attributesFor = (
   variable: EmailTemplateVariable | undefined,
+  /** Overrides the type's default, for picking a format at insertion time. */
+  format?: VariableFormat,
 ): { key: string; format: VariableFormat; currencySource: string | null } => ({
   key: variable?.key ?? '',
-  format: defaultFormatFor(variable),
+  format: format ?? defaultFormatFor(variable),
   currencySource: variable?.currencyKey ?? null,
 });

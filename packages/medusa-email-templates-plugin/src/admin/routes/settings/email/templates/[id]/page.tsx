@@ -5,7 +5,6 @@ import {
   Container,
   DropdownMenu,
   Heading,
-  Input,
   Label,
   Skeleton,
   Switch,
@@ -23,14 +22,28 @@ import {
   useSaveEmailTemplate,
   useToggleEmailTemplate,
 } from '../../../../../hooks/use-email-template';
-import { toLiquidExpression } from '../../../../../../lib/rendering/variable-format';
+import type { VariableFormat } from '../../../../../../lib/rendering/variable-format';
 import { getApiErrorMessage } from '../../../../../lib/api-error';
-import { defaultFormatFor, groupVariables } from '../../../../../lib/variables';
+import {
+  attributesFor,
+  FORMAT_LABELS,
+  formatsFor,
+  groupVariables,
+} from '../../../../../lib/variables';
 // Type-only, so the editor module stays out of this route's bundle.
 import type { EmailTemplateEditorHandle } from '../../../../../components/editor/email-template-editor';
+import type { SubjectEditorHandle } from '../../../../../components/editor/subject-editor';
 
 const EmailTemplateEditor = lazy(
   () => import('../../../../../components/editor/email-template-editor'),
+);
+
+/*
+ * Lazy for the same reason as the body: it pulls in `@tiptap/react` and the
+ * variable pill, which should not land in any other admin route's bundle.
+ */
+const SubjectEditor = lazy(
+  () => import('../../../../../components/editor/subject-editor'),
 );
 
 const SETTINGS_PATH = '/settings/email';
@@ -54,16 +67,17 @@ const EmailTemplatePage = () => {
   const saveTemplate = useSaveEmailTemplate(templateKey);
   const toggleTemplate = useToggleEmailTemplate();
 
-  const subjectRef = useRef<HTMLInputElement>(null);
+  const subjectRef = useRef<SubjectEditorHandle>(null);
   const editorRef = useRef<EmailTemplateEditorHandle>(null);
-  // Undefined means untouched, so the saved value shows through and a refetch
-  // never clobbers what is being typed.
-  const [draftSubject, setDraftSubject] = useState<string>();
+  /*
+   * Both fields are uncontrolled: each editor owns its document, and the value
+   * is read back only when saving. Mirroring the subject into state would
+   * reseed the editor on every keystroke, and `useEditor` takes its content
+   * once anyway.
+   */
+  const [subjectDirty, setSubjectDirty] = useState(false);
   const [bodyDirty, setBodyDirty] = useState(false);
 
-  const subject = draftSubject ?? template?.subject_template ?? '';
-  const subjectDirty =
-    draftSubject !== undefined && draftSubject !== template?.subject_template;
   const isDirty = subjectDirty || bodyDirty;
 
   const groups = useMemo(
@@ -74,33 +88,17 @@ const EmailTemplatePage = () => {
   const [previewing, setPreviewing] = useState(false);
   const [testing, setTesting] = useState(false);
 
-  /** Inserts at the cursor rather than appending, so it lands where expected. */
-  const insertVariable = (key: string) => {
-    const input = subjectRef.current;
+  /**
+   * The editor places the pill at its own selection, so there is no caret
+   * arithmetic here any more. `attributesFor` carries the format and currency
+   * source across, so a money or date variable arrives formatted rather than
+   * as a raw number.
+   */
+  const insertVariable = (key: string, format?: VariableFormat) => {
     const variable = template?.variables.find((entry) => entry.key === key);
-    // Generated, not hand-built: a money or date variable needs its filter
-    // here just as much as in the body, or the subject shows a raw number.
-    const token = toLiquidExpression(key, defaultFormatFor(variable), {
-      currencySource: variable?.currencyKey,
-    });
-    // An unfocused input reports `selectionStart` as 0 rather than null, and
-    // opening the menu blurs the field — so trusting the caret unconditionally
-    // silently prepended every insertion.
-    const hasCaret = Boolean(input) && document.activeElement === input;
-    const start = hasCaret
-      ? (input?.selectionStart ?? subject.length)
-      : subject.length;
-    const end = hasCaret
-      ? (input?.selectionEnd ?? subject.length)
-      : subject.length;
 
-    setDraftSubject(`${subject.slice(0, start)}${token}${subject.slice(end)}`);
-
-    // Put the caret after the inserted token.
-    requestAnimationFrame(() => {
-      input?.focus();
-      input?.setSelectionRange(start + token.length, start + token.length);
-    });
+    subjectRef.current?.insertVariable(attributesFor(variable, format));
+    setSubjectDirty(true);
   };
 
   const save = async () => {
@@ -119,12 +117,17 @@ const EmailTemplatePage = () => {
 
     saveTemplate.mutate(
       {
-        ...(subjectDirty ? { subject_template: subject } : {}),
+        // `getText()` serialises each pill back through the node's own
+        // `renderText`, so this is the same Liquid string the field has always
+        // stored.
+        ...(subjectDirty
+          ? { subject_template: subjectRef.current?.getText() ?? '' }
+          : {}),
         ...(body ?? {}),
       },
       {
         onSuccess: () => {
-          setDraftSubject(undefined);
+          setSubjectDirty(false);
           setBodyDirty(false);
           toast.success('Template saved.');
         },
@@ -261,21 +264,15 @@ const EmailTemplatePage = () => {
             Subject
           </Label>
           <div className="flex items-center gap-2">
-            {/*
-              The flex sizing lives on this wrapper rather than on `Input`.
-              Medusa's Input renders its own `relative` div and forwards
-              `className` to the inner `<input>`, so `flex-1` passed as a prop
-              lands a level too deep to size the flex child — the wrapper
-              stays content-sized and the input dutifully fills it. The inner
-              input is already `w-full`, so it takes whatever this gets.
-            */}
             <div className="min-w-0 flex-1">
-              <Input
-                id="subject"
-                ref={subjectRef}
-                value={subject}
-                onChange={(event) => setDraftSubject(event.target.value)}
-              />
+              <Suspense fallback={<Skeleton className="h-8 w-full" />}>
+                <SubjectEditor
+                  ref={subjectRef}
+                  subject={template.subject_template}
+                  variables={template.variables}
+                  onDirty={() => setSubjectDirty(true)}
+                />
+              </Suspense>
             </div>
             <DropdownMenu>
               {/* Sized to its label, and never squeezed as the field grows. */}
@@ -289,14 +286,47 @@ const EmailTemplatePage = () => {
                   <div key={group}>
                     {index > 0 && <DropdownMenu.Separator />}
                     <DropdownMenu.Label>{group}</DropdownMenu.Label>
-                    {variables.map((variable) => (
-                      <DropdownMenu.Item
-                        key={variable.key}
-                        onClick={() => insertVariable(variable.key)}
-                      >
-                        {variable.label}
-                      </DropdownMenu.Item>
-                    ))}
+                    {variables.map((variable) => {
+                      const formats = formatsFor(variable);
+
+                      /*
+                       * A variable with one sensible rendering inserts on the
+                       * spot. Totals and dates open a submenu instead, because
+                       * the default is only a guess — a total might belong in
+                       * a subject as a plain number, and a date has four
+                       * shapes. Without this the format was decided for you.
+                       */
+                      if (formats.length === 1) {
+                        return (
+                          <DropdownMenu.Item
+                            key={variable.key}
+                            onClick={() => insertVariable(variable.key)}
+                          >
+                            {variable.label}
+                          </DropdownMenu.Item>
+                        );
+                      }
+
+                      return (
+                        <DropdownMenu.SubMenu key={variable.key}>
+                          <DropdownMenu.SubMenuTrigger>
+                            {variable.label}
+                          </DropdownMenu.SubMenuTrigger>
+                          <DropdownMenu.SubMenuContent>
+                            {formats.map((format) => (
+                              <DropdownMenu.Item
+                                key={format}
+                                onClick={() =>
+                                  insertVariable(variable.key, format)
+                                }
+                              >
+                                {FORMAT_LABELS[format]}
+                              </DropdownMenu.Item>
+                            ))}
+                          </DropdownMenu.SubMenuContent>
+                        </DropdownMenu.SubMenu>
+                      );
+                    })}
                   </div>
                 ))}
               </DropdownMenu.Content>
