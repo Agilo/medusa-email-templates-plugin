@@ -59,48 +59,24 @@ const expressionFor = (attrs: Record<string, unknown> | undefined): string => {
 };
 
 /*
- * Only classes Medusa's own components already use reach this plugin.
- *
- * The dashboard ships one prebuilt stylesheet. The Tailwind pass that builds
- * it scans files ending in .js, .ts, .jsx or .tsx — but this plugin's admin
- * code is emitted as extensionless files under `_chunks/`, so none of it is
- * ever scanned and a class we invent resolves to nothing at all. Every class
- * below was checked against `@medusajs/dashboard/dist/app.css`; whatever that
- * file does not already emit is set inline instead.
- *
  * `inline`, not `inline-flex`: an inline-level box keeps the line box sized
  * by the surrounding text, so the pill's padding, border and focus ring paint
  * outside it without pushing a paragraph's lines apart.
+ *
+ * `text-[0.875em]` rather than a fixed size, so the pill tracks whatever text
+ * it sits in — a heading, or a small footer.
+ *
+ * These are ordinary classes again. They used to be set inline, because the
+ * host's Tailwind pass never saw this plugin's code: it globs the admin
+ * directory for .js/.ts/.jsx/.tsx while the admin build emits its chunks
+ * without any extension. `scripts/write-admin-safelist.mjs` closes that gap
+ * at build time, so a class here reaches the stylesheet like any other.
  */
 const PILL_BASE = [
-  'inline whitespace-nowrap px-[5px] py-px',
-  'rounded-md border font-sans font-medium leading-none',
+  'inline whitespace-nowrap align-baseline mx-px px-[5px] py-px',
+  'rounded-md border font-sans text-[0.875em] font-medium leading-none',
   'cursor-default select-none transition-fg',
 ].join(' ');
-
-/*
- * `align-baseline`, `mx-px` and `text-[0.875em]` are absent from the bundle,
- * so they are set here. Sizing in `em` keeps the pill tracking whatever text
- * it sits in — a heading, or a small footer — rather than locking to one
- * pixel size everywhere.
- */
-const PILL_STYLE = {
-  verticalAlign: 'baseline',
-  marginInline: '1px',
-  fontSize: '0.875em',
-} as const;
-
-/*
- * The separator, likewise inline: `ml-[5px]` and `pl-[5px]` are not in the
- * bundle either, and a bare `border-l` would take a default grey that is
- * invisible against the pill's own fill.
- */
-const RULE_STYLE = {
-  marginLeft: '5px',
-  paddingLeft: '5px',
-  borderLeftWidth: '1px',
-  borderLeftStyle: 'solid',
-} as const;
 
 /*
  * Blue is a configured variable; orange flags one that needs attention —
@@ -108,26 +84,25 @@ const RULE_STYLE = {
  * to fill), or a key the event no longer publishes (solid, because something
  * *was* chosen and has since gone).
  *
- * `rule` is a custom property rather than a class. The `-icon` tokens exist,
- * but Medusa only ever pairs them with `bg-` and `text-`, so the utility
- * `border-ui-tag-blue-icon` is never generated. Reading the variable directly
- * still follows the theme, which redefines these for dark mode.
- *
- * No hover tone: the bundle has no `bg-ui-tag-*-bg-hover` in any form, so
- * selection is carried by the focus ring alone.
+ * `active` is the fill a selected pill takes, alongside the focus ring. The
+ * `-icon` tone is the strongest of the pair and reads as a hairline against
+ * the pill's own fill.
  */
 const PILL_TONES = {
   chosen: {
-    idle: 'border-ui-tag-blue-border bg-ui-tag-blue-bg text-ui-tag-blue-text',
-    rule: 'var(--tag-blue-icon)',
+    idle: 'border-ui-tag-blue-border bg-ui-tag-blue-bg text-ui-tag-blue-text hover:bg-ui-tag-blue-bg-hover',
+    active: 'bg-ui-tag-blue-bg-hover',
+    rule: 'border-ui-tag-blue-icon',
   },
   empty: {
-    idle: 'border-dashed border-ui-tag-orange-border bg-ui-tag-orange-bg text-ui-tag-orange-text',
-    rule: 'var(--tag-orange-icon)',
+    idle: 'border-dashed border-ui-tag-orange-border bg-ui-tag-orange-bg text-ui-tag-orange-text hover:bg-ui-tag-orange-bg-hover',
+    active: 'bg-ui-tag-orange-bg-hover',
+    rule: 'border-ui-tag-orange-icon',
   },
   stale: {
-    idle: 'border-ui-tag-orange-border bg-ui-tag-orange-bg text-ui-tag-orange-text',
-    rule: 'var(--tag-orange-icon)',
+    idle: 'border-ui-tag-orange-border bg-ui-tag-orange-bg text-ui-tag-orange-text hover:bg-ui-tag-orange-bg-hover',
+    active: 'bg-ui-tag-orange-bg-hover',
+    rule: 'border-ui-tag-orange-icon',
   },
 } as const;
 
@@ -218,11 +193,10 @@ const VariablePill = ({
          * nothing. This one reads as "this is the thing the Inspector is
          * editing", which is exactly what selection means here.
          */
-        selected ? 'shadow-borders-focus' : '',
+        selected ? `shadow-borders-focus ${tone.active}` : '',
       ]
         .filter(Boolean)
         .join(' ')}
-      style={PILL_STYLE}
       aria-label={`Variable: ${description}`}
       /* Always present, unlike the key, so the pill is addressable even
          before a variable has been chosen. */
@@ -237,10 +211,7 @@ const VariablePill = ({
           rather than a separator character, which would be read aloud and
           would wrap as its own token. */}
       {showFormat && (
-        <span
-          className="font-normal"
-          style={{ ...RULE_STYLE, borderLeftColor: tone.rule }}
-        >
+        <span className={`ml-[5px] border-l pl-[5px] font-normal ${tone.rule}`}>
           {FORMAT_LABELS[format]}
         </span>
       )}

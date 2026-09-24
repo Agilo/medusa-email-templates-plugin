@@ -138,24 +138,42 @@ describe('variable pill', () => {
     expect(screen.getByText('order.discontinued')).toBeInTheDocument();
   });
 
-  it('draws the format separator with styles the admin bundle actually ships', async () => {
+  it('separates the format from the label with a hairline in the pill tone', async () => {
     /*
-     * This guards a whole class of silent failure. The dashboard ships one
-     * prebuilt stylesheet and its Tailwind pass never scans this plugin's
-     * admin chunks, so `border-ui-tag-blue-icon` — and every other class
-     * Medusa does not itself use — renders nothing at all. The separator is
-     * therefore set inline, and asserting on the inline style is the only
-     * way a test can tell the difference between a rule that paints and a
-     * class that silently does not exist.
+     * Classes rather than inline styles: the host's Tailwind pass reaches this
+     * plugin's code through the generated safelist, so `border-ui-tag-*-icon`
+     * resolves like any other utility.
+     *
+     * Note what this does *not* cover. jsdom sees the className string but
+     * cannot tell whether Tailwind emitted a rule for it, so a class that
+     * silently fails to generate would still pass here. That guarantee lives
+     * in `scripts/write-admin-safelist.mjs`. What this pins is that the
+     * separator exists, carries a left border with its spacing, and takes the
+     * tone of the pill around it.
      */
     await mountEditor(docWith({ key: 'order.total', format: 'money' }));
 
     const rule = screen.getByText('Money');
 
-    expect(rule).toHaveStyle({ borderLeftWidth: '1px' });
-    expect(rule).toHaveStyle({ borderLeftStyle: 'solid' });
-    // A colour, not the default grey that is invisible on the pill's fill.
-    expect(rule.getAttribute('style')).toContain('--tag-blue-icon');
+    expect(rule).toHaveClass('border-l');
+    expect(rule).toHaveClass('ml-[5px]');
+    expect(rule).toHaveClass('border-ui-tag-blue-icon');
+  });
+
+  it('fills the pill while selected, alongside the focus ring', async () => {
+    // The ring alone reads as focus rather than "this is what the Inspector
+    // is editing"; the fill is what makes the selected pill obvious.
+    await mountEditor(docWith({ key: 'order.total', format: 'money' }));
+
+    expect(pill()).toHaveClass('hover:bg-ui-tag-blue-bg-hover');
+    expect(pill()).not.toHaveClass('bg-ui-tag-blue-bg-hover');
+
+    fireEvent.mouseDown(pill());
+
+    await waitFor(() => {
+      expect(pill()).toHaveClass('shadow-borders-focus');
+      expect(pill()).toHaveClass('bg-ui-tag-blue-bg-hover');
+    });
   });
 
   it('names the variable, its format and its state to assistive tech', async () => {
