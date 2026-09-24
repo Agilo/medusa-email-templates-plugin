@@ -43,6 +43,57 @@ type EmailTemplateEditorProps = {
  */
 const InspectorBreadcrumb = Inspector.Breadcrumb as unknown as FC;
 
+/*
+ * The panel, plus patches for gaps in the library's own stylesheet.
+ *
+ * These have to be classes. A stylesheet cannot reach the host: the plugin
+ * build does emit `index.css`, but nothing imports it — the host writes and
+ * loads its own, and `admin-vite-plugin` never reads a plugin's CSS. So
+ * arbitrary variants on this element are the only way to reach the library's
+ * internals, which is why the list below is longer than it looks like it
+ * should be.
+ *
+ * Each group fixes something the library declares for one element and forgets
+ * for another:
+ *
+ *  - The text inputs get `font-size`, `padding` and `max-width` but never a
+ *    `background` or `border` reset, unlike every other control in that file
+ *    (toggles, buttons, the breadcrumb). They keep their user-agent fill and
+ *    border, which then paints over the wrapper's rounded edge. `min-w-0`
+ *    goes with it: a flex item defaults to `min-width: auto`, so a monospace
+ *    hex string refuses to shrink and pushes through the right border.
+ *
+ *  - The wrappers have a fixed `height: 1.6rem` and no `overflow`, so
+ *    anything taller escapes them. Clipping mirrors what the library already
+ *    does for `[data-re-inspector-toggle-group]`.
+ *
+ *  - The unit label (`px`) shares one rule with the colour swatch, so it is
+ *    handed `width: 1rem; height: 1rem; aspect-ratio: 1/2` — a box built for
+ *    a swatch, which two characters cannot fit.
+ *
+ *    All three have to be released together. With only the width and height
+ *    set to auto, the ratio stops being ignored and starts governing: the
+ *    span becomes twice as tall as it is wide, and `align-items: center`
+ *    centres that tall box while the text sits at the top of it.
+ *
+ *    The label also has no `font-size` of its own, while the number beside it
+ *    is pinned at 0.75rem — so it inherits the ambient size and renders
+ *    larger in any section that is not a `[data-re-inspector-prop-row]`.
+ *    Spacing is exactly that: `PaddingSection` renders straight into
+ *    `PaddingPicker` with no `PropRow`, which is why `px` looked bigger there
+ *    than in Typography.
+ *
+ *    No line-height override: `text-xs` already carries `1rem`, and the
+ *    wrapper's own `align-items: center` does the centring.
+ */
+const INSPECTOR_CLASS = [
+  'bg-ui-bg-base border-ui-border-base w-60 shrink-0 overflow-y-auto rounded-lg border p-4',
+  '[&_[data-re-inspector-input]]:bg-transparent [&_[data-re-inspector-input]]:border-0 [&_[data-re-inspector-input]]:min-w-0',
+  '[&_[data-re-inspector-color-hex]]:bg-transparent [&_[data-re-inspector-color-hex]]:border-0 [&_[data-re-inspector-color-hex]]:min-w-0',
+  '[&_[data-re-inspector-number]]:overflow-hidden [&_[data-re-inspector-color-control]]:overflow-hidden [&_[data-re-inspector-select]]:overflow-hidden',
+  '[&_[data-re-inspector-unit]]:text-xs [&_[data-re-inspector-unit]]:w-auto [&_[data-re-inspector-unit]]:h-auto [&_[data-re-inspector-unit]]:aspect-auto',
+].join(' ');
+
 /**
  * The visual editor.
  *
@@ -163,8 +214,24 @@ const EmailTemplateEditor = forwardRef<
 
         {/* A card, not a divider. `border-l` drew a single rule on the left
             edge, which the parent's gap-x-4 left stranded in the gutter rather
-            than sitting between the two panes. */}
-        <Inspector.Root className="bg-ui-bg-base border-ui-border-base w-60 shrink-0 overflow-y-auto rounded-lg border p-4">
+            than sitting between the two panes.
+
+            The arbitrary variants patch a gap in the library's own stylesheet.
+            Every other interactive element there — toggles, buttons, the
+            breadcrumb — explicitly resets `background` and `border`, but
+            `[data-re-inspector-input]` and `[data-re-inspector-color-hex]` do
+            not, so the text fields keep their user-agent fill and border. That
+            filled box then escapes a wrapper fixed at `height: 1.6rem` with no
+            `overflow`, punching holes through its rounded edge. `min-w-0`
+            matters too: a flex item defaults to `min-width: auto`, so the
+            monospace hex string refuses to shrink below its own content width
+            and pushes past the right border. Clipping the wrapper mirrors what
+            the library already does for `[data-re-inspector-toggle-group]`.
+
+            These have to be classes: a stylesheet cannot reach the host. The
+            plugin build emits `index.css` but nothing imports it, and the
+            host's entry loads only its own. */}
+        <Inspector.Root className={INSPECTOR_CLASS}>
           <InspectorBreadcrumb />
           <Inspector.Document />
           {/* Stands in for `Inspector.Node`: variables get their own panel,

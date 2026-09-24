@@ -45,18 +45,26 @@ if (!existsSync(chunksDir)) {
 }
 
 /*
- * Leans permissive, but anchored on a leading utility-shaped word. Tailwind
- * silently discards a candidate that matches no theme value, so a false
- * positive costs a few bytes while a false negative is the exact silent
- * failure this script exists to prevent.
+ * Leans permissive. Tailwind silently discards a candidate that matches no
+ * theme value, so a false positive costs a few bytes while a false negative
+ * is the exact silent failure this script exists to prevent.
  *
- * Covers bare utilities (`flex`), variants (`hover:bg-…`), fractions
- * (`w-2/3`) and arbitrary values (`text-[0.875em]`). It deliberately does
- * *not* match a bare `[...]`, which would scoop up JavaScript subscripts and
- * template-literal fragments from the surrounding bundle and leave the
- * generated file unreadable.
+ * Two alternatives, because Tailwind classes come in two shapes here:
+ *
+ *   1. Anchored on a leading word — bare utilities (`flex`), variants
+ *      (`hover:bg-…`), fractions (`w-2/3`), arbitrary values
+ *      (`text-[0.875em]`).
+ *   2. Anchored on `]:` — arbitrary variants, which begin with a bracket:
+ *      `[&_[data-re-inspector-color-hex]]:bg-transparent`.
+ *
+ * The second deliberately excludes backticks, parentheses, dots and spreads,
+ * which is what separates a real variant from the JavaScript subscripts and
+ * template-literal fragments in the surrounding bundle (`[...map.entries()]`,
+ * [`Node.replace`]). Matching those would leave the generated file unreadable
+ * for no benefit.
  */
-const CANDIDATE = /[a-z][a-z0-9]*(?:[:/-][a-z0-9[\]#%._-]+)+/g;
+const CANDIDATE =
+  /\[[&a-z0-9_[\]="'-]+\]:[a-z0-9[\]#%._/-]+|[a-z][a-z0-9]*(?:[:/-][a-z0-9[\]#%._-]+)+/g;
 
 /** Only the chunks: reading the whole directory would include our own output. */
 const tokens = new Set();
