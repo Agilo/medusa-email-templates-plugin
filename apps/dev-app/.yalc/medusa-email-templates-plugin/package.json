@@ -35,10 +35,10 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "patch:dev": "node ../../scripts/apply-dev-patches.cjs",
-    "plugin:build": "medusa plugin:build",
+    "plugin:build": "medusa plugin:build && node ./scripts/write-admin-safelist.mjs",
     "plugin:dev:medusa": "medusa plugin:develop",
     "plugin:publish:local": "medusa plugin:publish",
-    "prepublishOnly": "medusa plugin:build",
+    "prepublishOnly": "medusa plugin:build && node ./scripts/write-admin-safelist.mjs",
     "test": "yarn test:unit && yarn test:backend && yarn test:admin",
     "test:admin": "yarn patch:dev && vitest run --passWithNoTests",
     "test:unit": "yarn patch:dev && vitest run --config vitest.config.unit.ts --passWithNoTests",
@@ -69,5 +69,5 @@
     "resend": "6.28.0",
     "zod": "4.2.0"
   },
-  "yalcSig": "937c568268efb6c413ee53670add20b7"
+  "yalcSig": "44ba43c2bda6beb9054a22fdc516c381"
 }
