@@ -87,12 +87,34 @@ const InspectorBreadcrumb = Inspector.Breadcrumb as unknown as FC;
  *    wrapper's own `align-items: center` does the centring.
  */
 const INSPECTOR_CLASS = [
-  'bg-ui-bg-base border-ui-border-base w-60 shrink-0 overflow-y-auto rounded-lg border p-4',
+  'bg-ui-bg-base border-ui-border-base w-64 shrink-0 overflow-y-auto border-l p-4',
   '[&_[data-re-inspector-input]]:bg-transparent [&_[data-re-inspector-input]]:border-0 [&_[data-re-inspector-input]]:min-w-0',
   '[&_[data-re-inspector-color-hex]]:bg-transparent [&_[data-re-inspector-color-hex]]:border-0 [&_[data-re-inspector-color-hex]]:min-w-0',
   '[&_[data-re-inspector-number]]:overflow-hidden [&_[data-re-inspector-color-control]]:overflow-hidden [&_[data-re-inspector-select]]:overflow-hidden',
   '[&_[data-re-inspector-unit]]:text-xs [&_[data-re-inspector-unit]]:w-auto [&_[data-re-inspector-unit]]:h-auto [&_[data-re-inspector-unit]]:aspect-auto',
 ].join(' ');
+
+/*
+ * The canvas, plus a frame around the email itself.
+ *
+ * The container is a real 600px block, but nothing in the markup says so:
+ * `EmailTheming` injects `<scope> .node-container { width: 600px }` at
+ * runtime, keyed off the `data-editor-theme-scope` attribute it sets on the
+ * editor. Hence the width never appears on the element.
+ *
+ * `mx-auto` centres it. Nothing competes: the theme's container group has no
+ * margin prop, `RESET_BASIC.container` is `{}`, and `container` is absent from
+ * `RESET_NODE_TYPES`, so it is not handed the universal `margin: 0` reset.
+ *
+ * The dashed frame is ours — the library draws no outline around the email.
+ * `border-ui-border-base` is worth knowing about: Medusa already applies
+ * `* { border-color: var(--border-base) }`, so this class restates the colour
+ * the border would have anyway. It is written out to say so deliberately
+ * rather than relying on a global, but it is why the frame looks so faint —
+ * `--border-base` is #e4e4e7. `border-ui-border-strong` (#d4d4d8) is the one
+ * neutral step up if it should read more clearly.
+ */
+const CANVAS_CLASS = ['p-6', '[&_[data-type=container]]:mx-auto'].join(' ');
 
 /**
  * The visual editor.
@@ -203,18 +225,44 @@ const EmailTemplateEditor = forwardRef<
 
   return (
     <EditorContext.Provider value={{ editor }}>
-      <div className="flex gap-x-4">
-        {/* `border-ui-border-base` is not optional dressing: a width class on
-            its own inherits preflight's hardcoded #e5e7eb, which is invisible
-            here and stays near-white in dark mode instead of following
-            --border-base. */}
-        <div className="bg-ui-bg-base border-ui-border-base min-w-0 flex-1 overflow-hidden rounded-lg border">
-          <EditorContent editor={editor} className="p-4" />
+      <div className="flex min-h-[32rem]">
+        <div className="min-w-0 flex-1">
+          {/* The canvas container is a block `div` carrying an inline `width`
+              and no margins of its own, so it sits flush left. The library
+              ships no rule for it at all, so centring falls to us — and
+              `mx-auto` has no inline margin to fight.
+
+              Selected by `data-type`, not the `.node-container` class the same
+              div carries: the safelist extractor's bracket-variant pattern
+              admits no `.`, so a class selector is silently truncated to a
+              fragment and the rule is never generated. The attribute form is
+              what the Inspector patches above already use.
+
+              This only brings the canvas in line with what already sends — the
+              export renders the container with `align: "center"`, so the email
+              itself was never left-aligned. */}
+          {/* The container is a real 600px block, but nothing in the markup
+              says so: `EmailTheming` injects
+              `<scope> .node-container { width: 600px }` at runtime, keyed off
+              the `data-editor-theme-scope` attribute it puts on the editor.
+
+              Nothing sets a margin on it — the theme's container group has no
+              margin prop, `RESET_BASIC.container` is `{}`, and `container` is
+              absent from `RESET_NODE_TYPES` — so auto margins are unopposed.
+
+              The theme's `align: "center"` does not help here: it is not a CSS
+              property, so the injected rule drops it. It only reaches the
+              export, where it becomes the React Email `Container` align. */}
+          <EditorContent editor={editor} className={CANVAS_CLASS} />
         </div>
 
-        {/* A card, not a divider. `border-l` drew a single rule on the left
-            edge, which the parent's gap-x-4 left stranded in the gutter rather
-            than sitting between the two panes.
+        {/* A divider now, not a card. `border-l` was wrong only while the
+            parent carried `gap-x-4`: the rule landed in the gutter instead of
+            between the panes. With the gap gone and the two panes flush, that
+            border is the seam. `border-ui-border-base` is not dressing either
+            — a width class alone inherits preflight's hardcoded #e5e7eb, which
+            is invisible here and stays near-white in dark mode instead of
+            following --border-base.
 
             The arbitrary variants patch a gap in the library's own stylesheet.
             Every other interactive element there — toggles, buttons, the

@@ -53,6 +53,19 @@ const WARNING_TEXT: Record<string, string> = {
     'No storefront URL is configured, so links in this email cannot be built. It will not send until that is set.',
 };
 
+/**
+ * Inline code: the event name in the header, the slash key in the body hint.
+ *
+ * The list page sets the event in bare `font-mono`; a chip is the same idea
+ * with an edge, which is what keeps it readable mid-sentence rather than
+ * looking like emphasised prose.
+ */
+const CodeChip = ({ children }: { children: string }) => (
+  <code className="bg-ui-bg-component text-ui-fg-subtle rounded-md px-1 py-px font-mono text-xs">
+    {children}
+  </code>
+);
+
 const EmailTemplatePage = () => {
   const { id: templateKey = '' } = useParams();
   const navigate = useNavigate();
@@ -193,20 +206,35 @@ const EmailTemplatePage = () => {
             >
               <ArrowLeft />
             </Button>
-            <div className="flex min-w-0 flex-col">
+            <div className="flex min-w-0 flex-col gap-y-0.5">
               <Heading level="h2">{template.label}</Heading>
-              <Text size="small" className="text-ui-fg-subtle font-mono">
-                {template.event}
+              {/*
+                The event's own description, not one fixed sentence. Only the
+                order template goes to a customer — the invite and the admin
+                password reset go to an admin user, so copy that said "sent to
+                the customer" would be wrong on half the built-ins. Each event
+                already carries the right sentence; the chip names the event
+                behind it.
+              */}
+              <Text
+                size="small"
+                className="text-ui-fg-subtle flex flex-wrap items-center gap-x-1.5"
+              >
+                {template.description ? (
+                  <>
+                    {template.description}
+                    <CodeChip>{template.event}</CodeChip>
+                  </>
+                ) : (
+                  <>
+                    Sent when <CodeChip>{template.event}</CodeChip> fires
+                  </>
+                )}
               </Text>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
-            {isDirty && (
-              <Text size="small" className="text-ui-fg-subtle">
-                Unsaved changes
-              </Text>
-            )}
             <Switch
               checked={template.enabled}
               disabled={toggleTemplate.isPending}
@@ -258,7 +286,9 @@ const EmailTemplatePage = () => {
             <Alert variant="warning">{WARNING_TEXT[warning] ?? warning}</Alert>
           </div>
         )}
+      </Container>
 
+      <Container className="p-0">
         <div className="flex flex-col gap-y-2 px-6 py-4">
           <Label size="small" weight="plus" htmlFor="subject">
             Subject
@@ -347,16 +377,35 @@ const EmailTemplatePage = () => {
               </DropdownMenu.Content>
             </DropdownMenu>
           </div>
-          <Text size="xsmall" className="text-ui-fg-subtle">
-            Liquid without quotes, for example{' '}
-            <span className="font-mono">{'{{ order.display_id }}'}</span>.
-          </Text>
         </div>
       </Container>
 
-      <Container className="p-0">
-        <div className="px-6 py-4">
-          <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+      {/*
+        The body is its own card, so the two things being edited read as two
+        sections rather than one long surface.
+
+        Its rule is an explicit `border-t`, not `divide-y`: the editor renders
+        its bubble menus and slash menu as siblings of the canvas, and
+        `divide-y` would stripe a rule above each of them. `overflow-hidden`
+        keeps the Inspector's rail from squaring off the bottom corners.
+      */}
+      <Container className="overflow-hidden p-0">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-6 py-4">
+          <Text size="small" weight="plus">
+            Body
+          </Text>
+          {/* The slash menu is the only way to reach most block types, and
+              nothing else on the page advertises it. */}
+          <Text
+            size="small"
+            className="text-ui-fg-subtle flex items-center gap-x-1.5"
+          >
+            Type <CodeChip>/</CodeChip> to add a block
+          </Text>
+        </div>
+
+        <div className="border-ui-border-base border-t">
+          <Suspense fallback={<Skeleton className="h-96 w-full" />}>
             <EmailTemplateEditor
               ref={editorRef}
               template={template}

@@ -131,7 +131,6 @@ describe('EmailTemplatePage', () => {
     // Seeding the editor fires update events of its own; none of them are an
     // edit, so nothing here should count as unsaved.
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
-    expect(screen.queryByText('Unsaved changes')).toBeNull();
   });
 
   it('opens showing the default template rather than a blank body', async () => {
@@ -160,7 +159,6 @@ describe('EmailTemplatePage', () => {
     await editSubject();
 
     expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
-    expect(screen.getByText('Unsaved changes')).toBeInTheDocument();
   });
 
   it('saves only the subject, leaving the stored body alone', async () => {
