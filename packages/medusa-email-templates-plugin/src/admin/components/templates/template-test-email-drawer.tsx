@@ -3,23 +3,47 @@ import { useState } from 'react';
 
 import { useSendTemplateTestEmail } from '../../hooks/use-email-template';
 import { getApiErrorMessage } from '../../lib/api-error';
-import type { EmailTemplateListItem } from '../../lib/types';
+import type {
+  EmailTemplateDraft,
+  EmailTemplateListItem,
+} from '../../lib/types';
 
 type TemplateTestEmailDrawerProps = {
   template: EmailTemplateListItem;
   onClose: () => void;
+  /**
+   * The unsaved subject and body, read when Send is pressed. Without it the
+   * test sends the stored template, which is not what the editor is showing.
+   *
+   * Omitted by the templates list, which has no editor behind it.
+   */
+  getDraft?: () => Promise<EmailTemplateDraft>;
 };
 
 const TemplateTestEmailDrawer = ({
   template,
   onClose,
+  getDraft,
 }: TemplateTestEmailDrawerProps) => {
   const sendTest = useSendTemplateTestEmail(template.template_key);
   const [recipient, setRecipient] = useState('');
 
-  const send = () => {
+  const send = async () => {
+    let draft: EmailTemplateDraft | undefined;
+
+    if (getDraft) {
+      try {
+        draft = await getDraft();
+      } catch (error) {
+        // Exporting failed, so there is nothing to send. Better to say so than
+        // to quietly send the saved template instead.
+        toast.error(getApiErrorMessage(error));
+        return;
+      }
+    }
+
     sendTest.mutate(
-      { to: recipient },
+      { to: recipient, ...(draft ? { draft } : {}) },
       {
         onSuccess: () => {
           toast.success(`Test email sent to ${recipient}.`);
