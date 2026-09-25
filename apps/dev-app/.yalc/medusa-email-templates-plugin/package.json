@@ -63,11 +63,12 @@
   "dependencies": {
     "@medusajs/dashboard": "^2.21.0",
     "@react-email/editor": "1.7.7",
+    "@tiptap/pm": "3.31.3",
     "@tiptap/react": "3.31.3",
     "html-to-text": "^9.0.5",
     "liquidjs": "^10.29.0",
     "resend": "6.28.0",
     "zod": "4.2.0"
   },
-  "yalcSig": "44ba43c2bda6beb9054a22fdc516c381"
+  "yalcSig": "e24aa37ffa68cf669a64d6427336dd56"
 }
