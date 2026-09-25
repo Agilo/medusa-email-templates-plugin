@@ -4,6 +4,7 @@ import { EmailTheming } from '@react-email/editor/plugins';
 import { Editor, type JSONContent } from '@tiptap/core';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { inviteCreatedDefaultTemplate } from '../../../../lib/events/built-in/default-templates/account';
 import { orderPlacedDefaultTemplate } from '../../../../lib/events/built-in/default-templates/order-placed';
 import { deriveEditorContent, withVariableNodes } from '../derive-document';
 import { VariableNode } from '../variable-node';
@@ -171,6 +172,33 @@ describe('deriveEditorContent', () => {
     collect(doc, 'text').forEach((node) => {
       expect(node.text).not.toMatch(/\{\{|\{%/);
     });
+  });
+
+  /*
+   * A call to action has to arrive as a `button` node, not as link-marked text
+   * in a paragraph. Both render an anchor, so the difference is invisible in
+   * the inbox and total in the editor: the button's inspector section and
+   * bubble menu key off the node type, and neither reaches a link mark.
+   *
+   * What decides it is one attribute. `@react-email/editor` parses buttons
+   * from `a[data-id="react-email-button"]` alone, so an anchor styled to look
+   * like a button — which is what these templates had — degrades silently.
+   */
+  it('derives the account templates call to action as a button', () => {
+    const doc = deriveEditorContent(
+      inviteCreatedDefaultTemplate.html,
+      extensions,
+    );
+
+    const buttons = collect(doc, 'button');
+
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0].attrs?.href).toBe('{{ invite_url }}');
+    // The label is the button's own content, not a sibling paragraph's.
+    expect(buttons[0].content?.[0].text).toBe('Accept the invitation');
+    // The `<p>` that used to wrap it would be lifted off and left behind
+    // empty, because a button is a block node.
+    expect(collect(doc, 'paragraph').every((node) => node.content)).toBe(true);
   });
 
   it('keeps the structure the HTML described', () => {

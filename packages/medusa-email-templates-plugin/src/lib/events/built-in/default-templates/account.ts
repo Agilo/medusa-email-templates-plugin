@@ -17,8 +17,30 @@ const layout = (heading: string, body: string): string => `<!doctype html>
   </body>
 </html>`;
 
+/**
+ * A call to action, as both an email button and an editor one.
+ *
+ * An anchor, never a `<button>`: a button element navigates nowhere, does
+ * nothing outside a form, and is dropped outright by Outlook's Word renderer.
+ * This markup is what actually sends for a template nobody has customised —
+ * `resolveTemplate` falls back to `defaultTemplate.html` — so it has to be
+ * plain, inline-styled email HTML.
+ *
+ * `data-id="react-email-button"` is what makes the editor recognise it.
+ * `@react-email/editor`'s Button node parses one selector,
+ * `a[data-id="react-email-button"]`, and its `getAttrs` copies every attribute
+ * off the element, so the href and the inline styling survive the trip. Drop
+ * the attribute and the derived document degrades to a paragraph holding
+ * link-marked text: still correct in the inbox, but the button's own inspector
+ * and bubble menu never reach it.
+ *
+ * A `div` rather than a `p` around it, because the Button node is a block node
+ * — inside a paragraph ProseMirror lifts it out and leaves the empty paragraph
+ * behind. The margin lives there since the anchor is `inline-block` and cannot
+ * carry the block spacing itself.
+ */
 const button = (url: string, label: string): string =>
-  `<p style="margin:0 0 24px"><a href="${url}" style="display:inline-block;padding:10px 18px;background-color:#111827;color:#ffffff;text-decoration:none;border-radius:6px">${label}</a></p>`;
+  `<div style="margin:0 0 24px"><a data-id="react-email-button" href="${url}" style="display:inline-block;padding:10px 18px;background-color:#111827;color:#ffffff;text-decoration:none;border-radius:6px">${label}</a></div>`;
 
 export const inviteCreatedDefaultTemplate: EmailEventDefaultTemplate = {
   subject: "You've been invited to {{ store.name }}",
