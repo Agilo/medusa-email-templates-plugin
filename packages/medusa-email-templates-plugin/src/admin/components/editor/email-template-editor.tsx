@@ -182,11 +182,30 @@ const EmailTemplateEditor = forwardRef<
     // against. `false` would defer creation to an effect and cost an extra
     // render for nothing.
     immediatelyRender: true,
-    // Seeding the initial content fires update events of its own, so only a
-    // document-changing transaction from someone actually typing counts as an
-    // edit. Without this gate the page opens already dirty.
+    /*
+     * Seeding fires update events of its own, so only a document-changing
+     * transaction after the editor has settled counts as an edit. Without a
+     * gate here the page opens already dirty.
+     *
+     * `isInitialized`, not `isFocused`. TipTap sets `isInitialized` in the
+     * deferred macrotask that also emits `create`, while `EmailTheming` seeds
+     * the document synchronously inside `createView` — so the seeding update
+     * lands while it is still false, and everything after it counts. (Nothing
+     * else slips into that macrotask: `autofocus` defaults to false, so the
+     * focus command guarded ahead of `create` never runs.)
+     *
+     * `isFocused` excluded far more than seeding: it dropped every change made
+     * while focus sat outside the canvas, which is precisely what the
+     * Inspector is. Editing a colour, the container width or padding moves
+     * focus to an input, so the edit reached the document but never marked the
+     * page dirty, and Save stayed disabled over real unsaved work.
+     */
     onUpdate: ({ editor: instance, transaction }) => {
-      if (transaction.docChanged && instance.isEditable && instance.isFocused) {
+      if (
+        transaction.docChanged &&
+        instance.isEditable &&
+        instance.isInitialized
+      ) {
         onDirty();
       }
     },
