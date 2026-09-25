@@ -13,9 +13,11 @@ import {
   formatsFor,
   groupVariables,
 } from '../../lib/variables';
+import { ButtonLinkSection } from './link-inspector';
 
 type SectionName =
   | 'attributes'
+  | 'link'
   | 'size'
   | 'typography'
   | 'padding'
@@ -31,12 +33,17 @@ type SectionName =
  * means supplying the panel for every other type too. Reproduced rather than
  * invented, but it will drift if the library changes its defaults.
  *
- * `link` is deliberately absent: the layout lists it, but the renderer's
- * switch has no case for it and drops it.
+ * One deliberate divergence: `link` on `button`. The library's own layout
+ * lists a `link` section but its renderer has no case for it and drops it, so
+ * a button's href had no home in the panel at all. Ours is first because it is
+ * the property a button is most often opened to change.
+ *
+ * Images can carry an href too, and would take the same section — left out
+ * only because nothing has asked for it.
  */
 const SECTIONS_BY_NODE: Record<string, readonly SectionName[]> = {
   image: ['attributes', 'size', 'padding', 'border'],
-  button: ['typography', 'size', 'padding', 'border', 'background'],
+  button: ['link', 'typography', 'size', 'padding', 'border', 'background'],
   section: ['background', 'padding', 'border'],
   div: ['background', 'padding', 'border'],
   codeBlock: ['attributes', 'padding', 'border'],
@@ -71,7 +78,13 @@ const FALLBACK_SECTIONS: readonly SectionName[] = [
   'border',
 ];
 
-const DefaultSections = ({ context }: { context: InspectorNodeContext }) => {
+const DefaultSections = ({
+  context,
+  variables,
+}: {
+  context: InspectorNodeContext;
+  variables: EmailTemplateVariable[];
+}) => {
   const sections = SECTIONS_BY_NODE[context.nodeType] ?? FALLBACK_SECTIONS;
 
   /*
@@ -88,6 +101,14 @@ const DefaultSections = ({ context }: { context: InspectorNodeContext }) => {
         switch (section) {
           case 'attributes':
             return <Inspector.Attributes key={section} {...context} />;
+          case 'link':
+            return (
+              <ButtonLinkSection
+                key={section}
+                {...context}
+                variables={variables}
+              />
+            );
           case 'size':
             return <Inspector.Size key={section} {...context} />;
           case 'typography':
@@ -230,7 +251,7 @@ export const VariableInspector = ({
       context.nodeType === 'variable' ? (
         <VariableSection {...context} variables={variables} />
       ) : (
-        <DefaultSections context={context} />
+        <DefaultSections context={context} variables={variables} />
       )
     }
   </Inspector.Node>

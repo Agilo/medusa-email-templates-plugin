@@ -15,7 +15,9 @@ import { EditorContent, EditorContext, useEditor } from '@tiptap/react';
 import { forwardRef, useImperativeHandle, useMemo, type FC } from 'react';
 
 import type { EmailTemplateDetail } from '../../lib/types';
+import { isLiquidUrl, validateUrl } from '../../lib/liquid-url';
 import { deriveEditorContent } from './derive-document';
+import { LinkTextInspector } from './link-inspector';
 import { VariableInspector } from './variable-inspector';
 import { VariableNode } from './variable-node';
 import { variableSlashCommand } from './variable-slash-command';
@@ -85,6 +87,15 @@ const InspectorBreadcrumb = Inspector.Breadcrumb as unknown as FC;
  *
  *    No line-height override: `text-xs` already carries `1rem`, and the
  *    wrapper's own `align-items: center` does the centring.
+ *
+ *  - `[data-re-inspector-input]` is capped at `max-width: 3.5rem`, which fits
+ *    a number and nothing else. The URL field in `link-inspector.tsx` is the
+ *    one input here holding a full href, so it opts out by its own attribute
+ *    rather than by widening every input in the panel. Its shell is
+ *    `inline-flex` and would otherwise size to its content; `w-full` spans
+ *    the stacked row instead, and `min-w-0` is what lets it shrink, since a
+ *    flex item defaults to `min-width: auto` and a long href would push
+ *    straight through the panel's edge.
  */
 const INSPECTOR_CLASS = [
   'bg-ui-bg-base border-ui-border-base w-64 shrink-0 overflow-y-auto border-l p-4',
@@ -92,6 +103,8 @@ const INSPECTOR_CLASS = [
   '[&_[data-re-inspector-color-hex]]:bg-transparent [&_[data-re-inspector-color-hex]]:border-0 [&_[data-re-inspector-color-hex]]:min-w-0',
   '[&_[data-re-inspector-number]]:overflow-hidden [&_[data-re-inspector-color-control]]:overflow-hidden [&_[data-re-inspector-select]]:overflow-hidden',
   '[&_[data-re-inspector-unit]]:text-xs [&_[data-re-inspector-unit]]:w-auto [&_[data-re-inspector-unit]]:h-auto [&_[data-re-inspector-unit]]:aspect-auto',
+  '[&_[data-link-url-control]]:w-full [&_[data-link-url-control]]:min-w-0',
+  '[&_[data-link-url]]:max-w-none [&_[data-link-url]]:w-full',
 ].join(' ');
 
 /*
@@ -135,7 +148,21 @@ const EmailTemplateEditor = forwardRef<
    */
   const extensions = useMemo(
     () => [
-      StarterKit,
+      /*
+       * `Link` is reconfigured because a link's href may be Liquid. `setLink`
+       * returns false *before* applying the mark when `isAllowedUri` rejects
+       * the value, and the stock check demands a known scheme — so
+       * `{{ invite_url }}` silently never became a link at all.
+       *
+       * `ctx.defaultValidate` is the stock check, so everything that is not
+       * Liquid keeps its existing rules and `javascript:` stays blocked.
+       */
+      StarterKit.configure({
+        Link: {
+          isAllowedUri: (url, ctx) =>
+            isLiquidUrl(url) || ctx.defaultValidate(url),
+        },
+      }),
       EmailTheming,
       // Each pill resolves its own label from this list, so the canvas shows
       // "Total | Money" rather than the generated Liquid.
@@ -304,7 +331,10 @@ const EmailTemplateEditor = forwardRef<
           {/* Stands in for `Inspector.Node`: variables get their own panel,
               every other node type keeps the library's default sections. */}
           <VariableInspector variables={template.variables} />
-          <Inspector.Text />
+          {/* Stands in for `Inspector.Text`: the library's own link section
+              renders its URL field `readOnly`, so a selected link showed a
+              field nobody could type into. */}
+          <LinkTextInspector variables={template.variables} />
         </Inspector.Root>
       </div>
 
@@ -314,8 +344,16 @@ const EmailTemplateEditor = forwardRef<
         hideWhenActiveNodes={['button', 'variable']}
         hideWhenActiveMarks={['link']}
       />
-      <BubbleMenu.LinkDefault />
-      <BubbleMenu.ButtonDefault />
+      {/* The stock menus, for acting on a link that is already there: edit,
+          open, unlink. Choosing a *variable* for a URL happens in the
+          Inspector instead — see the note at the top of `link-inspector.tsx`
+          for why a picker cannot live in these.
+
+          `validateUrl` is what lets Liquid be typed or pasted here too.
+          Without it both forms reject `{{ invite_url }}` and clear the href,
+          which is what made a link disappear as it was being written. */}
+      <BubbleMenu.LinkDefault validateUrl={validateUrl} />
+      <BubbleMenu.ButtonDefault validateUrl={validateUrl} />
       <SlashCommand items={slashCommands} />
     </EditorContext.Provider>
   );

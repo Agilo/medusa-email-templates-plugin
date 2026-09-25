@@ -16,6 +16,25 @@ export const groupVariables = (
   return [...groups.entries()];
 };
 
+/**
+ * The variables a link or button href may be set to.
+ *
+ * Only those declared `url`. An href is not body text: dropping
+ * `{{ order.total }}` into one produces a link to "€42.00", which is broken in
+ * a way nothing downstream can catch — the Liquid renders, the anchor is
+ * emitted, and it fails only when a recipient clicks it. Offering every
+ * variable made that the easiest mistake in the editor to make.
+ *
+ * The consequence is that a host application's own URL variable has to be
+ * marked `type: 'url'` to appear here. That is deliberate: guessing from key
+ * names like `invite_url` would work for the built-in events and quietly fail
+ * for anyone whose naming differs.
+ */
+export const urlVariables = (
+  variables: EmailTemplateVariable[],
+): EmailTemplateVariable[] =>
+  variables.filter((variable) => variable.type === 'url');
+
 export const FORMAT_LABELS: Record<VariableFormat, string> = {
   text: 'Text',
   money: 'Money',
