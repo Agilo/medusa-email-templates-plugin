@@ -3,6 +3,7 @@ import {
   type InspectorNodeContext,
   type InspectorTextContext,
 } from '@react-email/editor/ui';
+import { useState } from 'react';
 
 import { isVariableFormat } from '../../../lib/rendering/variable-format';
 import type { EmailTemplateVariable } from '../../lib/types';
@@ -117,12 +118,22 @@ type VariableSectionProps = InspectorNodeContext & {
  * Deliberately no styling controls: a variable has no `style` attribute, so
  * background, border and padding would render controls that silently write
  * nowhere.
+ *
+ * The markup mirrors the library's own `Section` / `PropRow` / `Label` /
+ * `Select` primitives, which are internal — the `Inspector` compound exports
+ * whole sections only. Emitting the same `data-re-inspector-*` attributes is
+ * what makes this panel inherit the panel's styling rather than reading as a
+ * different component: a row per property with the label beside its control,
+ * and a select at the shared 1.6rem height. Reproduced rather than invented,
+ * so it will drift if the library changes those attributes.
  */
 const VariableSection = ({
   getAttr,
   setAttr,
   variables,
 }: VariableSectionProps) => {
+  // Matching the library's sections, which are collapsible by their title.
+  const [collapsed, setCollapsed] = useState(false);
   const rawKey = getAttr('key');
   const key = typeof rawKey === 'string' ? rawKey : '';
   const rawFormat = getAttr('format');
@@ -142,48 +153,67 @@ const VariableSection = ({
   };
 
   return (
-    <div className="flex flex-col gap-y-2 p-3">
-      <label className="txt-compact-small text-ui-fg-subtle" htmlFor="variable">
-        Variable
-      </label>
-      <select
-        id="variable"
-        value={key}
-        onChange={(event) => chooseVariable(event.target.value)}
-      >
-        <option value="">Choose a variable</option>
-        {groupVariables(variables).map(([group, grouped]) => (
-          <optgroup key={group} label={group}>
-            {grouped.map((variable) => (
-              <option key={variable.key} value={variable.key}>
-                {variable.label}
-              </option>
-            ))}
-          </optgroup>
-        ))}
-      </select>
+    <div data-re-inspector-section="" data-has-title="">
+      <div data-re-inspector-section-header="">
+        {/* "Attributes" rather than "Variable": it matches what the library
+            calls a node's own settings, and the row beneath is already
+            labelled Variable. */}
+        <button
+          type="button"
+          data-re-inspector-section-toggle=""
+          onClick={() => setCollapsed((value) => !value)}
+        >
+          Attributes
+        </button>
+      </div>
 
-      {/* Only worth showing when the value can be displayed more than one way. */}
-      {formats.length > 1 && (
-        <>
-          <label
-            className="txt-compact-small text-ui-fg-subtle"
-            htmlFor="variable-format"
-          >
-            Format
-          </label>
-          <select
-            id="variable-format"
-            value={format}
-            onChange={(event) => setAttr('format', event.target.value)}
-          >
-            {formats.map((option) => (
-              <option key={option} value={option}>
-                {FORMAT_LABELS[option]}
-              </option>
-            ))}
-          </select>
-        </>
+      {!collapsed && (
+        <div data-re-inspector-section-body="">
+          <div data-re-inspector-prop-row="">
+            <label data-re-inspector-label="" htmlFor="variable">
+              Variable
+            </label>
+            <select
+              data-re-inspector-select=""
+              id="variable"
+              value={key}
+              onChange={(event) => chooseVariable(event.target.value)}
+            >
+              <option value="">Choose a variable</option>
+              {groupVariables(variables).map(([group, grouped]) => (
+                <optgroup key={group} label={group}>
+                  {grouped.map((variable) => (
+                    <option key={variable.key} value={variable.key}>
+                      {variable.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+
+          {/* Only worth showing when the value can be displayed more than one
+              way. */}
+          {formats.length > 1 && (
+            <div data-re-inspector-prop-row="">
+              <label data-re-inspector-label="" htmlFor="variable-format">
+                Format
+              </label>
+              <select
+                data-re-inspector-select=""
+                id="variable-format"
+                value={format}
+                onChange={(event) => setAttr('format', event.target.value)}
+              >
+                {formats.map((option) => (
+                  <option key={option} value={option}>
+                    {FORMAT_LABELS[option]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
