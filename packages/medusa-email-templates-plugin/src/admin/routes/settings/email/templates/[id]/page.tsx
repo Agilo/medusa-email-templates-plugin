@@ -12,7 +12,7 @@ import {
   toast,
   usePrompt,
 } from '@medusajs/ui';
-import { Suspense, lazy, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, type UIMatch } from 'react-router-dom';
 
 import TemplatePreviewDrawer from '../../../../../components/templates/template-preview-drawer';
@@ -24,6 +24,7 @@ import {
 } from '../../../../../hooks/use-email-template';
 import type { VariableFormat } from '../../../../../../lib/rendering/variable-format';
 import { getApiErrorMessage } from '../../../../../lib/api-error';
+import type { EmailTemplateDraft } from '../../../../../lib/types';
 import {
   attributesFor,
   FORMAT_LABELS,
@@ -113,6 +114,32 @@ const EmailTemplatePage = () => {
     subjectRef.current?.insertVariable(attributesFor(variable, format));
     setSubjectDirty(true);
   };
+
+  /**
+   * What the editors currently hold, so a preview or test uses the work in
+   * progress rather than the last save.
+   *
+   * Read on demand rather than tracked: both drawers are modal, so nothing can
+   * change while one is open, and closing unmounts it — the next open reads
+   * again.
+   *
+   * Stable identity on purpose: the preview drawer keys an effect on this.
+   *
+   * Both omissions are the schema talking. `subject_template` is `min(1)`, and
+   * mid-edit the field really can be empty, so an empty subject is left out
+   * rather than sent as `''` and rejected. And the draft is a strict object, so
+   * only `html_template` goes over even though `getBody` also returns
+   * `editor_content` — including it would fail the whole request.
+   */
+  const getDraft = useCallback(async (): Promise<EmailTemplateDraft> => {
+    const subject = subjectRef.current?.getText() ?? '';
+    const body = await editorRef.current?.getBody();
+
+    return {
+      ...(subject ? { subject_template: subject } : {}),
+      ...(body ? { html_template: body.html_template } : {}),
+    };
+  }, []);
 
   const save = async () => {
     // Partial update: an untouched body is left out entirely rather than
@@ -418,6 +445,7 @@ const EmailTemplatePage = () => {
       {previewing && (
         <TemplatePreviewDrawer
           template={template}
+          getDraft={getDraft}
           onClose={() => setPreviewing(false)}
         />
       )}
@@ -425,6 +453,7 @@ const EmailTemplatePage = () => {
       {testing && (
         <TemplateTestEmailDrawer
           template={template}
+          getDraft={getDraft}
           onClose={() => setTesting(false)}
         />
       )}
