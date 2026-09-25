@@ -47,6 +47,7 @@ const variables = (resetLabel: string): EmailTemplateVariable[] => [
     description: resetLabel,
     example:
       'https://example.com/reset-password?token=abc&email=jane%40example.com',
+    type: 'url',
     group: 'Account',
   },
   {

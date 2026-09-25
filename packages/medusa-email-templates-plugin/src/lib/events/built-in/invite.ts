@@ -53,6 +53,7 @@ const inviteVariables: EmailTemplateVariable[] = [
     label: 'Accept link',
     description: 'Link to Medusa Admin that accepts the invitation.',
     example: 'https://admin.example.com/app/invite?token=abc',
+    type: 'url',
     group: 'Invite',
   },
   {

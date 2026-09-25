@@ -256,6 +256,8 @@ export default async function handler({ event, container }) {
 export const config = { event: 'review.approved' };
 ```
 
+Each variable may declare a `type`, which decides what the editor offers for it: `money` and `date` unlock display formats, and `url` is what puts a variable in the link picker used for button and link addresses. A variable holding a URL has to say so — the editor will not guess from a key name like `invite_url`, so an unmarked one can still be typed into an address by hand but is not offered as a choice.
+
 The same module exports `registerEmailTransport` for adding a transport of your own; it takes the `EmailTransport` interface, so templates and events stay untouched.
 
 Rendering happens when the email is sent: the subject and text body are rendered as-is, the HTML body is HTML-escaped, and the plain-text body is derived from the rendered HTML when no text template is set. Templates cannot read files or run JavaScript, and they run under parse, render and memory limits.

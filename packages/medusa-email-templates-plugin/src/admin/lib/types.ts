@@ -75,8 +75,11 @@ export interface EmailTemplateVariable {
   description?: string;
   example: unknown;
   group?: string;
-  /** Omitted means plain text. Decides which formats the editor offers. */
-  type?: 'text' | 'number' | 'money' | 'date';
+  /**
+   * Omitted means plain text. Decides which formats the editor offers, and
+   * `url` decides which variables the link picker offers.
+   */
+  type?: 'text' | 'number' | 'money' | 'date' | 'url';
   /** For `money` values, the key holding the currency code. */
   currencyKey?: string;
 }

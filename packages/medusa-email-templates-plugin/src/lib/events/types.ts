@@ -12,8 +12,14 @@ export interface EmailTemplateVariable {
    * for it. Omitted means plain text. Marking a value `money` or `date` when
    * it is neither renders an empty string, so the editor uses this to stop an
    * impossible choice being made rather than to decorate the picker.
+   *
+   * `url` is the same idea applied to link and button hrefs: it is the only
+   * thing that distinguishes a value that can *be* a URL from one that merely
+   * reads like it, so the editor's link picker offers these and nothing else.
+   * A `url` value is still a plain string everywhere else — it can be dropped
+   * into body text like any other variable.
    */
-  type?: 'text' | 'number' | 'money' | 'date';
+  type?: 'text' | 'number' | 'money' | 'date' | 'url';
   /**
    * For a `money` value, the key holding its currency code. The editor emits
    * this as a Liquid filter argument, so it must be a bare identifier path —
