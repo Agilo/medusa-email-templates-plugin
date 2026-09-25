@@ -44,6 +44,26 @@ module.exports = defineConfig({
         ...config,
         server: {
           ...config.server,
+          /*
+           * HMR stays off behind a tunnel, where the client cannot reach the
+           * websocket, but is left on locally — and it is load-bearing there.
+           *
+           * The plugin admin entry is excluded from `optimizeDeps` below, so
+           * Vite's initial dependency scan never crawls it and everything it
+           * imports is discovered at request time instead. Each discovery
+           * re-runs the optimizer and moves `browserHash`, which is the `?v=`
+           * Vite stamps onto every optimized import. Vite's answer to that is
+           * to push a full page reload so the whole graph comes from one
+           * generation; with no websocket there is nothing to push it down,
+           * and the page ends up holding several generations at once. Two
+           * copies of React then run side by side, the second one's dispatcher
+           * is null, and mounting the lazily loaded editor dies with "Cannot
+           * read properties of null (reading 'useMemo')".
+           *
+           * Listing the plugin's imports under `include` is not a substitute:
+           * it removes the discoveries you can name, while transitive ones
+           * (`@medusajs/admin-shared`, say) still arrive late.
+           */
           ...(tunnelHost
             ? {
                 allowedHosts: [
@@ -54,9 +74,7 @@ module.exports = defineConfig({
                 ],
                 hmr: false,
               }
-            : {
-                hmr: false,
-              }),
+            : {}),
         },
         optimizeDeps: {
           ...config.optimizeDeps,
@@ -66,6 +84,20 @@ module.exports = defineConfig({
           // (e.g. deepmerge via @react-email/render → html-to-text) fail to
           // load in the browser. Pre-bundle the plugin's admin dependencies
           // explicitly.
+          //
+          // Every bare specifier the built admin chunks import belongs here,
+          // not only the ones that fail outright. Being excluded, those chunks
+          // are served raw, and Vite rewrites their imports to
+          // `/.vite/deps/…?v=<browserHash>` using whichever hash is current
+          // when it transforms the file. A specifier missing from this list is
+          // discovered at request time instead, which re-runs the optimizer
+          // and moves that hash — and since `hmr` is off above, no reload is
+          // sent, so the page keeps the old hash while the newly transformed
+          // chunk gets the new one. Two copies of React then run side by side
+          // and the second one's dispatcher is null, which surfaces as
+          // "Cannot read properties of null (reading 'useMemo')" on first
+          // visit to a route that lazy-loads the editor. A refresh clears it,
+          // and the next republish brings it back.
           include: [
             ...(config.optimizeDeps?.include ?? []),
             '@react-email/editor',
@@ -74,6 +106,8 @@ module.exports = defineConfig({
             '@react-email/editor/plugins',
             '@react-email/editor/ui',
             '@tiptap/react',
+            // Imported directly by the variable node, for `NodeSelection`.
+            '@tiptap/pm/state',
           ],
           exclude: [
             ...(config.optimizeDeps?.exclude ?? []),
