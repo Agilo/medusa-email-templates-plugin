@@ -5,6 +5,7 @@ import {
   Container,
   DropdownMenu,
   Heading,
+  IconButton,
   Label,
   Skeleton,
   Switch,
@@ -225,14 +226,14 @@ const EmailTemplatePage = () => {
       <Container className="divide-y p-0">
         <div className="flex flex-wrap items-start justify-between gap-4 px-6 py-4">
           <div className="flex min-w-0 items-start gap-x-3">
-            <Button
+            <IconButton
               size="small"
               variant="transparent"
               aria-label="Back to email settings"
               onClick={leave}
             >
               <ArrowLeft />
-            </Button>
+            </IconButton>
             <div className="flex min-w-0 flex-col gap-y-0.5">
               <Heading level="h2">{template.label}</Heading>
               {/*
