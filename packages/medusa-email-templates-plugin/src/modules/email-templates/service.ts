@@ -15,6 +15,8 @@ export type EmailTemplatesModuleOptions = {
   storefront_url?: string;
   /** Storefront path that handles password resets. */
   storefront_reset_password_path?: string;
+  /** Storefront path that shows an order, with the order id appended. */
+  storefront_order_path?: string;
 };
 
 export default class EmailTemplatesModuleService extends MedusaService({

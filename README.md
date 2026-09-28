@@ -216,12 +216,14 @@ plugins: [
       storefront_url: 'https://shop.example.com',
       // Defaults to /reset-password
       storefront_reset_password_path: '/account/new-password',
+      // Defaults to /orders, with the order id appended
+      storefront_order_path: '/account/orders',
     },
   },
 ],
 ```
 
-Without `storefront_url`, the customer password reset is skipped rather than sending a link that goes nowhere.
+Without `storefront_url`, the customer password reset is skipped rather than sending a link that goes nowhere. The order confirmation still sends — it is a complete email without a link — but its `order_url` variable goes unresolved, and both templates report the missing configuration in the admin list.
 
 #### Custom events
 

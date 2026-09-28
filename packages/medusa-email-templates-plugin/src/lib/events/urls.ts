@@ -7,6 +7,13 @@ import type { EmailTemplatesModuleOptions } from '../../modules/email-templates/
 
 export const DEFAULT_STOREFRONT_RESET_PATH = '/reset-password';
 
+/**
+ * Storefronts disagree about this one — the Next.js starter has moved it more
+ * than once — so the default is the plainest thing that could be right and the
+ * option exists to correct it.
+ */
+export const DEFAULT_STOREFRONT_ORDER_PATH = '/orders';
+
 /** Missing storefront configuration, reported instead of a broken link. */
 export class StorefrontUrlNotConfiguredError extends Error {
   constructor() {
@@ -70,6 +77,38 @@ export const getStorefrontResetPasswordPath = (
     readOptions(container).storefront_reset_password_path ??
       DEFAULT_STOREFRONT_RESET_PATH,
   );
+
+export const getStorefrontOrderPath = (container: MedusaContainer): string =>
+  withLeadingSlash(
+    readOptions(container).storefront_order_path ??
+      DEFAULT_STOREFRONT_ORDER_PATH,
+  );
+
+/**
+ * A link to an order on the storefront, or null when there is no storefront to
+ * link to.
+ *
+ * Null rather than a throw, which is what sets this apart from the password
+ * reset. That email *is* its link, so `getStorefrontUrl` throwing there skips
+ * the send rather than delivering something useless. An order confirmation is
+ * a complete email without one — it has been sending for as long as this plugin
+ * has existed, with no storefront configured — so a missing URL must not stop
+ * it. The variable simply goes unresolved, and `getWarnings` says why.
+ */
+export const getOrderUrl = (
+  container: MedusaContainer,
+  orderId: string,
+): string | null => {
+  try {
+    return `${getStorefrontUrl(container)}${getStorefrontOrderPath(container)}/${orderId}`;
+  } catch (error) {
+    if (error instanceof StorefrontUrlNotConfiguredError) {
+      return null;
+    }
+
+    throw error;
+  }
+};
 
 export const buildQuery = (
   params: Record<string, string | undefined>,

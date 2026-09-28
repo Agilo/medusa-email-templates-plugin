@@ -2,6 +2,7 @@ import type { MedusaContainer } from '@medusajs/framework/types';
 import { ContainerRegistrationKeys } from '@medusajs/framework/utils';
 
 import { defineEmailEvent } from '../define-email-event';
+import { getOrderUrl, getStorefrontUrl } from '../urls';
 import { orderPlacedDefaultTemplate } from './default-templates/order-placed';
 import { retrieveStoreName } from './store';
 
@@ -117,6 +118,13 @@ export const orderPlacedEmailEvent = defineEmailEvent<OrderPlacedEventData>({
         })),
         shipping_address: order.shipping_address ?? null,
       },
+      /*
+       * Composed here rather than left to the editor. An admin could write
+       * `https://shop.test/orders/{{ order.id }}` by hand, but the base would
+       * be baked into the template and wrong in every other environment. Built
+       * from `storefront_url`, it follows the deployment instead.
+       */
+      order_url: getOrderUrl(container, order.id),
       store: { name: await retrieveStoreName(container) },
     };
   },
@@ -201,10 +209,35 @@ export const orderPlacedEmailEvent = defineEmailEvent<OrderPlacedEventData>({
       group: 'Totals',
     },
     {
+      key: 'order_url',
+      label: 'Order link',
+      description:
+        'Link to this order on the storefront. Needs storefront_url to be configured.',
+      example: 'https://shop.example.com/orders/order_01J8Z',
+      type: 'url',
+      group: 'Order',
+    },
+    {
       key: 'store.name',
       label: 'Store name',
       example: 'Medusa Store',
       group: 'Store',
     },
   ],
+
+  /*
+   * Reported, not enforced. Unlike the password reset, this email is worth
+   * sending without a storefront — most of it is the order summary — so a
+   * missing `storefront_url` leaves `order_url` unresolved rather than
+   * skipping the send, and this is what tells an admin why the link is the
+   * one thing that will not work.
+   */
+  getWarnings: (container) => {
+    try {
+      getStorefrontUrl(container);
+      return [];
+    } catch {
+      return ['storefront_url_not_configured'];
+    }
+  },
 });

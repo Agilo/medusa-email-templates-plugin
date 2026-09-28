@@ -1,6 +1,8 @@
 import type { MedusaContainer } from '@medusajs/framework/types';
 import { describe, expect, it, vi } from 'vitest';
 
+import { EMAIL_TEMPLATES_MODULE } from '../../../modules/email-templates';
+import type { EmailTemplatesModuleOptions } from '../../../modules/email-templates/service';
 import { orderPlacedEmailEvent } from '../built-in/order-placed';
 
 const order = {
@@ -26,13 +28,23 @@ const order = {
   customer: { first_name: 'Jane', last_name: 'Doe' },
 };
 
-const containerWith = (orders: unknown[]) => {
+const containerWith = (
+  orders: unknown[],
+  options: EmailTemplatesModuleOptions = {},
+) => {
   const graph = vi.fn(async ({ entity }: { entity: string }) =>
     entity === 'store' ? { data: [{ name: 'Test Store' }] } : { data: orders },
   );
 
   return {
-    container: { resolve: () => ({ graph }) } as unknown as MedusaContainer,
+    container: {
+      // Keyed, because the URL helpers resolve the module for its options
+      // while everything else here wants the query service.
+      resolve: (key: string) =>
+        key === EMAIL_TEMPLATES_MODULE
+          ? { getOptions: () => options }
+          : { graph },
+    } as unknown as MedusaContainer,
     graph,
   };
 };
@@ -79,6 +91,76 @@ describe('order-placed email event', () => {
         items: [{ title: 'Medusa T-Shirt', quantity: 2, total: 40 }],
       },
       store: { name: 'Test Store' },
+    });
+  });
+
+  /*
+   * The link is composed here so the base follows the deployment. Written by
+   * hand in a template it would be frozen into the saved HTML and wrong
+   * everywhere but the environment it was typed in.
+   */
+  describe('order link', () => {
+    const urlOf = async (options: EmailTemplatesModuleOptions) => {
+      const { container } = containerWith([order], options);
+      const context = (await orderPlacedEmailEvent.getContext(
+        { id: 'order_1' },
+        container,
+      )) as { order_url: string | null };
+
+      return context.order_url;
+    };
+
+    it('appends the order id to the configured storefront', async () => {
+      await expect(
+        urlOf({ storefront_url: 'https://shop.test' }),
+      ).resolves.toBe('https://shop.test/orders/order_1');
+    });
+
+    it('takes the path from options, and tolerates a missing slash', async () => {
+      await expect(
+        urlOf({
+          storefront_url: 'https://shop.test/',
+          storefront_order_path: 'account/orders',
+        }),
+      ).resolves.toBe('https://shop.test/account/orders/order_1');
+    });
+
+    /*
+     * The difference from the password reset, which throws here so the send is
+     * skipped. This email is mostly an order summary and is worth sending
+     * without a link, so the variable goes unresolved instead.
+     */
+    it('is null without a storefront, and does not stop the context', async () => {
+      const { container } = containerWith([order]);
+      const context = (await orderPlacedEmailEvent.getContext(
+        { id: 'order_1' },
+        container,
+      )) as { order_url: string | null; order: { display_id: number } };
+
+      expect(context.order_url).toBeNull();
+      expect(context.order.display_id).toBe(1001);
+    });
+
+    it('reports the missing storefront to the admin list', () => {
+      const { container: unset } = containerWith([order]);
+      const { container: set } = containerWith([order], {
+        storefront_url: 'https://shop.test',
+      });
+
+      expect(orderPlacedEmailEvent.getWarnings?.(unset)).toEqual([
+        'storefront_url_not_configured',
+      ]);
+      expect(orderPlacedEmailEvent.getWarnings?.(set)).toEqual([]);
+    });
+
+    // `url` is what puts it in the editor's link picker; without it the
+    // variable exists but no button or link can be pointed at it.
+    it('is declared as a URL variable', () => {
+      const declared = orderPlacedEmailEvent.variables.find(
+        (variable) => variable.key === 'order_url',
+      );
+
+      expect(declared?.type).toBe('url');
     });
   });
 

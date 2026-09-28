@@ -64,8 +64,13 @@ export interface EmailEventDefinition<TData = unknown> {
     resource_type?: string;
   };
   /**
-   * Configuration problems that stop this template from sending, surfaced in
-   * the admin list. For example a customer link with no storefront URL.
+   * Configuration problems surfaced in the admin list, as codes the dashboard
+   * turns into text. For example a customer link with no storefront URL.
+   *
+   * Not only problems that stop a send. The password reset cannot go at all
+   * without its link, while an order confirmation sends perfectly well and
+   * merely loses `order_url` — both are worth telling an admin about, and the
+   * rendered text says what is broken rather than what was prevented.
    */
   getWarnings?: (container: MedusaContainer) => string[];
 }
