@@ -31,7 +31,32 @@ const variables: EmailTemplateVariable[] = [
     currencyKey: 'order.currency_code',
     group: 'Totals',
   },
+  // The currency is a variable of its own, and the money pill renders through
+  // its example rather than guessing a symbol.
+  {
+    key: 'order.currency_code',
+    label: 'Currency',
+    example: 'eur',
+    group: 'Order',
+  },
+  {
+    key: 'invite.expires_at',
+    label: 'Expires at',
+    example: '2026-10-01T10:00:00.000Z',
+    type: 'date',
+    group: 'Invite',
+  },
+  // A host's custom event may declare anything as an example. Nothing stops
+  // this reaching the canvas, so the pill has to cope with it.
+  { key: 'order.notes', label: 'Notes', example: { free: 'form' } },
 ];
+
+/** A money pill as `attributesFor` builds one, currency source included. */
+const MONEY = {
+  key: 'order.total',
+  format: 'money',
+  currencySource: 'order.currency_code',
+};
 
 const docWith = (attrs: Record<string, unknown>): JSONContent => ({
   type: 'doc',
@@ -104,18 +129,83 @@ const mountEditor = async (content: JSONContent) => {
 const pill = () => document.querySelector('[data-variable-node]') as Element;
 
 describe('variable pill', () => {
-  it('renders the variable label rather than the Liquid expression', async () => {
-    await mountEditor(docWith({ key: 'order.total', format: 'money' }));
+  /*
+   * The canvas reads like the email, so the pill shows what a recipient will
+   * see. Through the send path's own `formatMoney`, which is why the currency
+   * arrives as another variable's example rather than as a guessed symbol.
+   */
+  it('renders the value a recipient will see, not the Liquid', async () => {
+    await mountEditor(docWith(MONEY));
 
-    expect(screen.getByText('Total')).toBeInTheDocument();
+    expect(screen.getByText('€55.00')).toBeInTheDocument();
     // The whole point of the structured model: no Liquid on the canvas.
     expect(screen.queryByText(/\{\{/)).toBeNull();
   });
 
-  it('names the format when it is not plain text', async () => {
-    await mountEditor(docWith({ key: 'order.total', format: 'money' }));
+  /*
+   * What the format control is for. "Long date" names a choice; `October 1,
+   * 2026` shows it, which is the difference between a label and a preview.
+   */
+  it('renders a date in the format that was chosen', async () => {
+    await mountEditor(
+      docWith({ key: 'invite.expires_at', format: 'date_long' }),
+    );
 
-    expect(screen.getByText(/Money/)).toBeInTheDocument();
+    expect(screen.getByText('October 1, 2026')).toBeInTheDocument();
+  });
+
+  it('renders an unformatted value as it stands', async () => {
+    // Plain text is a real choice, and an ISO string is what that pill sends.
+    await mountEditor(docWith({ key: 'invite.expires_at', format: 'text' }));
+
+    expect(screen.getByText('2026-10-01T10:00:00.000Z')).toBeInTheDocument();
+  });
+
+  it('falls back to the name when the example cannot be shown', async () => {
+    // `[object Object]` inline would be worse than saying nothing useful.
+    await mountEditor(docWith({ key: 'order.notes', format: 'text' }));
+
+    expect(screen.getByText('Notes')).toBeInTheDocument();
+  });
+
+  /*
+   * The pill no longer says which variable it is, so something has to. A
+   * `title` attribute did not: it never surfaced inside the contenteditable.
+   *
+   * Opened by focus rather than by pointer. Radix answers both, and focus
+   * skips the hover delay and the pointer-event support jsdom lacks — what is
+   * being pinned here is that a tooltip exists and names the variable, not
+   * which gesture reveals it.
+   */
+  it('names the variable in a tooltip', async () => {
+    await mountEditor(docWith(MONEY));
+
+    fireEvent.focus(pill().firstElementChild as Element);
+
+    // The name and nothing else. The format is already legible in the €55.00
+    // on the pill, and repeating it would crowd out the one thing hovering is
+    // for.
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(/^Total$/);
+  });
+
+  it('warns in the tooltip when the event no longer publishes the key', async () => {
+    await mountEditor(docWith({ key: 'order.discontinued', format: 'text' }));
+
+    fireEvent.focus(pill().firstElementChild as Element);
+
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      'order.discontinued — not available for this event',
+    );
+  });
+
+  it('offers no tooltip until a variable is chosen', async () => {
+    // It would repeat the pill's own text, which already reads "Choose a
+    // variable".
+    await mountEditor(docWith({ key: '' }));
+
+    fireEvent.focus(pill());
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
   });
 
   it('prompts when no variable has been chosen', async () => {
@@ -138,32 +228,10 @@ describe('variable pill', () => {
     expect(screen.getByText('order.discontinued')).toBeInTheDocument();
   });
 
-  it('separates the format from the label with a hairline in the pill tone', async () => {
-    /*
-     * Classes rather than inline styles: the host's Tailwind pass reaches this
-     * plugin's code through the generated safelist, so `border-ui-tag-*-icon`
-     * resolves like any other utility.
-     *
-     * Note what this does *not* cover. jsdom sees the className string but
-     * cannot tell whether Tailwind emitted a rule for it, so a class that
-     * silently fails to generate would still pass here. That guarantee lives
-     * in `scripts/write-admin-safelist.mjs`. What this pins is that the
-     * separator exists, carries a left border with its spacing, and takes the
-     * tone of the pill around it.
-     */
-    await mountEditor(docWith({ key: 'order.total', format: 'money' }));
-
-    const rule = screen.getByText('Money');
-
-    expect(rule).toHaveClass('border-l');
-    expect(rule).toHaveClass('ml-[5px]');
-    expect(rule).toHaveClass('border-ui-tag-blue-icon');
-  });
-
   it('fills the pill while selected, alongside the focus ring', async () => {
     // The ring alone reads as focus rather than "this is what the Inspector
     // is editing"; the fill is what makes the selected pill obvious.
-    await mountEditor(docWith({ key: 'order.total', format: 'money' }));
+    await mountEditor(docWith(MONEY));
 
     expect(pill()).toHaveClass('hover:bg-ui-tag-blue-bg-hover');
     expect(pill()).not.toHaveClass('bg-ui-tag-blue-bg-hover');
@@ -176,18 +244,22 @@ describe('variable pill', () => {
     });
   });
 
+  /*
+   * The pill is one text run to a screen reader, and the blue/orange
+   * distinction carries meaning that colour alone does not convey.
+   *
+   * The format stays here even though the tooltip dropped it: `aria-label`
+   * replaces the element's text, so a screen reader hears "Total, Money" and
+   * never the `€55.00` a sighted reader is looking at.
+   */
   it('names the variable, its format and its state to assistive tech', async () => {
-    // The pill is one text run to a screen reader, and the blue/orange
-    // distinction carries meaning that colour alone does not convey.
-    await mountEditor(docWith({ key: 'order.total', format: 'money' }));
+    await mountEditor(docWith(MONEY));
 
     expect(screen.getByLabelText('Variable: Total, Money')).toBeInTheDocument();
   });
 
   it('selects the pill when it is clicked', async () => {
-    const editor = await mountEditor(
-      docWith({ key: 'order.total', format: 'money' }),
-    );
+    const editor = await mountEditor(docWith(MONEY));
 
     fireEvent.mouseDown(pill());
 
@@ -198,9 +270,7 @@ describe('variable pill', () => {
   });
 
   it('stays selected when an already-selected pill is clicked again', async () => {
-    const editor = await mountEditor(
-      docWith({ key: 'order.total', format: 'money' }),
-    );
+    const editor = await mountEditor(docWith(MONEY));
 
     fireEvent.mouseDown(pill());
     fireEvent.mouseDown(pill());
@@ -257,13 +327,13 @@ describe('variable inspector', () => {
   };
 
   it('shows nothing while no variable is selected', async () => {
-    await mountWithInspector(docWith({ key: 'order.total', format: 'money' }));
+    await mountWithInspector(docWith(MONEY));
 
     expect(screen.queryByLabelText('Variable')).toBeNull();
   });
 
   it('shows the variable and its format once the pill is selected', async () => {
-    await mountWithInspector(docWith({ key: 'order.total', format: 'money' }));
+    await mountWithInspector(docWith(MONEY));
 
     fireEvent.mouseDown(pill());
 
@@ -272,7 +342,7 @@ describe('variable inspector', () => {
   });
 
   it('offers only the formats the variable supports', async () => {
-    await mountWithInspector(docWith({ key: 'order.total', format: 'money' }));
+    await mountWithInspector(docWith(MONEY));
 
     fireEvent.mouseDown(pill());
 
@@ -286,7 +356,7 @@ describe('variable inspector', () => {
   });
 
   it('writes a format change back to the node', async () => {
-    await mountWithInspector(docWith({ key: 'order.total', format: 'money' }));
+    await mountWithInspector(docWith(MONEY));
 
     fireEvent.mouseDown(pill());
 
@@ -294,10 +364,12 @@ describe('variable inspector', () => {
 
     fireEvent.change(format, { target: { value: 'text' } });
 
+    // Visible in the pill, not just stored: dropping the currency formatting
+    // leaves the bare number the template would then send.
     await waitFor(() => {
-      expect(
-        document.querySelector('[data-variable-node]')?.textContent,
-      ).not.toMatch(/Money/);
+      expect(document.querySelector('[data-variable-node]')?.textContent).toBe(
+        '55',
+      );
     });
   });
 });

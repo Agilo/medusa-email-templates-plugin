@@ -1,3 +1,4 @@
+import { Tooltip, TooltipProvider } from '@medusajs/ui';
 import { EmailNode } from '@react-email/editor/core';
 import type { RawCommands } from '@tiptap/core';
 import { NodeSelection } from '@tiptap/pm/state';
@@ -10,6 +11,7 @@ import type { MouseEvent as ReactMouseEvent } from 'react';
 
 import type { EmailTemplateVariable } from '../../lib/types';
 import { FORMAT_LABELS } from '../../lib/variables';
+import { formatDate, formatMoney } from '../../../lib/rendering/format-value';
 import {
   isVariableFormat,
   toLiquidExpression,
@@ -84,34 +86,87 @@ const PILL_BASE = [
  * to fill), or a key the event no longer publishes (solid, because something
  * *was* chosen and has since gone).
  *
- * `active` is the fill a selected pill takes, alongside the focus ring. The
- * `-icon` tone is the strongest of the pair and reads as a hairline against
- * the pill's own fill.
+ * `active` is the fill a selected pill takes, alongside the focus ring.
+ *
+ * Each tone carried a third entry, for the hairline between the label and the
+ * format name. Both are gone: the pill shows the formatted example now, so
+ * there is no second segment to divide.
  */
 const PILL_TONES = {
   chosen: {
     idle: 'border-ui-tag-blue-border bg-ui-tag-blue-bg text-ui-tag-blue-text hover:bg-ui-tag-blue-bg-hover',
     active: 'bg-ui-tag-blue-bg-hover',
-    rule: 'border-ui-tag-blue-icon',
   },
   empty: {
     idle: 'border-dashed border-ui-tag-orange-border bg-ui-tag-orange-bg text-ui-tag-orange-text hover:bg-ui-tag-orange-bg-hover',
     active: 'bg-ui-tag-orange-bg-hover',
-    rule: 'border-ui-tag-orange-icon',
   },
   stale: {
     idle: 'border-ui-tag-orange-border bg-ui-tag-orange-bg text-ui-tag-orange-text hover:bg-ui-tag-orange-bg-hover',
     active: 'bg-ui-tag-orange-bg-hover',
-    rule: 'border-ui-tag-orange-icon',
   },
 } as const;
 
 /**
+ * The value a variable will stand for, rendered exactly as a recipient sees it.
+ *
+ * Through the send path's own formatters, not a copy of them —
+ * `format-value.ts` is kept dependency-free for this. A canvas that formatted
+ * its own way would be showing a guess.
+ *
+ * An empty string means the example cannot be shown: `formatMoney` and
+ * `formatDate` both answer that way for input they cannot read, and a host's
+ * custom event is free to declare `example: {}`. The caller falls back to the
+ * label, because a name is more use than `[object Object]` sitting inline.
+ */
+const exampleText = (
+  variable: EmailTemplateVariable,
+  format: VariableFormat,
+  variables: EmailTemplateVariable[],
+  currencySource: string | undefined,
+): string => {
+  if (format === 'money') {
+    /*
+     * The currency is another variable's example — `order.total` names
+     * `order.currency_code`, whose own example is `eur`. Without it
+     * `formatMoney` gives a bare `40.00`, which is still honest: that is what
+     * sends when the currency key is missing.
+     */
+    return formatMoney(
+      variable.example,
+      variables.find((entry) => entry.key === currencySource)?.example,
+    );
+  }
+
+  if (format !== 'text') {
+    return formatDate(variable.example, format);
+  }
+
+  // Plain text takes the example as it stands, including a date left
+  // unformatted — an ISO string is unlovely, but it is what that pill sends.
+  return typeof variable.example === 'string' ||
+    typeof variable.example === 'number'
+    ? String(variable.example)
+    : '';
+};
+
+/**
  * What the pill shows on the canvas.
  *
- * The whole point of the structured model is that an admin never reads Liquid,
- * so this renders the variable's label and, when it is displayed some
- * particular way, the format beside it — never `{{ order.total | money: … }}`.
+ * The example value, not the variable's name. The canvas is where the email is
+ * composed, so it should read like the email: line lengths, wrapping and the
+ * look of a formatted total are all things you are judging while you write,
+ * and `Total | Money` tells you nothing about any of them. It also makes the
+ * Inspector's Format control demonstrate itself — pick Long date and the pill
+ * says `October 1, 2026` instead of the words "Long date".
+ *
+ * The name has not gone, it has moved: a tooltip on hover, `aria-label` for a
+ * screen reader, and the Inspector's own Variable row whenever the pill is
+ * selected. What stays as text is the two states that have no value to show —
+ * a pill with no variable chosen, and one whose key the event has stopped
+ * publishing.
+ *
+ * Either way an admin never reads Liquid; that part is unchanged.
  */
 const VariablePill = ({
   node,
@@ -134,18 +189,66 @@ const VariablePill = ({
   const tone = PILL_TONES[state];
   const showFormat = format !== 'text';
 
+  const currencySource =
+    typeof node.attrs.currencySource === 'string'
+      ? node.attrs.currencySource
+      : undefined;
+
+  /*
+   * `||` at every step, not `??`: an unusable example renders as an empty
+   * string rather than null, and an unchosen pill's key is `''`. Both are
+   * falsy but neither is nullish, so `??` would keep them and the pill would
+   * render blank.
+   */
+  const text =
+    state === 'empty'
+      ? UNSET_VARIABLE_LABEL
+      : variable
+        ? exampleText(variable, format, variables ?? [], currencySource) ||
+          variable.label
+        : key;
+
+  const name =
+    state === 'empty' ? UNSET_VARIABLE_LABEL : (variable?.label ?? key);
+
   /*
    * Spelled out because the pill is one run of text to a screen reader, which
    * would otherwise read the label and the format as unrelated words, and the
    * blue-versus-orange distinction not at all.
+   *
+   * The format belongs here even though the tooltip drops it: `aria-label`
+   * replaces the element's text, so a screen reader is told "Total, Money" and
+   * never hears the `€55.00` a sighted reader is looking at. Commas because
+   * they are what a screen reader pauses on.
    */
   const description = [
-    state === 'empty' ? UNSET_VARIABLE_LABEL : (variable?.label ?? key),
+    name,
     showFormat ? FORMAT_LABELS[format] : null,
     state === 'stale' ? 'not available for this event' : null,
   ]
     .filter(Boolean)
     .join(', ');
+
+  /*
+   * The tooltip says only what the pill cannot.
+   *
+   * No format: the pill already shows `€55.00` or `October 1, 2026`, so naming
+   * the format repeats what is on screen, and the Inspector has the control
+   * for changing it. What is left is the variable's name, which the pill gave
+   * up when it started showing values.
+   *
+   * Nothing at all for a pill with no variable chosen — its text is already
+   * "Choose a variable", and a tooltip repeating that is noise.
+   *
+   * An em dash for a stale pill rather than a comma, because the warning is
+   * subordinate to the name rather than a second fact of equal weight.
+   */
+  const tooltip =
+    state === 'empty'
+      ? null
+      : state === 'stale'
+        ? `${name} — not available for this event`
+        : name;
 
   return (
     <NodeViewWrapper
@@ -204,16 +307,39 @@ const VariablePill = ({
       data-variable-key={key || undefined}
       data-variable-state={state}
     >
-      {/* `||`, not `??`: an unchosen pill has an empty-string key, which is
-          not nullish, so `??` would return it and render nothing at all. */}
-      {variable?.label || key || UNSET_VARIABLE_LABEL}
-      {/* Only worth naming when it is not the plain default. A hairline rule
-          rather than a separator character, which would be read aloud and
-          would wrap as its own token. */}
-      {showFormat && (
-        <span className={`ml-[5px] border-l pl-[5px] font-normal ${tone.rule}`}>
-          {FORMAT_LABELS[format]}
-        </span>
+      {/*
+        The name, now that the pill shows the value instead.
+
+        A real tooltip rather than `title`, which never surfaced inside the
+        contenteditable however the attribute was set — and which takes about a
+        second to appear even where it does work, too slow for something you
+        read while scanning a template.
+
+        Wrapped around an inner span on purpose. `Tooltip` renders its trigger
+        `asChild`, so it merges its handlers onto whatever element it is given,
+        and the wrapper above carries the `onMouseDown` that selection depends
+        on — the comments there explain how narrow that path already is. The
+        span keeps the two sets apart; the mousedown still reaches the wrapper
+        by bubbling.
+
+        Its own provider, rather than relying on the dashboard's. Node views
+        render through portals that do carry React context, so the app's
+        provider would reach this in the admin — but nothing guarantees an
+        ancestor, and Radix throws without one. Nesting providers is supported
+        and a provider is context and a timer, nothing more.
+
+        Unlike the picker that started all this, a tooltip never takes focus
+        and installs no outside-mousedown listener, so the editor's focus scope
+        has nothing to react to.
+      */}
+      {tooltip ? (
+        <TooltipProvider>
+          <Tooltip content={tooltip}>
+            <span>{text}</span>
+          </Tooltip>
+        </TooltipProvider>
+      ) : (
+        text
       )}
     </NodeViewWrapper>
   );
