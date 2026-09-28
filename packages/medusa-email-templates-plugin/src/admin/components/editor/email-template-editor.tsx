@@ -18,6 +18,7 @@ import type { EmailTemplateDetail } from '../../lib/types';
 import { isLiquidUrl, validateUrl } from '../../lib/liquid-url';
 import { deriveEditorContent } from './derive-document';
 import { LinkTextInspector } from './link-inspector';
+import { claimLinkShortcut } from './search-shortcut';
 import { VariableInspector } from './variable-inspector';
 import { VariableNode } from './variable-node';
 import { variableSlashCommand } from './variable-slash-command';
@@ -209,6 +210,9 @@ const EmailTemplateEditor = forwardRef<
     // against. `false` would defer creation to an effect and cost an extra
     // render for nothing.
     immediatelyRender: true,
+    // Cmd/Ctrl-K makes a link here rather than opening the dashboard's search
+    // palette. See `search-shortcut.ts` for why both used to happen at once.
+    editorProps: { handleDOMEvents: { keydown: claimLinkShortcut } },
     /*
      * Seeding fires update events of its own, so only a document-changing
      * transaction after the editor has settled counts as an edit. Without a
