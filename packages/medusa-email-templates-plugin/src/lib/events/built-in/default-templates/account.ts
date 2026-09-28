@@ -38,9 +38,20 @@ const layout = (heading: string, body: string): string => `<!doctype html>
  * — inside a paragraph ProseMirror lifts it out and leaves the empty paragraph
  * behind. The margin lives there since the anchor is `inline-block` and cannot
  * carry the block spacing itself.
+ *
+ * The padding is longhand, and has to be. React Email's `Button` runs
+ * `parsePadding` over the style it is given and re-emits the four longhand
+ * properties *after* spreading that style, and `parsePadding` lets a longhand
+ * key override whatever the `padding` shorthand set. The editor's theme
+ * supplies button padding in longhand, so it always lands last and a shorthand
+ * here never reaches the sent email — `padding: 30px 40px` exports at the
+ * theme's size exactly as `10px 18px` does. Written this way the value is
+ * carried into the export and shown in the inspector's Spacing section, so a
+ * template that is opened and saved keeps the button it had rather than
+ * quietly resizing to the theme default.
  */
 const button = (url: string, label: string): string =>
-  `<div style="margin:0 0 24px"><a data-id="react-email-button" href="${url}" style="display:inline-block;padding:10px 18px;background-color:#111827;color:#ffffff;text-decoration:none;border-radius:6px">${label}</a></div>`;
+  `<div style="margin:0 0 24px"><a data-id="react-email-button" href="${url}" style="display:inline-block;padding-top:10px;padding-right:18px;padding-bottom:10px;padding-left:18px;background-color:#111827;color:#ffffff;text-decoration:none;border-radius:6px">${label}</a></div>`;
 
 export const inviteCreatedDefaultTemplate: EmailEventDefaultTemplate = {
   subject: "You've been invited to {{ store.name }}",

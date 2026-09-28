@@ -91,13 +91,10 @@ module.exports = defineConfig({
           // `/.vite/deps/…?v=<browserHash>` using whichever hash is current
           // when it transforms the file. A specifier missing from this list is
           // discovered at request time instead, which re-runs the optimizer
-          // and moves that hash — and since `hmr` is off above, no reload is
-          // sent, so the page keeps the old hash while the newly transformed
-          // chunk gets the new one. Two copies of React then run side by side
-          // and the second one's dispatcher is null, which surfaces as
-          // "Cannot read properties of null (reading 'useMemo')" on first
-          // visit to a route that lazy-loads the editor. A refresh clears it,
-          // and the next republish brings it back.
+          // and moves that hash, leaving the page mixing two generations of
+          // the same dependency. Listing them here keeps the first pass
+          // complete; the HMR note above covers what catches the ones that
+          // still slip through.
           include: [
             ...(config.optimizeDeps?.include ?? []),
             '@react-email/editor',

@@ -246,4 +246,37 @@ describe('deriveEditorContent', () => {
       expect(unformattedHtml).toContain(expression);
     });
   });
+
+  /*
+   * The same property, for the button's size rather than its expressions.
+   *
+   * React Email's `Button` parses the padding out of the style it is handed
+   * and re-emits the four longhand properties after spreading that style, and
+   * `parsePadding` lets a longhand key override whatever the shorthand set.
+   * The editor's theme supplies button padding in longhand, so a `padding`
+   * shorthand on the node is always overridden and never reaches the export —
+   * silently, and at any value. Opening a template and saving it would then
+   * resize its button to the theme default.
+   */
+  it('exports the button at the size the template asked for', async () => {
+    const editor = new Editor({
+      extensions,
+      content: deriveEditorContent(
+        inviteCreatedDefaultTemplate.html,
+        extensions,
+      ),
+    });
+    editors.push(editor);
+
+    const { unformattedHtml } = await composeReactEmail({ editor });
+    const anchor = /<a[^>]*data-id="react-email-button"[^>]*>|<a[^>]*>/.exec(
+      unformattedHtml,
+    )?.[0];
+
+    expect(anchor).toBeDefined();
+    expect(anchor).toContain('padding-top:10px');
+    expect(anchor).toContain('padding-right:18px');
+    expect(anchor).toContain('padding-bottom:10px');
+    expect(anchor).toContain('padding-left:18px');
+  });
 });
