@@ -5,13 +5,18 @@ import { Editor, type JSONContent } from '@tiptap/core';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { inviteCreatedDefaultTemplate } from '../../../../lib/events/built-in/default-templates/account';
+import {
+  CARD_MARGIN,
+  EMAIL_DESIGN,
+} from '../../../../lib/events/built-in/default-templates/design';
+import { EMAIL_THEME } from '../email-template-editor';
 import { orderPlacedDefaultTemplate } from '../../../../lib/events/built-in/default-templates/order-placed';
 import { deriveEditorContent, withVariableNodes } from '../derive-document';
 import { VariableNode } from '../variable-node';
 
 const extensions = [
   StarterKit.configure(),
-  EmailTheming.configure({ theme: 'basic' }),
+  EmailTheming.configure({ theme: EMAIL_THEME }),
   VariableNode,
 ];
 
@@ -245,6 +250,40 @@ describe('deriveEditorContent', () => {
     ].forEach((expression) => {
       expect(unformattedHtml).toContain(expression);
     });
+  });
+
+  /*
+   * The whole reason `design.ts` exists. The default templates and the editor
+   * theme describe one email from one set of numbers, so a template that is
+   * opened and saved comes back looking like itself — grey page, white card,
+   * rounded, padded, near-black text. Left to `basic` the export is white on
+   * white, square, and with the text against the card's edge.
+   *
+   * Asserted against `EMAIL_DESIGN` rather than against literals, so the test
+   * follows a deliberate change to the design and still fails when the two
+   * sides drift apart, which is the thing worth catching.
+   */
+  it('exports the design the default template describes', async () => {
+    const editor = new Editor({
+      extensions,
+      content: deriveEditorContent(orderPlacedDefaultTemplate.html, extensions),
+    });
+    editors.push(editor);
+
+    const { unformattedHtml } = await composeReactEmail({ editor });
+    const body = /<body[^>]*>/.exec(unformattedHtml)?.[0] ?? '';
+    const card = /<table align="center"[^>]*>/.exec(unformattedHtml)?.[0] ?? '';
+    const cell =
+      /<td style="padding-top[^>]*>/.exec(unformattedHtml)?.[0] ?? '';
+
+    expect(body).toContain(`background-color:${EMAIL_DESIGN.pageBackground}`);
+    expect(card).toContain(`background-color:${EMAIL_DESIGN.cardBackground}`);
+    expect(card).toContain(`color:${EMAIL_DESIGN.textColor}`);
+    expect(card).toContain(`border-radius:${EMAIL_DESIGN.cardRadius}px`);
+    expect(card).toContain(`max-width:${EMAIL_DESIGN.cardWidth}px`);
+    expect(card).toContain(`margin:${CARD_MARGIN}`);
+    expect(cell).toContain(`padding-top:${EMAIL_DESIGN.cardPadding}px`);
+    expect(cell).toContain(`padding-left:${EMAIL_DESIGN.cardPadding}px`);
   });
 
   /*

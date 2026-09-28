@@ -1,6 +1,6 @@
 import { composeReactEmail } from '@react-email/editor/core';
 import { StarterKit } from '@react-email/editor/extensions';
-import { EmailTheming } from '@react-email/editor/plugins';
+import { EmailTheming, extendTheme } from '@react-email/editor/plugins';
 import {
   BubbleMenu,
   defaultSlashCommands,
@@ -14,6 +14,10 @@ import '@react-email/editor/themes/default.css';
 import { EditorContent, EditorContext, useEditor } from '@tiptap/react';
 import { forwardRef, useImperativeHandle, useMemo, type FC } from 'react';
 
+import {
+  CARD_MARGIN,
+  EMAIL_DESIGN,
+} from '../../../lib/events/built-in/default-templates/design';
 import type { EmailTemplateDetail } from '../../lib/types';
 import { isLiquidUrl, validateUrl } from '../../lib/liquid-url';
 import { deriveEditorContent } from './derive-document';
@@ -45,6 +49,35 @@ type EmailTemplateEditorProps = {
  * we build against; the runtime value is an ordinary component.
  */
 const InspectorBreadcrumb = Inspector.Breadcrumb as unknown as FC;
+
+/**
+ * The canvas and the export, drawn from the same numbers as the default
+ * templates.
+ *
+ * Left alone, `basic` renders a white page with square corners, black text and
+ * no padding at all — so opening a template and saving it replaced the design
+ * the HTML described with the library's defaults, without touching a thing.
+ * `design.ts` holds the values; this hands them to the editor.
+ *
+ * `body` gets the page colour but no padding, because it cannot have any:
+ * `RESET_BASIC.reset` carries `padding: "0"` and is applied after the theme,
+ * so every form of it exports as zero. The gutter is a margin on the card
+ * instead, which is what `layout` writes too.
+ */
+export const EMAIL_THEME = extendTheme('basic', {
+  body: { backgroundColor: EMAIL_DESIGN.pageBackground },
+  container: {
+    backgroundColor: EMAIL_DESIGN.cardBackground,
+    color: EMAIL_DESIGN.textColor,
+    width: EMAIL_DESIGN.cardWidth,
+    borderRadius: EMAIL_DESIGN.cardRadius,
+    margin: CARD_MARGIN,
+    paddingTop: EMAIL_DESIGN.cardPadding,
+    paddingRight: EMAIL_DESIGN.cardPadding,
+    paddingBottom: EMAIL_DESIGN.cardPadding,
+    paddingLeft: EMAIL_DESIGN.cardPadding,
+  },
+});
 
 /*
  * The panel, plus patches for gaps in the library's own stylesheet.
@@ -164,7 +197,7 @@ const EmailTemplateEditor = forwardRef<
             isLiquidUrl(url) || ctx.defaultValidate(url),
         },
       }),
-      EmailTheming,
+      EmailTheming.configure({ theme: EMAIL_THEME }),
       // Each pill resolves its own label from this list, so the canvas shows
       // "Total | Money" rather than the generated Liquid.
       VariableNode.configure({ variables: template.variables }),
