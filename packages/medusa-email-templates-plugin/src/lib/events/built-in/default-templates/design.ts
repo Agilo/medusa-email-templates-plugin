@@ -26,23 +26,37 @@ export const EMAIL_DESIGN = {
   cardWidth: 600,
   cardRadius: 8,
   cardPadding: 24,
-  /** Above and below the card. */
-  pageGutter: 24,
+  /**
+   * Page showing above and below the card.
+   *
+   * Deliberately smaller than `cardPadding`. There is no matching value to the
+   * sides — the card is centred with `auto` margins, so the space there is
+   * whatever the viewport has left over, from nothing in a narrow preview to
+   * a hundred pixels or more in a desktop client. A tall gutter reads as a gap
+   * rather than a frame next to that.
+   */
+  pageGutter: 8,
   fontFamily:
     "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif",
 } as const;
 
 /**
- * The gutter as a margin on the card, not padding on the `<body>`.
+ * The gutter as a margin on the card, and horizontal centring.
  *
- * Not a stylistic choice — body padding cannot be themed. `RESET_BASIC.reset`
- * carries `padding: "0"` and is applied to the body after the theme, so any
- * value set there exports as zero whatever form it takes. A margin on the card
- * survives, and is the closest thing the editor can reproduce.
+ * Padding on the `<body>` would be the obvious way and cannot be used:
+ * `RESET_BASIC.reset` carries `padding: "0"` and is applied after the theme,
+ * so every form of it exports as zero.
  *
- * The visible difference from padding is on a narrow screen: the card runs
- * edge to edge instead of keeping a strip of page either side, because it is
- * `width: 100%` and auto margins have nothing to take from.
+ * The canvas draws this margin above the card but not below, so the card reads
+ * as sitting slightly low rather than framed. That is a canvas limitation, not
+ * a fault in the email: an iframe or a mail client gives the body a real
+ * viewport, the page colour fills it, and both bands appear — which is what
+ * the preview shows.
+ *
+ * Kept in spite of that, because the canvas is an approximation either way. It
+ * already cannot show the page colour running past the end of the content, for
+ * the same reason. Trading a band of space in every email that actually sends
+ * for exactness in the editor is the wrong way round.
  */
 export const CARD_MARGIN = `${EMAIL_DESIGN.pageGutter}px auto`;
 

@@ -72,6 +72,18 @@ export const EMAIL_THEME = extendTheme('basic', {
     width: EMAIL_DESIGN.cardWidth,
     borderRadius: EMAIL_DESIGN.cardRadius,
     margin: CARD_MARGIN,
+    /*
+     * Both forms, and both are needed.
+     *
+     * The longhands are what the export reads — the theme's own defaults are
+     * longhand zeros, and a shorthand alone lands after them only by luck of
+     * declaration order. The shorthand is what the *panel* reads:
+     * `InspectorDocumentDefaults` looks up `padding` and nothing else, so with
+     * longhands alone it finds no value, falls back to the global default of
+     * 8, and shows a number the email never had. Worse, editing that field
+     * writes a shorthand that would then override the longhands.
+     */
+    padding: EMAIL_DESIGN.cardPadding,
     paddingTop: EMAIL_DESIGN.cardPadding,
     paddingRight: EMAIL_DESIGN.cardPadding,
     paddingBottom: EMAIL_DESIGN.cardPadding,
@@ -161,7 +173,36 @@ const INSPECTOR_CLASS = [
  * `--border-base` is #e4e4e7. `border-ui-border-strong` (#d4d4d8) is the one
  * neutral step up if it should read more clearly.
  */
-const CANVAS_CLASS = ['p-6', '[&_[data-type=container]]:mx-auto'].join(' ');
+/*
+ * `flow-root` is what makes the page colour frame the card top *and* bottom.
+ *
+ * The theme paints the body styles onto `.ProseMirror` itself, and the card is
+ * its child carrying `margin: 24px auto`. That element is handed the theme's
+ * reset — `padding: 0`, no border, height auto — which is exactly the shape in
+ * which a child's margins collapse through their parent.
+ *
+ * Only the bottom one does, though, and the asymmetry is worth writing down
+ * because it looks like a bug either way. The editor inserts a hidden 1px
+ * `[data-type=globalContent]` div as the first child, so the card's top margin
+ * has a sibling above it and stays inside; the card *is* the last child, so
+ * its bottom margin escapes and the page colour stops at the card's edge.
+ *
+ * `flow-root` gives `.ProseMirror` a block formatting context, which keeps
+ * both margins in. It sits here rather than in the theme deliberately: the
+ * theme's body styles are exported into the sent email, and this is a canvas
+ * problem — a mail client gives the body a real viewport and draws both bands
+ * without help.
+ *
+ * Selected by `data-editor-theme-scope`, the attribute the theming plugin puts
+ * on the editor. Not `.ProseMirror`: the safelist extractor's bracket-variant
+ * pattern admits no `.`, so a class selector is silently truncated and the
+ * rule never generated.
+ */
+const CANVAS_CLASS = [
+  'p-6',
+  '[&_[data-type=container]]:mx-auto',
+  '[&_[data-editor-theme-scope]]:flow-root',
+].join(' ');
 
 /**
  * The visual editor.
