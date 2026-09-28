@@ -62,7 +62,9 @@ describe('subject editor', () => {
       expect(document.querySelector('[data-variable-node]')).not.toBeNull();
     });
 
-    expect(screen.getByText('Store name')).toBeInTheDocument();
+    // The pill shows the example value, so the field reads as the subject
+    // line a recipient receives rather than as a row of variable names.
+    expect(screen.getByText('Shop')).toBeInTheDocument();
     // The whole point: no Liquid on the field.
     expect(field().textContent).not.toContain('{{');
   });

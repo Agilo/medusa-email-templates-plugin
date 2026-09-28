@@ -114,10 +114,11 @@ describe('EmailTemplatePage', () => {
     expect(await screen.findByText('Order placed')).toBeInTheDocument();
     expect(screen.getByText('order.placed')).toBeInTheDocument();
 
-    // The stored subject arrives as a pill plus its surrounding text, so the
-    // field shows the variable's label rather than the raw expression.
+    // The stored subject arrives as a pill plus its surrounding text, and the
+    // pill shows the example value — so the field reads as the subject line
+    // that will be sent, not as the expression behind it.
     await waitFor(() => {
-      expect(subjectField().textContent).toContain('Order number');
+      expect(subjectField().textContent).toBe('Your order #1001');
     });
     expect(subjectField().textContent).not.toContain('{{');
   });
