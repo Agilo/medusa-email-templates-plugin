@@ -223,8 +223,8 @@ const EmailTemplatePage = () => {
 
   return (
     <div className="flex flex-col gap-y-3">
-      <Container className="divide-y p-0">
-        <div className="flex flex-wrap items-start justify-between gap-4 px-6 py-4">
+      <Container className="flex flex-col gap-y-3 px-6 py-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-0 items-start gap-x-3">
             <IconButton
               size="small"
@@ -310,7 +310,7 @@ const EmailTemplatePage = () => {
         </div>
 
         {warning && (
-          <div className="px-6 py-4">
+          <div>
             <Alert variant="warning">{WARNING_TEXT[warning] ?? warning}</Alert>
           </div>
         )}
