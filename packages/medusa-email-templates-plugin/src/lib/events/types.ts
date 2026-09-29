@@ -46,6 +46,25 @@ export interface EmailTemplateVariable {
   itemTemplate?: string;
 }
 
+/**
+ * A ready-made piece of email the editor can insert, such as an order's
+ * totals. Offered as a slash command; once inserted it is ordinary editable
+ * content, not a block of its own.
+ */
+export interface EmailTemplateSnippet {
+  /** Stable identifier, unique within the event. */
+  key: string;
+  /** The slash command's title, for example "Order totals". */
+  label: string;
+  description?: string;
+  /**
+   * The HTML inserted, written with the event's `{{ … }}` expressions, which
+   * become pills. Use `columns()` for side-by-side cells, so the result can
+   * be reshaped in the editor.
+   */
+  html: string;
+}
+
 export interface EmailEventDefaultTemplate {
   subject: string;
   html: string;
@@ -75,6 +94,8 @@ export interface EmailEventDefinition<TData = unknown> {
     container: MedusaContainer,
   ) => Promise<Record<string, unknown>>;
   variables: EmailTemplateVariable[];
+  /** Ready-made content the editor offers to insert. */
+  snippets?: EmailTemplateSnippet[];
   defaultTemplate: EmailEventDefaultTemplate;
   getIdempotencyKey?: (data: TData) => string | undefined;
   getResource?: (data: TData) => {

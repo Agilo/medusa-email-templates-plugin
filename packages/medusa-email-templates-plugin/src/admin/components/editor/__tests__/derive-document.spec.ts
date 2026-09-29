@@ -4,7 +4,13 @@ import { EmailTheming } from '@react-email/editor/plugins';
 import { Editor, type JSONContent } from '@tiptap/core';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { inviteCreatedDefaultTemplate } from '../../../../lib/events/built-in/default-templates/account';
+import {
+  emailVerificationDefaultTemplate,
+  inviteCreatedDefaultTemplate,
+  inviteResentDefaultTemplate,
+  passwordResetCustomerDefaultTemplate,
+  passwordResetUserDefaultTemplate,
+} from '../../../../lib/events/built-in/default-templates/account';
 import {
   CARD_MARGIN,
   columns,
@@ -217,6 +223,7 @@ describe('deriveEditorContent', () => {
       'item.variant_title',
       'item.total',
       'order.subtotal',
+      'order.discount_total',
       'order.shipping_total',
       'order.tax_total',
       'order.total',
@@ -270,10 +277,10 @@ describe('deriveEditorContent', () => {
 
     expect(collect(doc, 'heading')).toHaveLength(1);
     // Every row opens as an editable layout rather than a fixed table: the
-    // item row, then the four totals, each with its two cells.
+    // item row, then the five totals, each with its two cells.
     expect(collect(doc, 'table')).toHaveLength(0);
-    expect(collect(doc, 'twoColumns')).toHaveLength(5);
-    expect(collect(doc, 'columnsColumn')).toHaveLength(10);
+    expect(collect(doc, 'twoColumns')).toHaveLength(6);
+    expect(collect(doc, 'columnsColumn')).toHaveLength(12);
   });
 
   /*
@@ -289,9 +296,18 @@ describe('deriveEditorContent', () => {
       extensions,
     );
 
+    // Longhand on every column, which is what the Spacing field reads.
     collect(doc, 'columnsColumn').forEach((column) => {
-      expect(column.attrs?.style).toContain('padding-top:8px');
-      expect(column.attrs?.style).toContain('padding-bottom:8px');
+      expect(column.attrs?.style).toMatch(/padding-top:\d+px/);
+      expect(column.attrs?.style).toMatch(/padding-bottom:\d+px/);
+    });
+
+    // Both cells of a row share their spacing, or the value drops out of
+    // line with its label.
+    collect(doc, 'twoColumns').forEach((row) => {
+      const [label, value] = row.content ?? [];
+
+      expect(value.attrs?.style).toBe(label.attrs?.style);
     });
 
     const editor = new Editor({ extensions, content: doc });
@@ -302,11 +318,83 @@ describe('deriveEditorContent', () => {
       /<td data-id="__react-email-column"[\s\S]*?<\/td>/g,
     );
 
-    expect(cells).toHaveLength(10);
+    expect(cells).toHaveLength(12);
     cells?.forEach((cell) => {
       expect(cell).not.toContain('padding-top:0.5em');
       expect(cell).not.toContain('padding-bottom:0.5em');
     });
+  });
+
+  /*
+   * The gaps above and below the greeting are the margins the template writes
+   * and nothing more. The theme's own padding on paragraphs and headings used
+   * to stack on top of them once a template was saved, tripling the space
+   * between two lines of prose.
+   */
+  it('spaces the title and greeting by their own margins alone', async () => {
+    const editor = new Editor({
+      extensions,
+      content: deriveEditorContent(orderPlacedDefaultTemplate.html, extensions),
+    });
+    editors.push(editor);
+
+    const { unformattedHtml } = await composeReactEmail({ editor });
+    const heading = /<h1[^>]*>/.exec(unformattedHtml)?.[0] ?? '';
+    const greeting = /<p[^>]*>Hi /.exec(unformattedHtml)?.[0] ?? '';
+    const intro = /<p[^>]*>We received/.exec(unformattedHtml)?.[0] ?? '';
+
+    expect(heading).toContain('font-size:24px');
+    expect(heading).not.toContain('padding-top:0.389em');
+    [greeting, intro].forEach((paragraph) => {
+      expect(paragraph).not.toContain('padding-top:0.5em');
+      expect(paragraph).not.toContain('padding-bottom:0.5em');
+    });
+  });
+
+  /*
+   * The same, for every built-in email. Any paragraph or heading that leaves
+   * the theme's padding in place shows up here as a gap that grows once the
+   * template is saved.
+   */
+  it.each([
+    ['order placed', orderPlacedDefaultTemplate],
+    ['invite created', inviteCreatedDefaultTemplate],
+    ['invite resent', inviteResentDefaultTemplate],
+    ['password reset (user)', passwordResetUserDefaultTemplate],
+    ['password reset (customer)', passwordResetCustomerDefaultTemplate],
+    ['email verification', emailVerificationDefaultTemplate],
+  ])('keeps the theme spacing out of the %s email', async (_, template) => {
+    const editor = new Editor({
+      extensions,
+      content: deriveEditorContent(template.html, extensions),
+    });
+    editors.push(editor);
+
+    const { unformattedHtml } = await composeReactEmail({ editor });
+    const blocks = unformattedHtml.match(/<(p|h1)\b[^>]*>/g) ?? [];
+
+    expect(blocks.length).toBeGreaterThan(0);
+    blocks.forEach((block) => {
+      expect(block).not.toMatch(/padding-(top|bottom):0\.(5|389)em/);
+    });
+  });
+
+  it('sets the totals apart, packs them close, and rules off the total', () => {
+    const doc = deriveEditorContent(
+      orderPlacedDefaultTemplate.html,
+      extensions,
+    );
+    // The item row comes first; the five after it are the totals.
+    const totals = collect(doc, 'twoColumns')
+      .slice(1)
+      .map((row) => row.content?.[0].attrs?.style as string);
+
+    expect(totals[0]).toContain('padding-top:24px');
+    totals.slice(1, 4).forEach((style) => {
+      expect(style).toContain('padding-top:2px');
+      expect(style).toContain('padding-bottom:2px');
+    });
+    expect(totals[4]).toContain('border-top:1px solid #e5e7eb');
   });
 
   /*

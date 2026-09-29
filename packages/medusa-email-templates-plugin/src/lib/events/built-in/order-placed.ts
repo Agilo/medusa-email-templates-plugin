@@ -5,6 +5,7 @@ import { defineEmailEvent } from '../define-email-event';
 import { getOrderUrl, getStorefrontUrl } from '../urls';
 import {
   ORDER_ITEM_ROW,
+  ORDER_TOTALS,
   orderPlacedDefaultTemplate,
 } from './default-templates/order-placed';
 import { retrieveStoreName } from './store';
@@ -82,6 +83,14 @@ export const orderPlacedEmailEvent = defineEmailEvent<OrderPlacedEventData>({
   label: 'Order placed',
   description: 'Sent to the customer when an order is placed.',
   defaultTemplate: orderPlacedDefaultTemplate,
+  snippets: [
+    {
+      key: 'order-totals',
+      label: 'Order totals',
+      description: 'Subtotal, discount, shipping, tax and total',
+      html: ORDER_TOTALS,
+    },
+  ],
   getIdempotencyKey: (data) => `order.placed:${data.id}`,
   getResource: (data) => ({ resource_id: data.id, resource_type: 'order' }),
 

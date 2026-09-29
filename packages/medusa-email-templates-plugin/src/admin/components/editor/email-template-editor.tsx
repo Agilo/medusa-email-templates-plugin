@@ -24,6 +24,7 @@ import { deriveEditorContent } from './derive-document';
 import { LinkTextInspector } from './link-inspector';
 import { RepeatNode } from './repeat-node';
 import { repeatSlashCommands } from './repeat-slash-command';
+import { snippetSlashCommands } from './snippet-slash-command';
 import { claimLinkShortcut } from './search-shortcut';
 import { VariableBubbleMenu } from './variable-bubble-menu';
 import { VariableInspector } from './variable-inspector';
@@ -348,8 +349,9 @@ const EmailTemplateEditor = forwardRef<
       ...defaultSlashCommands,
       variableSlashCommand(template.variables),
       ...repeatSlashCommands(template.variables),
+      ...snippetSlashCommands(template.snippets),
     ],
-    [template.variables],
+    [template.variables, template.snippets],
   );
 
   if (!editor) {

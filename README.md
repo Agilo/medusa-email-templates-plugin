@@ -273,6 +273,8 @@ An array is declared as `type: 'list'`, with `fields` describing one entry. The 
 }
 ```
 
+An event can also offer `snippets`: ready-made content the editor inserts from its slash menu, such as the order confirmation's "Order totals". Each has a `key`, a `label` and the `html` to insert, written with the event's `{{ … }}` expressions. Once inserted, a snippet is ordinary editable content. Build side-by-side cells with `columns()` from `medusa-email-templates-plugin/registry`, so they open as a Columns layout that can be reshaped.
+
 A field's `currencyKey` stays an absolute path, such as `order.currency_code`, because the loop can still read the outer values. To use the same block in a default template, wrap the entry HTML with `repeat('review.photos', html)`, exported from `medusa-email-templates-plugin/registry`. It writes the shape the editor reads back.
 
 The same module exports `registerEmailTransport` for adding a transport of your own; it takes the `EmailTransport` interface, so templates and events stay untouched.

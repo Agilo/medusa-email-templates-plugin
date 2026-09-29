@@ -4,6 +4,7 @@ import type EmailTemplatesModuleService from '../modules/email-templates/service
 import { listEmailEventDefinitions } from './events';
 import type {
   EmailEventDefinition,
+  EmailTemplateSnippet,
   EmailTemplateVariable,
 } from './events/types';
 import { createEmailLiquid } from './rendering/liquid';
@@ -43,6 +44,7 @@ export type EmailTemplateDetail = EmailTemplateListItem & {
   html_template: string | null;
   text_template: string | null;
   variables: EmailTemplateVariable[];
+  snippets: EmailTemplateSnippet[];
   default_template: {
     subject: string;
     html: string;
@@ -223,6 +225,7 @@ export const buildEmailTemplateDetail = (
   html_template: row?.html_template ?? null,
   text_template: row?.text_template ?? null,
   variables: definition.variables,
+  snippets: definition.snippets ?? [],
   default_template: definition.defaultTemplate,
 });
 

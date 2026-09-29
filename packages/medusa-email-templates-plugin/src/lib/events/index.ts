@@ -16,6 +16,7 @@ export {
 export type {
   EmailEventDefaultTemplate,
   EmailEventDefinition,
+  EmailTemplateSnippet,
   EmailTemplateVariable,
 } from './types';
 export {

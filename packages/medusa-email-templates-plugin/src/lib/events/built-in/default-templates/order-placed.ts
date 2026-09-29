@@ -1,5 +1,5 @@
 import type { EmailEventDefaultTemplate } from '../../types';
-import { columns, EMAIL_DESIGN, layout } from './design';
+import { columns, EMAIL_DESIGN, layout, NO_THEME_SPACING } from './design';
 import { repeat } from './repeat';
 
 /*
@@ -25,7 +25,7 @@ const ROW_RULE = `${ROW_PADDING};border-bottom:1px solid #e5e7eb`;
  * theme's padding to this HTML, so the email only grew taller once it had
  * been opened and saved.
  */
-const CELL_TEXT = 'margin:0;padding-top:0;padding-bottom:0';
+const CELL_TEXT = `margin:0;${NO_THEME_SPACING}`;
 
 /**
  * One line of the order: what was bought and how many on the left, the line
@@ -50,6 +50,20 @@ export const ORDER_ITEM_ROW = columns([
   },
 ]);
 
+/*
+ * The totals read as one compact block rather than a list of rows: a gap
+ * above it to set it apart from the items, lines packed close, and the grand
+ * total ruled off beneath them.
+ *
+ * Set on both cells of a row, not just the label's. A row's cells are laid out
+ * separately, so padding one and not the other drops the value out of line
+ * with its label.
+ */
+const TOTALS_FIRST = 'padding-top:24px;padding-bottom:2px';
+const TOTALS_LINE = 'padding-top:2px;padding-bottom:2px';
+const TOTALS_GRAND =
+  'padding-top:8px;padding-bottom:2px;border-top:1px solid #e5e7eb';
+
 /**
  * One totals line, as its own row of columns so each can be edited or
  * removed on its own. Quote-free Liquid, so it survives the editor round
@@ -58,20 +72,45 @@ export const ORDER_ITEM_ROW = columns([
  * Bold through `<strong>` rather than a `font-weight` on the cell, so the
  * editor shows it as the bold mark the bubble menu toggles.
  */
-const totalsRow = (label: string, key: string, bold = false): string => {
+const totalsRow = (
+  label: string,
+  key: string,
+  {
+    style = TOTALS_LINE,
+    bold = false,
+  }: { style?: string; bold?: boolean } = {},
+): string => {
   const strong = (html: string) => (bold ? `<strong>${html}</strong>` : html);
 
   return columns([
     {
-      style: ROW_PADDING,
+      style,
       html: `<p style="${CELL_TEXT}">${strong(label)}</p>`,
     },
     {
-      style: ROW_PADDING,
+      style,
       html: `<p style="${CELL_TEXT};text-align:right">${strong(`{{ ${key} | money: order.currency_code }}`)}</p>`,
     },
   ]);
 };
+
+/**
+ * The order's totals, one row each.
+ *
+ * Exported because it is also the "Order totals" snippet the editor inserts,
+ * so a template that lost its totals gets back exactly these.
+ *
+ * Discount is always shown, as €0.00 on an order without one. Hiding it then
+ * needs a condition the editor cannot express yet; until it can, an admin
+ * who never discounts deletes the row.
+ */
+export const ORDER_TOTALS = [
+  totalsRow('Subtotal', 'order.subtotal', { style: TOTALS_FIRST }),
+  totalsRow('Discount', 'order.discount_total'),
+  totalsRow('Shipping', 'order.shipping_total'),
+  totalsRow('Tax', 'order.tax_total'),
+  totalsRow('Total', 'order.total', { style: TOTALS_GRAND, bold: true }),
+].join('');
 
 /**
  * Default order confirmation. Only quote-free Liquid is used, so the template
@@ -81,12 +120,9 @@ export const orderPlacedDefaultTemplate: EmailEventDefaultTemplate = {
   subject: 'Your {{ store.name }} order #{{ order.display_id }}',
   html: layout(
     'Thanks for your order',
-    `<p style="margin:0 0 8px">Hi {{ order.customer_name }},</p>
-            <p style="margin:0 0 24px">We received your order #{{ order.display_id }} and are getting it ready.</p>
+    `<p style="margin:0 0 8px;${NO_THEME_SPACING}">Hi {{ order.customer_name }},</p>
+            <p style="margin:0 0 24px;${NO_THEME_SPACING}">We received your order #{{ order.display_id }} and are getting it ready.</p>
             ${repeat('order.items', ORDER_ITEM_ROW)}
-            ${totalsRow('Subtotal', 'order.subtotal')}
-            ${totalsRow('Shipping', 'order.shipping_total')}
-            ${totalsRow('Tax', 'order.tax_total')}
-            ${totalsRow('Total', 'order.total', true)}`,
+            ${ORDER_TOTALS}`,
   ),
 };

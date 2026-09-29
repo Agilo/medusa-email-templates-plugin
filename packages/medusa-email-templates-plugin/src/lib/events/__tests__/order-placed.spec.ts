@@ -119,6 +119,24 @@ describe('order-placed email event', () => {
   });
 
   /*
+   * A snippet is inserted as pills, and a pill whose key the event does not
+   * declare shows as stale the moment it lands.
+   */
+  it('offers an order totals snippet built only from declared values', () => {
+    const [totals] = orderPlacedEmailEvent.snippets ?? [];
+    const declared = new Set(
+      orderPlacedEmailEvent.variables.map((variable) => variable.key),
+    );
+    const keys = [...totals.html.matchAll(/\{\{\s*([a-z0-9_.]+)/g)].map(
+      (match) => match[1],
+    );
+
+    expect(totals.label).toBe('Order totals');
+    expect(keys).toContain('order.discount_total');
+    keys.forEach((key) => expect(declared).toContain(key));
+  });
+
+  /*
    * The link is composed here so the base follows the deployment. Written by
    * hand in a template it would be frozen into the saved HTML and wrong
    * everywhere but the environment it was typed in.

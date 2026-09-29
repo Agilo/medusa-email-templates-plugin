@@ -1,5 +1,5 @@
 import type { EmailEventDefaultTemplate } from '../../types';
-import { EMAIL_DESIGN, layout } from './design';
+import { EMAIL_DESIGN, layout, NO_THEME_SPACING } from './design';
 
 /**
  * A call to action, as both an email button and an editor one.
@@ -41,9 +41,9 @@ export const inviteCreatedDefaultTemplate: EmailEventDefaultTemplate = {
   subject: "You've been invited to {{ store.name }}",
   html: layout(
     "You've been invited",
-    `<p style="margin:0 0 16px">You have been invited to join {{ store.name }} in Medusa Admin.</p>
+    `<p style="margin:0 0 16px;${NO_THEME_SPACING}">You have been invited to join {{ store.name }} in Medusa Admin.</p>
             ${button('{{ invite_url }}', 'Accept the invitation')}
-            <p style="margin:0;color:${EMAIL_DESIGN.mutedColor};font-size:12px">This invitation expires on {{ invite.expires_at | date_long }}.</p>`,
+            <p style="margin:0;${NO_THEME_SPACING};color:${EMAIL_DESIGN.mutedColor};font-size:12px">This invitation expires on {{ invite.expires_at | date_long }}.</p>`,
   ),
 };
 
@@ -51,9 +51,9 @@ export const inviteResentDefaultTemplate: EmailEventDefaultTemplate = {
   subject: 'Your invitation to {{ store.name }}',
   html: layout(
     'Here is your invitation again',
-    `<p style="margin:0 0 16px">Your invitation to join {{ store.name }} in Medusa Admin was renewed.</p>
+    `<p style="margin:0 0 16px;${NO_THEME_SPACING}">Your invitation to join {{ store.name }} in Medusa Admin was renewed.</p>
             ${button('{{ invite_url }}', 'Accept the invitation')}
-            <p style="margin:0;color:${EMAIL_DESIGN.mutedColor};font-size:12px">This invitation expires on {{ invite.expires_at | date_long }}.</p>`,
+            <p style="margin:0;${NO_THEME_SPACING};color:${EMAIL_DESIGN.mutedColor};font-size:12px">This invitation expires on {{ invite.expires_at | date_long }}.</p>`,
   ),
 };
 
@@ -61,9 +61,9 @@ export const passwordResetUserDefaultTemplate: EmailEventDefaultTemplate = {
   subject: 'Reset your {{ store.name }} admin password',
   html: layout(
     'Reset your password',
-    `<p style="margin:0 0 16px">We received a request to reset the password for {{ email }}.</p>
+    `<p style="margin:0 0 16px;${NO_THEME_SPACING}">We received a request to reset the password for {{ email }}.</p>
             ${button('{{ reset_url }}', 'Choose a new password')}
-            <p style="margin:0;color:${EMAIL_DESIGN.mutedColor};font-size:12px">If you did not request this, you can ignore this email.</p>`,
+            <p style="margin:0;${NO_THEME_SPACING};color:${EMAIL_DESIGN.mutedColor};font-size:12px">If you did not request this, you can ignore this email.</p>`,
   ),
 };
 
@@ -71,9 +71,9 @@ export const passwordResetCustomerDefaultTemplate: EmailEventDefaultTemplate = {
   subject: 'Reset your {{ store.name }} password',
   html: layout(
     'Reset your password',
-    `<p style="margin:0 0 16px">We received a request to reset the password for {{ email }}.</p>
+    `<p style="margin:0 0 16px;${NO_THEME_SPACING}">We received a request to reset the password for {{ email }}.</p>
             ${button('{{ reset_url }}', 'Choose a new password')}
-            <p style="margin:0;color:${EMAIL_DESIGN.mutedColor};font-size:12px">If you did not request this, you can ignore this email.</p>`,
+            <p style="margin:0;${NO_THEME_SPACING};color:${EMAIL_DESIGN.mutedColor};font-size:12px">If you did not request this, you can ignore this email.</p>`,
   ),
 };
 
@@ -81,8 +81,8 @@ export const emailVerificationDefaultTemplate: EmailEventDefaultTemplate = {
   subject: 'Your {{ store.name }} verification code',
   html: layout(
     'Verify your email address',
-    `<p style="margin:0 0 16px">Use this code to verify {{ email }}:</p>
-            <p style="margin:0 0 24px;font-size:28px;font-weight:600;letter-spacing:4px">{{ code }}</p>
-            <p style="margin:0;color:${EMAIL_DESIGN.mutedColor};font-size:12px">The code expires on {{ expires_at | date_long }}.</p>`,
+    `<p style="margin:0 0 16px;${NO_THEME_SPACING}">Use this code to verify {{ email }}:</p>
+            <p style="margin:0 0 24px;${NO_THEME_SPACING};font-size:28px;font-weight:600;letter-spacing:4px">{{ code }}</p>
+            <p style="margin:0;${NO_THEME_SPACING};color:${EMAIL_DESIGN.mutedColor};font-size:12px">The code expires on {{ expires_at | date_long }}.</p>`,
   ),
 };

@@ -24,8 +24,12 @@ export {
 export type {
   EmailEventDefaultTemplate,
   EmailEventDefinition,
+  EmailTemplateSnippet,
   EmailTemplateVariable,
 } from './lib/events';
+// For side-by-side cells in a default template or snippet, which the editor
+// opens as a Columns layout it can reshape.
+export { columns } from './lib/events/built-in/default-templates/design';
 // For a default template that repeats over a `list` variable, in the shape
 // the editor reads back as a Repeat block.
 export { repeat } from './lib/events/built-in/default-templates/repeat';

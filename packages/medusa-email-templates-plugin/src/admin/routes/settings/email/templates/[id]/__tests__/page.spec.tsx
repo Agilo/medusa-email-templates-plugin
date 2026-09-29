@@ -65,6 +65,7 @@ const template = (
       group: 'Totals',
     },
   ],
+  snippets: [],
   default_template: { subject: 'Default subject', html: '<p>Default</p>' },
   ...overrides,
 });

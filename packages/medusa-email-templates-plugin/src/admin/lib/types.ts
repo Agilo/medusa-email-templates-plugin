@@ -104,11 +104,20 @@ export interface EmailTemplateListItem {
   warnings: string[];
 }
 
+/** Ready-made content the editor offers to insert, as a slash command. */
+export interface EmailTemplateSnippet {
+  key: string;
+  label: string;
+  description?: string;
+  html: string;
+}
+
 export interface EmailTemplateDetail extends EmailTemplateListItem {
   editor_content: Record<string, unknown> | null;
   html_template: string | null;
   text_template: string | null;
   variables: EmailTemplateVariable[];
+  snippets: EmailTemplateSnippet[];
   default_template: {
     subject: string;
     html: string;

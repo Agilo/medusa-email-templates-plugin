@@ -91,6 +91,18 @@ export const columns = (cells: ColumnCell[]): string =>
     .join('')}</tr></tbody></table>`;
 
 /**
+ * Zeroes the editor theme's own spacing on a text block.
+ *
+ * The theme pads every paragraph 0.5em above and below, and a heading 0.389em
+ * above. None of that reaches an email sent from this HTML, but all of it
+ * lands the moment a template is opened and saved, stacked on top of the
+ * margins written here — so the gap between two lines came out three times
+ * what was asked for. Longhand, because that is what overrides the theme's own
+ * longhands on the canvas and in the export.
+ */
+export const NO_THEME_SPACING = 'padding-top:0;padding-bottom:0';
+
+/**
  * Wraps body content in the card.
  *
  * A table rather than a div, because Outlook's Word renderer ignores
@@ -107,9 +119,9 @@ export const layout = (
       <tbody>
         <tr>
           <td style="padding:${EMAIL_DESIGN.cardPadding}px">
-            <h1 style="margin:0 0 16px;font-size:20px">${heading}</h1>
+            <h1 style="margin:0 0 16px;${NO_THEME_SPACING};font-size:24px">${heading}</h1>
             ${body}
-            <p style="margin:24px 0 0;color:${EMAIL_DESIGN.mutedColor};font-size:12px">{{ store.name }}</p>
+            <p style="margin:24px 0 0;${NO_THEME_SPACING};color:${EMAIL_DESIGN.mutedColor};font-size:12px">{{ store.name }}</p>
           </td>
         </tr>
       </tbody>
