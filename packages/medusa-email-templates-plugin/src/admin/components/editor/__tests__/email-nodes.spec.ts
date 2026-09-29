@@ -154,3 +154,31 @@ describe('variable formats', () => {
     );
   });
 });
+
+describe('variable formatting', () => {
+  it('wraps a formatted pill in its marks around the Liquid', async () => {
+    const { html } = await exportEmail({
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            {
+              type: 'variable',
+              attrs: { key: 'order.display_id' },
+              marks: [{ type: 'bold' }, { type: 'italic' }],
+            },
+          ],
+        },
+      ],
+    });
+
+    // Nested in schema rank order, whatever order the marks were stored in.
+    expect(html).toContain('<em><strong>{{ order.display_id }}</strong></em>');
+    await expect(
+      createEmailLiquid({ escapeOutput: true }).parseAndRender(html, {
+        order: { display_id: 1001 },
+      }),
+    ).resolves.toContain('<em><strong>1001</strong></em>');
+  });
+});

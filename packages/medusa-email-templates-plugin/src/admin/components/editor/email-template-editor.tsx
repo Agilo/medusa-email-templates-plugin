@@ -23,6 +23,7 @@ import { isLiquidUrl, validateUrl } from '../../lib/liquid-url';
 import { deriveEditorContent } from './derive-document';
 import { LinkTextInspector } from './link-inspector';
 import { claimLinkShortcut } from './search-shortcut';
+import { VariableBubbleMenu } from './variable-bubble-menu';
 import { VariableInspector } from './variable-inspector';
 import { VariableNode } from './variable-node';
 import { variableSlashCommand } from './variable-slash-command';
@@ -416,12 +417,13 @@ const EmailTemplateEditor = forwardRef<
         </Inspector.Root>
       </div>
 
-      {/* Variables are configured in the Inspector, so the text menu stays out
-          of the way whenever one is selected. */}
+      {/* A selected variable gets its own, marks-only menu below, so the text
+          menu stands aside for it rather than showing both. */}
       <BubbleMenu
         hideWhenActiveNodes={['button', 'variable']}
         hideWhenActiveMarks={['link']}
       />
+      <VariableBubbleMenu />
       {/* The stock menus, for acting on a link that is already there: edit,
           open, unlink. Choosing a *variable* for a URL happens in the
           Inspector instead — see the note at the top of `link-inspector.tsx`
