@@ -27,12 +27,18 @@ export const isVariableSelected = ({ state }: { state: EditorState }) =>
 /**
  * Formatting for a selected variable.
  *
- * Only marks. The stock menu's "Turn into" and alignment act on the whole
- * paragraph, which is surprising from a single inline pill, and its link
- * selector would hand the pill to the link Inspector in place of the variable
- * one. Everything that remains is a mark the export already wraps around the
- * pill's Liquid — `<strong>{{ order.total | money: … }}</strong>` — so the
- * sent email carries the formatting without any change to the node.
+ * Marks, which the export wraps around the pill's Liquid —
+ * `<strong>{{ order.total | money: … }}</strong>` — so the sent email carries
+ * them without any change to the node.
+ *
+ * And alignment, which is the paragraph's rather than the pill's: the stock
+ * buttons align every textblock the selection touches, and a selected pill
+ * touches the one it sits in. That is what an admin means by aligning a
+ * value that sits alone on its line, such as a total in its column.
+ *
+ * Still no "Turn into", which would convert that whole paragraph from a
+ * single inline pill, and no link selector, which would hand the pill to the
+ * link Inspector in place of the variable one.
  */
 export const VariableBubbleMenu = () => (
   <BubbleMenu.Root
@@ -45,6 +51,11 @@ export const VariableBubbleMenu = () => (
       <BubbleMenu.Underline />
       <BubbleMenu.Strike />
       <BubbleMenu.Uppercase />
+    </BubbleMenu.ItemGroup>
+    <BubbleMenu.ItemGroup>
+      <BubbleMenu.AlignLeft />
+      <BubbleMenu.AlignCenter />
+      <BubbleMenu.AlignRight />
     </BubbleMenu.ItemGroup>
   </BubbleMenu.Root>
 );

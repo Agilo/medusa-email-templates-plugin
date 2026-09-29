@@ -1,5 +1,9 @@
 import { StarterKit } from '@react-email/editor/extensions';
 import { EmailTheming } from '@react-email/editor/plugins';
+import {
+  getSelectionAlignment,
+  setTextAlignment,
+} from '@react-email/editor/utils';
 import { Editor, type JSONContent } from '@tiptap/core';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -73,6 +77,24 @@ describe('variable bubble menu', () => {
     editor.commands.setNodeSelection(position);
 
     expect(isVariableSelected(editor)).toBe(false);
+  });
+
+  /*
+   * The same helpers the stock align buttons call. Alignment belongs to the
+   * paragraph, so what matters is that a selected pill reaches the one it
+   * sits in, and that the menu stays up for the next click.
+   */
+  it('aligns the paragraph around the pill and keeps it selected', () => {
+    const { editor, position } = createEditor();
+
+    editor.commands.setNodeSelection(position);
+    setTextAlignment(editor, 'right');
+
+    expect(editor.state.doc.resolve(position).parent.attrs.alignment).toBe(
+      'right',
+    );
+    expect(getSelectionAlignment(editor)).toBe('right');
+    expect(isVariableSelected(editor)).toBe(true);
   });
 
   it('applies a mark to the pill and keeps it selected', () => {
