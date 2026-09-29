@@ -65,8 +65,12 @@ const expressionFor = (attrs: Record<string, unknown> | undefined): string => {
  * by the surrounding text, so the pill's padding, border and focus ring paint
  * outside it without pushing a paragraph's lines apart.
  *
- * `text-[0.875em]` rather than a fixed size, so the pill tracks whatever text
- * it sits in — a heading, or a small footer.
+ * No font family, size or weight of its own. The pill is chrome around the
+ * value, and the type is the text's: a pill in a heading reads as heading
+ * text, and one made bold from the bubble menu reads as bold. ProseMirror
+ * draws a mark as an element around the node view, so these only have to
+ * inherit — a `font-medium` here used to override the `<strong>` and hide a
+ * formatting choice that the sent email carried all along.
  *
  * These are ordinary classes again. They used to be set inline, because the
  * host's Tailwind pass never saw this plugin's code: it globs the admin
@@ -76,7 +80,7 @@ const expressionFor = (attrs: Record<string, unknown> | undefined): string => {
  */
 const PILL_BASE = [
   'inline whitespace-nowrap align-baseline mx-px px-[5px] py-px',
-  'rounded-md border font-sans text-[0.875em] font-medium leading-none',
+  'rounded-md border leading-none',
   'cursor-default select-none transition-fg',
 ].join(' ');
 
