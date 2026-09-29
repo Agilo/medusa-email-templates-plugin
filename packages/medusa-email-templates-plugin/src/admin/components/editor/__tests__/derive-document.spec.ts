@@ -304,6 +304,8 @@ describe('deriveEditorContent', () => {
 
     expect(cells).toHaveLength(10);
     cells?.forEach((cell) => {
+      // A `<td>` centres vertically by default; the canvas draws the top.
+      expect(cell).toMatch(/^<td[^>]*vertical-align:top/);
       expect(cell).not.toContain('padding-top:0.5em');
       expect(cell).not.toContain('padding-bottom:0.5em');
     });

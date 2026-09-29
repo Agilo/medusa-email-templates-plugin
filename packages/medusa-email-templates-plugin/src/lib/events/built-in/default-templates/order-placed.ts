@@ -9,7 +9,13 @@ import { repeat } from './repeat';
  * nothing else: written as `padding:8px 0`, the Spacing field showed 0 for a
  * row that was plainly padded, and typing 0 into it changed nothing.
  */
-const ROW_PADDING = 'padding-top:8px;padding-bottom:8px';
+/*
+ * Top-aligned, because a table cell is not: `<td>` centres its content
+ * vertically by default, so beside a two-line product name the price floated
+ * halfway down. The editor draws columns with flexbox, where content starts
+ * at the top, so without this the canvas and the inbox disagreed.
+ */
+const ROW_PADDING = 'padding-top:8px;padding-bottom:8px;vertical-align:top';
 const ROW_RULE = `${ROW_PADDING};border-bottom:1px solid #e5e7eb`;
 
 /*
