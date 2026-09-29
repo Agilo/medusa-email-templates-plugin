@@ -7,17 +7,25 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { inviteCreatedDefaultTemplate } from '../../../../lib/events/built-in/default-templates/account';
 import {
   CARD_MARGIN,
+  columns,
   EMAIL_DESIGN,
 } from '../../../../lib/events/built-in/default-templates/design';
 import { EMAIL_THEME } from '../email-template-editor';
 import { orderPlacedDefaultTemplate } from '../../../../lib/events/built-in/default-templates/order-placed';
-import { deriveEditorContent, withVariableNodes } from '../derive-document';
+import { createEmailLiquid } from '../../../../lib/rendering/liquid';
+import {
+  columnsFromTables,
+  deriveEditorContent,
+  withVariableNodes,
+} from '../derive-document';
+import { RepeatNode } from '../repeat-node';
 import { VariableNode } from '../variable-node';
 
 const extensions = [
   StarterKit.configure(),
   EmailTheming.configure({ theme: EMAIL_THEME }),
   VariableNode,
+  RepeatNode,
 ];
 
 const editors: Editor[] = [];
@@ -100,8 +108,11 @@ describe('withVariableNodes', () => {
       ],
     };
 
-    const [before, , after] = withVariableNodes(doc).content?.[0].content ?? [];
+    const [before, pill, after] =
+      withVariableNodes(doc).content?.[0].content ?? [];
 
+    // The pill is part of the bold run too.
+    expect(pill.marks).toEqual([{ type: 'bold' }]);
     expect(before).toEqual({
       type: 'text',
       marks: [{ type: 'bold' }],
@@ -148,6 +159,47 @@ describe('withVariableNodes', () => {
   });
 });
 
+describe('columnsFromTables', () => {
+  const parse = (html: string) =>
+    new DOMParser().parseFromString(html, 'text/html').body;
+
+  it('rewrites a marked table as the Columns layout for its cell count', () => {
+    const body = parse(
+      columnsFromTables(
+        columns([
+          { html: '<p>A</p>', style: 'padding:8px 0' },
+          { html: '<p>B</p>' },
+          { html: '<p>C</p>' },
+        ]),
+      ),
+    );
+    const layout = body.querySelector('[data-type="three-columns"]');
+    const cells = layout?.querySelectorAll(':scope > [data-type="column"]');
+
+    expect(body.querySelector('table')).toBeNull();
+    expect(cells).toHaveLength(3);
+    // The cell's style moves to its column, where the Inspector reaches it.
+    expect(cells?.[0].getAttribute('style')).toBe('padding:8px 0');
+    expect(cells?.[2].innerHTML).toBe('<p>C</p>');
+  });
+
+  it('leaves unmarked tables, and cell counts with no layout, alone', () => {
+    const plain = '<table><tbody><tr><td>A</td><td>B</td></tr></tbody></table>';
+    const single = columns([{ html: 'A' }]);
+
+    expect(columnsFromTables(plain)).toBe(plain);
+    expect(
+      parse(columnsFromTables(single)).querySelector('table'),
+    ).not.toBeNull();
+  });
+
+  it('keeps a fragment a fragment', () => {
+    expect(
+      columnsFromTables(columns([{ html: 'A' }, { html: 'B' }])),
+    ).not.toMatch(/<body|<html/);
+  });
+});
+
 describe('deriveEditorContent', () => {
   it('turns the real default template into a document with pills', () => {
     const doc = deriveEditorContent(
@@ -160,6 +212,10 @@ describe('deriveEditorContent', () => {
     expect(keys).toEqual([
       'order.customer_name',
       'order.display_id',
+      'item.title',
+      'item.quantity',
+      'item.variant_title',
+      'item.total',
       'order.subtotal',
       'order.shipping_total',
       'order.tax_total',
@@ -213,9 +269,137 @@ describe('deriveEditorContent', () => {
     );
 
     expect(collect(doc, 'heading')).toHaveLength(1);
-    expect(collect(doc, 'table')).toHaveLength(1);
-    // Four totals rows, each still carrying its own cells.
-    expect(collect(doc, 'tableRow')).toHaveLength(4);
+    // Every row opens as an editable layout rather than a fixed table: the
+    // item row, then the four totals, each with its two cells.
+    expect(collect(doc, 'table')).toHaveLength(0);
+    expect(collect(doc, 'twoColumns')).toHaveLength(5);
+    expect(collect(doc, 'columnsColumn')).toHaveLength(10);
+  });
+
+  /*
+   * A row's height is set in one place, and it is a place the Inspector can
+   * show and change. The theme's per-paragraph 0.5em used to stack on top of
+   * the column's padding, with no control anywhere for it, and the Spacing
+   * field showed 0 because the padding was written as a shorthand it never
+   * reads.
+   */
+  it('spaces each row by its column padding alone', async () => {
+    const doc = deriveEditorContent(
+      orderPlacedDefaultTemplate.html,
+      extensions,
+    );
+
+    collect(doc, 'columnsColumn').forEach((column) => {
+      expect(column.attrs?.style).toContain('padding-top:8px');
+      expect(column.attrs?.style).toContain('padding-bottom:8px');
+    });
+
+    const editor = new Editor({ extensions, content: doc });
+    editors.push(editor);
+
+    const { unformattedHtml } = await composeReactEmail({ editor });
+    const cells = unformattedHtml.match(
+      /<td data-id="__react-email-column"[\s\S]*?<\/td>/g,
+    );
+
+    expect(cells).toHaveLength(10);
+    cells?.forEach((cell) => {
+      expect(cell).not.toContain('padding-top:0.5em');
+      expect(cell).not.toContain('padding-bottom:0.5em');
+    });
+  });
+
+  /*
+   * What converting to Columns was for. A table cell cannot be removed at
+   * all; an emptied column goes with one Backspace, and the last one left
+   * unwraps into plain content.
+   */
+  it('lets a column of the item row be removed', () => {
+    const editor = new Editor({
+      extensions,
+      content: deriveEditorContent(orderPlacedDefaultTemplate.html, extensions),
+    });
+    editors.push(editor);
+
+    // The item row is the first layout; its second column holds the total.
+    let row = -1;
+    editor.state.doc.descendants((node, pos) => {
+      if (row < 0 && node.type.name === 'twoColumns') {
+        row = pos;
+      }
+    });
+    const layout = editor.state.doc.nodeAt(row)!;
+    const column = row + 1 + layout.child(0).nodeSize;
+    const size = layout.child(1).nodeSize;
+
+    editor
+      .chain()
+      .setTextSelection({ from: column + 1, to: column + size - 1 })
+      .deleteSelection()
+      .setTextSelection(column + 2)
+      .run();
+
+    expect(editor.commands.keyboardShortcut('Backspace')).toBe(true);
+
+    const [block] = collect(editor.getJSON(), 'repeat');
+
+    expect(collect(block, 'twoColumns')).toHaveLength(0);
+    expect(collect(block, 'variable').map((node) => node.attrs?.key)).toEqual([
+      'item.title',
+      'item.quantity',
+      'item.variant_title',
+    ]);
+  });
+
+  /*
+   * The loop tags sit outside the element the block reads its content from,
+   * so they must never surface as text — that is what the parse rule's
+   * `contentElement` is for.
+   */
+  it('derives the item list as a Repeat block over order.items', () => {
+    const doc = deriveEditorContent(
+      orderPlacedDefaultTemplate.html,
+      extensions,
+    );
+    const [block] = collect(doc, 'repeat');
+
+    expect(collect(doc, 'repeat')).toHaveLength(1);
+    expect(block.attrs?.source).toBe('order.items');
+    expect(collect(block, 'variable').map((node) => node.attrs?.key)).toEqual([
+      'item.title',
+      'item.quantity',
+      'item.variant_title',
+      'item.total',
+    ]);
+    // `<strong>{{ item.title }}</strong>` arrives as a bold pill.
+    expect(collect(block, 'variable')[0].marks).toEqual([{ type: 'bold' }]);
+  });
+
+  it('exports a loop that renders every item', async () => {
+    const editor = new Editor({
+      extensions,
+      content: deriveEditorContent(orderPlacedDefaultTemplate.html, extensions),
+    });
+    editors.push(editor);
+
+    const { unformattedHtml } = await composeReactEmail({ editor });
+    const rendered = await createEmailLiquid({
+      escapeOutput: true,
+    }).parseAndRender(unformattedHtml, {
+      order: {
+        currency_code: 'eur',
+        items: [
+          { title: 'Shirt <XL>', variant_title: 'M', quantity: 2, total: 40 },
+          { title: 'Hat', variant_title: null, quantity: 1, total: 15 },
+        ],
+      },
+    });
+
+    expect(unformattedHtml).toContain('{% for item in order.items %}');
+    expect(rendered).toContain('Shirt &lt;XL&gt;');
+    expect(rendered).toContain('€40.00');
+    expect(rendered).toContain('Hat');
+    expect(rendered).toContain('€15.00');
   });
 
   /*
@@ -242,6 +426,8 @@ describe('deriveEditorContent', () => {
     [
       '{{ order.customer_name }}',
       '{{ order.display_id }}',
+      '{{ item.title }}',
+      '{{ item.total | money: order.currency_code }}',
       '{{ order.subtotal | money: order.currency_code }}',
       '{{ order.shipping_total | money: order.currency_code }}',
       '{{ order.tax_total | money: order.currency_code }}',

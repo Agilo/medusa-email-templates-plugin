@@ -18,14 +18,32 @@ export interface EmailTemplateVariable {
    * reads like it, so the editor's link picker offers these and nothing else.
    * A `url` value is still a plain string everywhere else — it can be dropped
    * into body text like any other variable.
+   *
+   * `list` is an array the editor repeats content over, never a value to
+   * print: it is offered as the source of a Repeat block rather than as a
+   * pill, and its `fields` become the `item.*` values inside that block.
    */
-  type?: 'text' | 'number' | 'money' | 'date' | 'url';
+  type?: 'text' | 'number' | 'money' | 'date' | 'url' | 'list';
   /**
    * For a `money` value, the key holding its currency code. The editor emits
    * this as a Liquid filter argument, so it must be a bare identifier path —
    * a quoted literal would be corrupted on export.
+   *
+   * On a list field it stays absolute (`order.currency_code`, not
+   * `item.currency_code`): Liquid reads the outer scope inside a loop.
    */
   currencyKey?: string;
+  /**
+   * For a `list`, what one entry holds. Keys are relative to the entry —
+   * `title`, which the editor offers as `item.title` inside the block.
+   */
+  fields?: EmailTemplateVariable[];
+  /**
+   * For a `list`, the HTML of one entry, written with `{{ item.* }}`
+   * expressions. The editor inserts it as the block's starting content, and a
+   * default template can reuse the same string so the two cannot drift.
+   */
+  itemTemplate?: string;
 }
 
 export interface EmailEventDefaultTemplate {

@@ -80,6 +80,29 @@ export const toLiquidExpression = (
   return `{{ ${key} | ${format} }}`;
 };
 
+/**
+ * The name a Repeat block gives each entry. Fixed rather than chosen, because
+ * blocks do not nest — there is never a second loop whose alias could clash.
+ */
+export const LOOP_ITEM = 'item';
+
+/**
+ * The tags a Repeat block wraps its content in.
+ *
+ * Quote-free for the same reason as `toLiquidExpression`: the source passes
+ * the identifier check, and nothing else in the tag is user-supplied.
+ */
+export const toLiquidLoop = (
+  source: string,
+): { open: string; close: string } => {
+  assertIdentifier(source, 'repeat source');
+
+  return {
+    open: `{% for ${LOOP_ITEM} in ${source} %}`,
+    close: '{% endfor %}',
+  };
+};
+
 /** What one output tag in a template resolves to. */
 export type ParsedLiquidExpression = {
   key: string;

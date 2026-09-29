@@ -10,7 +10,11 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { createEmailLiquid } from '../../../../lib/rendering/liquid';
 import { toLiquidExpression } from '../../../../lib/rendering/variable-format';
 
-import { UNSET_VARIABLE_LABEL, VariableNode } from '../variable-node';
+import {
+  styleFromCss,
+  UNSET_VARIABLE_LABEL,
+  VariableNode,
+} from '../variable-node';
 
 const content: JSONContent = {
   type: 'doc',
@@ -152,6 +156,60 @@ describe('variable formats', () => {
     await expect(liquid.parseAndRender(date.html, data)).resolves.toContain(
       'October',
     );
+  });
+});
+
+describe('variable typography', () => {
+  it('reads the declaration list the Inspector writes', () => {
+    expect(
+      styleFromCss('color: #ff0000; font-size: 20px;line-height:120%'),
+    ).toEqual({ color: '#ff0000', fontSize: '20px', lineHeight: '120%' });
+    expect(styleFromCss('')).toEqual({});
+    expect(styleFromCss(null)).toEqual({});
+  });
+
+  it('wraps only the expression in a styled span', async () => {
+    // Unformatted, as `getBody` stores it: the formatted variant breaks the
+    // line before `</span>`.
+    const { unformattedHtml: html } = await exportEmail({
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            { type: 'text', text: 'Total ' },
+            {
+              type: 'variable',
+              attrs: {
+                key: 'order.total',
+                format: 'money',
+                currencySource: 'order.currency_code',
+                style: 'color:#ff0000;font-size:20px',
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(html).toContain(
+      '<span style="color:#ff0000;font-size:20px">{{ order.total | money: order.currency_code }}</span>',
+    );
+    await expect(
+      createEmailLiquid({ escapeOutput: true }).parseAndRender(html, {
+        order: { total: 55, currency_code: 'eur' },
+      }),
+    ).resolves.toContain(
+      '<span style="color:#ff0000;font-size:20px">€55.00</span>',
+    );
+  });
+
+  it('adds no span to an unstyled pill', async () => {
+    const { html } = await exportEmail(
+      variableDoc({ key: 'order.display_id', style: '' }),
+    );
+
+    expect(html).not.toMatch(/<span[^>]*>\{\{ order\.display_id \}\}/);
   });
 });
 

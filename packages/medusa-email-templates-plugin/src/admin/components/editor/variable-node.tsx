@@ -7,10 +7,10 @@ import {
   ReactNodeViewRenderer,
   type ReactNodeViewProps,
 } from '@tiptap/react';
-import type { MouseEvent as ReactMouseEvent } from 'react';
+import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react';
 
 import type { EmailTemplateVariable } from '../../lib/types';
-import { FORMAT_LABELS } from '../../lib/variables';
+import { FORMAT_LABELS, variablesAt } from '../../lib/variables';
 import { formatDate, formatMoney } from '../../../lib/rendering/format-value';
 import {
   isVariableFormat,
@@ -33,6 +33,42 @@ export const UNSET_VARIABLE_LABEL = 'Choose a variable';
 type VariableNodeOptions = {
   /** Supplies each pill with its variable's human label. */
   variables: EmailTemplateVariable[];
+};
+
+/**
+ * A pill's own inline CSS as a React style object.
+ *
+ * The Inspector's Typography section writes it — colour, size, line height —
+ * as the kebab-case declaration list its style helper produces. The library's
+ * parser for that format is internal, and this is all it takes.
+ */
+export const styleFromCss = (css: unknown): CSSProperties => {
+  if (typeof css !== 'string' || !css.trim()) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    css
+      .split(';')
+      .map((declaration) => {
+        const index = declaration.indexOf(':');
+
+        return index < 0
+          ? null
+          : [
+              declaration
+                .slice(0, index)
+                .trim()
+                .replace(/-([a-z])/g, (_, letter: string) =>
+                  letter.toUpperCase(),
+                ),
+              declaration.slice(index + 1).trim(),
+            ];
+      })
+      .filter((entry): entry is [string, string] =>
+        Boolean(entry?.[0] && entry[1]),
+      ),
+  );
 };
 
 /**
@@ -179,8 +215,22 @@ const VariablePill = ({
   editor,
   getPos,
 }: ReactNodeViewProps) => {
-  const { variables } = extension.options as VariableNodeOptions;
+  /*
+   * Resolved at the pill's position, not from the flat list: inside a Repeat
+   * block `item.title` is a real value, anywhere else it is stale.
+   *
+   * Read on render, so it follows the pill when it moves — a moved pill is a
+   * new node view. Changing an enclosing block's list does not redraw the
+   * pills already inside it; with one list per event that never changes what
+   * they resolve to.
+   */
+  const variables = variablesAt(
+    editor.state.doc,
+    getPos(),
+    (extension.options as VariableNodeOptions).variables ?? [],
+  );
   const key = typeof node.attrs.key === 'string' ? node.attrs.key : '';
+  const textStyle = styleFromCss(node.attrs.style);
   const format: VariableFormat = isVariableFormat(node.attrs.format)
     ? node.attrs.format
     : 'text';
@@ -336,14 +386,17 @@ const VariablePill = ({
         and installs no outside-mousedown listener, so the editor's focus scope
         has nothing to react to.
       */}
+      {/* The pill's own typography goes on the value, not the chrome: a
+          coloured total reads as that colour, while the border and fill still
+          say "this is a variable". */}
       {tooltip ? (
         <TooltipProvider>
           <Tooltip content={tooltip}>
-            <span>{text}</span>
+            <span style={textStyle}>{text}</span>
           </Tooltip>
         </TooltipProvider>
       ) : (
-        text
+        <span style={textStyle}>{text}</span>
       )}
     </NodeViewWrapper>
   );
@@ -393,6 +446,19 @@ export const VariableNode = EmailNode.create<VariableNodeOptions>({
           attributes.currencySource
             ? { 'data-currency-source': attributes.currencySource }
             : {},
+      },
+      /*
+       * The pill's own typography, as inline CSS. Named `style` because that
+       * is the attribute the Inspector's style helpers read and write — the
+       * Typography section then works on a pill exactly as it does on a
+       * block, and keeps the pill selected while it does.
+       */
+      style: {
+        default: '',
+        parseHTML: (element: HTMLElement) =>
+          element.getAttribute('style') ?? '',
+        renderHTML: (attributes: Record<string, unknown>) =>
+          attributes.style ? { style: attributes.style } : {},
       },
     };
   },
@@ -459,7 +525,19 @@ export const VariableNode = EmailNode.create<VariableNodeOptions>({
     return expressionFor(node.attrs);
   },
 
+  /**
+   * The expression, in a styled `<span>` when the pill has typography of its
+   * own. The style is an attribute, not Liquid, so the quotes React puts
+   * around it cannot reach the expression.
+   */
   renderToReactEmail({ node }) {
-    return expressionFor(node.attrs);
+    const expression = expressionFor(node.attrs);
+    const style = styleFromCss(node.attrs?.style);
+
+    return expression && Object.keys(style).length ? (
+      <span style={style}>{expression}</span>
+    ) : (
+      expression
+    );
   },
 });

@@ -31,6 +31,7 @@ import {
   FORMAT_LABELS,
   formatsFor,
   groupVariables,
+  scalarVariables,
 } from '../../../../../lib/variables';
 // Type-only, so the editor module stays out of this route's bundle.
 import type { EmailTemplateEditorHandle } from '../../../../../components/editor/email-template-editor';
@@ -96,7 +97,8 @@ const EmailTemplatePage = () => {
   const isDirty = subjectDirty || bodyDirty;
 
   const groups = useMemo(
-    () => groupVariables(template?.variables ?? []),
+    // A subject has no Repeat block, so lists have nowhere to go.
+    () => groupVariables(scalarVariables(template?.variables ?? [])),
     [template?.variables],
   );
 

@@ -95,6 +95,30 @@ describe('order-placed email event', () => {
   });
 
   /*
+   * The editor offers exactly the declared fields inside the items block, so
+   * each one has to be something `getContext` actually puts on an item — a
+   * field it does not map would be a pill that always sends empty.
+   */
+  it('declares the items as a list of fields each item carries', async () => {
+    const { container } = containerWith([
+      { ...order, items: [{ ...order.items[0], variant_title: 'M' }] },
+    ]);
+    const context = (await orderPlacedEmailEvent.getContext(
+      { id: 'order_1' },
+      container,
+    )) as { order: { items: Record<string, unknown>[] } };
+    const items = orderPlacedEmailEvent.variables.find(
+      (variable) => variable.key === 'order.items',
+    );
+
+    expect(items?.type).toBe('list');
+    expect(items?.itemTemplate).toContain('{{ item.title }}');
+    (items?.fields ?? []).forEach((field) => {
+      expect(context.order.items[0]).toHaveProperty(field.key);
+    });
+  });
+
+  /*
    * The link is composed here so the base follows the deployment. Written by
    * hand in a template it would be frozen into the saved HTML and wrong
    * everywhere but the environment it was typed in.

@@ -3,6 +3,11 @@ import {
   type InspectorNodeContext,
   type InspectorTextContext,
 } from '@react-email/editor/ui';
+import {
+  getSelectionAlignment,
+  setTextAlignment,
+} from '@react-email/editor/utils';
+import { useCurrentEditor, useEditorState } from '@tiptap/react';
 import { useState } from 'react';
 
 import { isVariableFormat } from '../../../lib/rendering/variable-format';
@@ -12,6 +17,9 @@ import {
   FORMAT_LABELS,
   formatsFor,
   groupVariables,
+  listVariables,
+  scalarVariables,
+  variablesAt,
 } from '../../lib/variables';
 import { ButtonLinkSection } from './link-inspector';
 
@@ -136,9 +144,9 @@ type VariableSectionProps = InspectorNodeContext & {
 /**
  * Which value a pill shows, and how it is displayed.
  *
- * Deliberately no styling controls: a variable has no `style` attribute, so
- * background, border and padding would render controls that silently write
- * nowhere.
+ * Styling lives in its own section, `VariableTypography`, and stops at type:
+ * background, border and padding on an inline value would fight the pill's
+ * chrome on the canvas and render unpredictably in mail clients.
  *
  * The markup mirrors the library's own `Section` / `PropRow` / `Label` /
  * `Select` primitives, which are internal — the `Inspector` compound exports
@@ -151,8 +159,14 @@ type VariableSectionProps = InspectorNodeContext & {
 const VariableSection = ({
   getAttr,
   setAttr,
-  variables,
+  nodePos,
+  variables: declared,
 }: VariableSectionProps) => {
+  const { editor } = useCurrentEditor();
+  // What a pill *here* may show: `item.*` values only inside a Repeat block.
+  const variables = editor
+    ? variablesAt(editor.state.doc, nodePos.pos, declared)
+    : scalarVariables(declared);
   // Matching the library's sections, which are collapsible by their title.
   const [collapsed, setCollapsed] = useState(false);
   const rawKey = getAttr('key');
@@ -240,6 +254,116 @@ const VariableSection = ({
   );
 };
 
+/** The marks the Typography section's Format row toggles. */
+const FORMAT_MARKS = ['bold', 'italic', 'underline', 'strike', 'code'];
+
+/**
+ * The library's Typography section, pointed at the pill.
+ *
+ * Colour, size and line height come from the node context, whose style
+ * helpers write the pill's own `style` — so they style the value alone, not
+ * the words around it, and the export wraps just the expression in a span.
+ *
+ * Format and Align are what the bubble menu offers: marks on the pill, and
+ * the alignment of the paragraph it sits in, through the same helpers the
+ * stock align buttons use.
+ */
+const VariableTypography = ({ context }: { context: InspectorNodeContext }) => {
+  const { editor } = useCurrentEditor();
+  const marks =
+    useEditorState({
+      editor,
+      selector: ({ editor: current }) =>
+        Object.fromEntries(
+          FORMAT_MARKS.map((mark) => [mark, current?.isActive(mark) ?? false]),
+        ),
+    }) ?? {};
+  const alignment =
+    useEditorState({
+      editor,
+      selector: ({ editor: current }) =>
+        current ? getSelectionAlignment(current) : 'left',
+    }) ?? 'left';
+
+  if (!editor) {
+    return null;
+  }
+
+  return (
+    <Inspector.Typography
+      {...(context as unknown as InspectorTextContext)}
+      getStyle={context.getStyle}
+      setStyle={context.setStyle}
+      marks={marks}
+      toggleMark={(mark) => editor.chain().focus().toggleMark(mark).run()}
+      alignment={alignment}
+      setAlignment={(value) => setTextAlignment(editor, value)}
+    />
+  );
+};
+
+/**
+ * Which list a Repeat block repeats over.
+ *
+ * Deliberately no styling controls: the block is a loop around its content
+ * rather than a box of its own, so spacing and colour belong to the content
+ * inside it, where the usual sections apply.
+ *
+ * The same `data-re-inspector-*` markup as `VariableSection`.
+ */
+const RepeatSection = ({
+  getAttr,
+  setAttr,
+  variables,
+}: VariableSectionProps) => {
+  const [collapsed, setCollapsed] = useState(false);
+  const rawSource = getAttr('source');
+  const source = typeof rawSource === 'string' ? rawSource : '';
+  const lists = listVariables(variables);
+
+  return (
+    <div data-re-inspector-section="" data-has-title="">
+      <div data-re-inspector-section-header="">
+        <button
+          type="button"
+          data-re-inspector-section-toggle=""
+          onClick={() => setCollapsed((value) => !value)}
+        >
+          Attributes
+        </button>
+      </div>
+
+      {!collapsed && (
+        <div data-re-inspector-section-body="">
+          <div data-re-inspector-prop-row="">
+            <label data-re-inspector-label="" htmlFor="repeat-source">
+              Repeat for each
+            </label>
+            <select
+              data-re-inspector-select=""
+              id="repeat-source"
+              value={source}
+              onChange={(event) => setAttr('source', event.target.value)}
+            >
+              <option value="">Choose a list</option>
+              {/* Kept selectable when the event no longer declares it, so the
+                  select shows what the block actually holds. */}
+              {source && !lists.some((list) => list.key === source) && (
+                <option value={source}>{source}</option>
+              )}
+              {lists.map((list) => (
+                <option key={list.key} value={list.key}>
+                  {list.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 /** Drop-in replacement for `Inspector.Node` that knows about variables. */
 export const VariableInspector = ({
   variables,
@@ -249,7 +373,12 @@ export const VariableInspector = ({
   <Inspector.Node>
     {(context) =>
       context.nodeType === 'variable' ? (
-        <VariableSection {...context} variables={variables} />
+        <>
+          <VariableSection {...context} variables={variables} />
+          <VariableTypography context={context} />
+        </>
+      ) : context.nodeType === 'repeat' ? (
+        <RepeatSection {...context} variables={variables} />
       ) : (
         <DefaultSections context={context} variables={variables} />
       )

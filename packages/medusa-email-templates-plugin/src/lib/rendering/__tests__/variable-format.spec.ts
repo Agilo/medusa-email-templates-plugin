@@ -4,6 +4,7 @@ import {
   findLiquidExpressions,
   fromLiquidExpression,
   toLiquidExpression,
+  toLiquidLoop,
 } from '../variable-format';
 
 describe('fromLiquidExpression', () => {
@@ -122,5 +123,23 @@ describe('findLiquidExpressions', () => {
 
   it('finds nothing in ordinary text', () => {
     expect(findLiquidExpressions('Thanks for your order')).toEqual([]);
+  });
+});
+
+describe('toLiquidLoop', () => {
+  it('loops over a list as item', () => {
+    expect(toLiquidLoop('order.items')).toEqual({
+      open: '{% for item in order.items %}',
+      close: '{% endfor %}',
+    });
+  });
+
+  it.each([
+    ['a quote', 'order."items"'],
+    ['a filter', 'order.items | reverse'],
+    ['a closing tag', 'order.items %}{% raw'],
+    ['nothing', ''],
+  ])('rejects a source containing %s', (_, source) => {
+    expect(() => toLiquidLoop(source)).toThrow(/repeat source/);
   });
 });

@@ -1,6 +1,7 @@
 import type { Extensions, JSONContent } from '@tiptap/core';
 import { generateJSON } from '@tiptap/react';
 
+import { COLUMNS_ATTRIBUTE } from '../../../lib/events/built-in/default-templates/design';
 import { findLiquidExpressions } from '../../../lib/rendering/variable-format';
 
 /**
@@ -44,6 +45,8 @@ const splitTextNode = (node: JSONContent): JSONContent[] => {
       pieces.push({ ...node, text: text.slice(cursor, match.start) });
     }
 
+    // The pill takes the run's marks too — `<strong>{{ item.title }}</strong>`
+    // is a bold title, and a pill can carry marks like any inline content.
     pieces.push({
       type: 'variable',
       attrs: {
@@ -51,6 +54,7 @@ const splitTextNode = (node: JSONContent): JSONContent[] => {
         format: match.format,
         currencySource: match.currencySource ?? null,
       },
+      ...(node.marks ? { marks: node.marks } : {}),
     });
 
     cursor = match.end;
@@ -77,6 +81,70 @@ export const withVariableNodes = (node: JSONContent): JSONContent => {
   };
 };
 
+/** The editor's own markup for each Columns layout, by column count. */
+const COLUMN_LAYOUTS: Record<number, string> = {
+  2: 'two-columns',
+  3: 'three-columns',
+  4: 'four-columns',
+};
+
+/**
+ * Rewrites every `table[data-columns]` into the editor's Columns markup.
+ *
+ * The table is what a mail client needs, so it is what a default template
+ * sends; the Columns layout is what the editor can reshape. Rewriting before
+ * parsing lets the library's own nodes read it, rather than replacing them
+ * with copies that carry an extra parse rule.
+ *
+ * A cell's inline style moves to its column, where the Inspector reaches it.
+ * A table whose cell count has no layout (one, or more than four) is left as
+ * a table — still correct, just not reshapeable.
+ */
+export const columnsFromTables = (html: string): string => {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const tables = doc.querySelectorAll(`table[${COLUMNS_ATTRIBUTE}]`);
+
+  if (tables.length === 0) {
+    return html;
+  }
+
+  tables.forEach((table) => {
+    const cells = [...table.querySelectorAll(':scope > tbody > tr > td')];
+    const layoutType = COLUMN_LAYOUTS[cells.length];
+
+    if (!layoutType) {
+      return;
+    }
+
+    const layout = doc.createElement('div');
+    layout.setAttribute('data-type', layoutType);
+
+    cells.forEach((cell) => {
+      const column = doc.createElement('div');
+      const style = cell.getAttribute('style');
+
+      column.setAttribute('data-type', 'column');
+      if (style) {
+        column.setAttribute('style', style);
+      }
+      column.innerHTML = cell.innerHTML;
+      layout.append(column);
+    });
+
+    table.replaceWith(layout);
+  });
+
+  /*
+   * Handed back in the shape it arrived in. A whole template keeps its
+   * `<body>`, whose styling the theme reads back as the page colour; a
+   * fragment such as an `itemTemplate` must not gain one, because the editor
+   * has a Body node that would parse it as an extra wrapper.
+   */
+  return /<body[\s>]/i.test(html)
+    ? doc.documentElement.outerHTML
+    : doc.body.innerHTML;
+};
+
 /**
  * Builds an editor document from a template's HTML.
  *
@@ -89,4 +157,6 @@ export const deriveEditorContent = (
   html: string,
   extensions: Extensions,
 ): JSONContent =>
-  withVariableNodes(generateJSON(html, extensions) as JSONContent);
+  withVariableNodes(
+    generateJSON(columnsFromTables(html), extensions) as JSONContent,
+  );

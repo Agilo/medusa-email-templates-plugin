@@ -1,5 +1,77 @@
-import type { VariableFormat } from '../../lib/rendering/variable-format';
+import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
+
+import {
+  LOOP_ITEM,
+  type VariableFormat,
+} from '../../lib/rendering/variable-format';
 import type { EmailTemplateVariable } from './types';
+
+/**
+ * Variables that print as a value — everything but lists.
+ *
+ * A list is an array: printed as a pill it sends "[object Object]", so it is
+ * only ever offered as a Repeat block's source.
+ */
+export const scalarVariables = (
+  variables: EmailTemplateVariable[],
+): EmailTemplateVariable[] =>
+  variables.filter((variable) => variable.type !== 'list');
+
+/** The lists a Repeat block may repeat over. */
+export const listVariables = (
+  variables: EmailTemplateVariable[],
+): EmailTemplateVariable[] =>
+  variables.filter((variable) => variable.type === 'list');
+
+/**
+ * A list's fields as the variables they are inside its block: `title`
+ * becomes `item.title`, grouped under the list so the picker says where it
+ * comes from.
+ */
+export const itemVariables = (
+  list: EmailTemplateVariable,
+): EmailTemplateVariable[] =>
+  (list.fields ?? []).map((field) => ({
+    ...field,
+    key: `${LOOP_ITEM}.${field.key}`,
+    group: list.label,
+  }));
+
+/**
+ * What a pill at `pos` may show.
+ *
+ * The event's own values everywhere, plus one entry's values inside a Repeat
+ * block. Scope is structural, so it is read from the document rather than
+ * stored on the pill: drag an `item.title` pill out of its block and it stops
+ * resolving, which is exactly when it would start sending empty text.
+ */
+export const variablesAt = (
+  doc: ProseMirrorNode,
+  pos: number | undefined,
+  variables: EmailTemplateVariable[],
+): EmailTemplateVariable[] => {
+  const scalars = scalarVariables(variables);
+
+  if (typeof pos !== 'number' || pos < 0 || pos > doc.content.size) {
+    return scalars;
+  }
+
+  const $pos = doc.resolve(pos);
+
+  for (let depth = $pos.depth; depth > 0; depth--) {
+    const node = $pos.node(depth);
+
+    if (node.type.name === 'repeat') {
+      const list = listVariables(variables).find(
+        (entry) => entry.key === node.attrs.source,
+      );
+
+      return list ? [...scalars, ...itemVariables(list)] : scalars;
+    }
+  }
+
+  return scalars;
+};
 
 /** Variables arrive flat; every picker shows them under their group. */
 export const groupVariables = (

@@ -22,6 +22,8 @@ import type { EmailTemplateDetail } from '../../lib/types';
 import { isLiquidUrl, validateUrl } from '../../lib/liquid-url';
 import { deriveEditorContent } from './derive-document';
 import { LinkTextInspector } from './link-inspector';
+import { RepeatNode } from './repeat-node';
+import { repeatSlashCommands } from './repeat-slash-command';
 import { claimLinkShortcut } from './search-shortcut';
 import { VariableBubbleMenu } from './variable-bubble-menu';
 import { VariableInspector } from './variable-inspector';
@@ -243,6 +245,8 @@ const EmailTemplateEditor = forwardRef<
       // Each pill resolves its own label from this list, so the canvas shows
       // "Total | Money" rather than the generated Liquid.
       VariableNode.configure({ variables: template.variables }),
+      // Reads the lists for its label; pills inside read their fields.
+      RepeatNode.configure({ variables: template.variables }),
     ],
     [template.variables],
   );
@@ -340,7 +344,11 @@ const EmailTemplateEditor = forwardRef<
   );
 
   const slashCommands = useMemo(
-    () => [...defaultSlashCommands, variableSlashCommand(template.variables)],
+    () => [
+      ...defaultSlashCommands,
+      variableSlashCommand(template.variables),
+      ...repeatSlashCommands(template.variables),
+    ],
     [template.variables],
   );
 

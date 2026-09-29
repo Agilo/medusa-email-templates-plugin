@@ -3,7 +3,10 @@ import { ContainerRegistrationKeys } from '@medusajs/framework/utils';
 
 import { defineEmailEvent } from '../define-email-event';
 import { getOrderUrl, getStorefrontUrl } from '../urls';
-import { orderPlacedDefaultTemplate } from './default-templates/order-placed';
+import {
+  ORDER_ITEM_ROW,
+  orderPlacedDefaultTemplate,
+} from './default-templates/order-placed';
 import { retrieveStoreName } from './store';
 
 export type OrderPlacedEventData = { id: string };
@@ -162,12 +165,52 @@ export const orderPlacedEmailEvent = defineEmailEvent<OrderPlacedEventData>({
       group: 'Order',
     },
     /*
-     * `order.items` is deliberately absent, though `getContext` still builds
-     * it. The editor has no way to repeat a row, so the only thing an admin
-     * could do with it is insert `{{ order.items }}` — which renders as
-     * "[object Object][object Object]" in a sent email. It stays in the
-     * context so a hand-written template can still loop over it.
+     * A list, so the editor offers it as a Repeat block's source and never as
+     * a pill — printed directly it would send "[object Object]". The fields
+     * are what `getContext` maps each item to.
      */
+    {
+      key: 'order.items',
+      label: 'Order items',
+      type: 'list',
+      group: 'Order',
+      example: [
+        {
+          title: 'Medusa T-Shirt',
+          variant_title: 'M / Black',
+          quantity: 2,
+          unit_price: 15,
+          total: 30,
+        },
+        {
+          title: 'Medusa Hoodie',
+          variant_title: 'L',
+          quantity: 1,
+          unit_price: 10,
+          total: 10,
+        },
+      ],
+      itemTemplate: ORDER_ITEM_ROW,
+      fields: [
+        { key: 'title', label: 'Product', example: 'Medusa T-Shirt' },
+        { key: 'variant_title', label: 'Variant', example: 'M / Black' },
+        { key: 'quantity', label: 'Quantity', example: 2, type: 'number' },
+        {
+          key: 'unit_price',
+          label: 'Unit price',
+          example: 15,
+          type: 'money',
+          currencyKey: 'order.currency_code',
+        },
+        {
+          key: 'total',
+          label: 'Line total',
+          example: 30,
+          type: 'money',
+          currencyKey: 'order.currency_code',
+        },
+      ],
+    },
     {
       key: 'order.subtotal',
       label: 'Subtotal',

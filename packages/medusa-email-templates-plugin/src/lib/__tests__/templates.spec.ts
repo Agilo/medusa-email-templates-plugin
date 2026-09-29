@@ -47,6 +47,25 @@ describe('buildSampleData', () => {
     });
   });
 
+  /*
+   * What a preview or test send loops over. The example is taken whole, so a
+   * list arrives as the array it declares rather than as nested keys.
+   */
+  it('keeps a list example as an array', () => {
+    const items = [{ title: 'Shirt' }, { title: 'Hat' }];
+    const withList = {
+      ...definition,
+      variables: [
+        ...definition.variables,
+        { key: 'order.items', label: 'Items', type: 'list', example: items },
+      ],
+    } as unknown as EmailEventDefinition<never>;
+
+    expect(buildSampleData(withList)).toMatchObject({
+      order: { display_id: 1001, items },
+    });
+  });
+
   it('lets callers override the examples', () => {
     expect(
       buildSampleData(definition, { order: { display_id: 7 }, extra: true }),

@@ -76,12 +76,17 @@ export interface EmailTemplateVariable {
   example: unknown;
   group?: string;
   /**
-   * Omitted means plain text. Decides which formats the editor offers, and
-   * `url` decides which variables the link picker offers.
+   * Omitted means plain text. Decides which formats the editor offers, `url`
+   * decides which variables the link picker offers, and `list` is a Repeat
+   * block's source rather than a pill.
    */
-  type?: 'text' | 'number' | 'money' | 'date' | 'url';
+  type?: 'text' | 'number' | 'money' | 'date' | 'url' | 'list';
   /** For `money` values, the key holding the currency code. */
   currencyKey?: string;
+  /** For a `list`, one entry's values, keyed relative to the entry. */
+  fields?: EmailTemplateVariable[];
+  /** For a `list`, one entry's HTML, used as a new block's content. */
+  itemTemplate?: string;
 }
 
 export interface EmailTemplateListItem {

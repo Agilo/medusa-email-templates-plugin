@@ -61,6 +61,36 @@ export const EMAIL_DESIGN = {
 export const CARD_MARGIN = `${EMAIL_DESIGN.pageGutter}px auto`;
 
 /**
+ * Marks a table as a row of columns the editor may reshape.
+ *
+ * The editor's Table node is for keeping imported HTML intact: it has no way
+ * to add or remove a column. Its Columns layout does — Backspace in an empty
+ * column removes it — but parses only from its own `div[data-type]` markup,
+ * which is no layout at all in a mail client. A default template is sent
+ * as-is until someone edits it, so it has to stay a table; this attribute is
+ * what tells `deriveEditorContent` to open that table as Columns.
+ */
+export const COLUMNS_ATTRIBUTE = 'data-columns';
+
+/** One cell of a `columns` row: its content, and optional inline style. */
+export type ColumnCell = { html: string; style?: string };
+
+/**
+ * Two to four cells side by side, as a table every mail client lays out the
+ * same way, which the editor opens as an editable Columns layout.
+ *
+ * Alignment belongs on the content (`<p style="text-align:right">`), not the
+ * cell: a column carries a style but has no `align` of its own to keep.
+ */
+export const columns = (cells: ColumnCell[]): string =>
+  `<table ${COLUMNS_ATTRIBUTE}="" role="presentation" width="100%" cellpadding="0" cellspacing="0"><tbody><tr>${cells
+    .map(
+      ({ html, style }) =>
+        `<td${style ? ` style="${style}"` : ''}>${html}</td>`,
+    )
+    .join('')}</tr></tbody></table>`;
+
+/**
  * Wraps body content in the card.
  *
  * A table rather than a div, because Outlook's Word renderer ignores

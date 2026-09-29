@@ -26,6 +26,9 @@ export type {
   EmailEventDefinition,
   EmailTemplateVariable,
 } from './lib/events';
+// For a default template that repeats over a `list` variable, in the shape
+// the editor reads back as a Repeat block.
+export { repeat } from './lib/events/built-in/default-templates/repeat';
 export { registerEmailTransport } from './lib/transports/registry';
 export type {
   CloudEmailConfig,
