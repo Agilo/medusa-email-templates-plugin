@@ -65,7 +65,14 @@ export const resetEmailTemplateStep = createStep(
     };
 
     if (!existing.enabled) {
-      await service.deleteEmailTemplates(existing.id);
+      /*
+       * Soft, so the compensation below can bring it back: `restore` only
+       * finds soft-deleted rows, and a hard delete left a rolled-back reset
+       * with nothing to restore — the admin's customised template gone for
+       * good. The unique index on `template_key` ignores deleted rows, so
+       * saving the template again still creates a fresh one.
+       */
+      await service.softDeleteEmailTemplates(existing.id);
 
       return new StepResponse({ reset: true }, {
         restored: existing.id,
