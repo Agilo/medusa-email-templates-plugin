@@ -6,13 +6,25 @@
  *
  * ```ts
  * // src/subscribers/email-review-approved.ts
- * import { defineEmailEvent } from 'medusa-email-templates-plugin/registry';
+ * import {
+ *   defineEmailEvent,
+ *   sendEmailEventWorkflow,
+ * } from 'medusa-email-templates-plugin/registry';
  *
- * const reviewApproved = defineEmailEvent({ ... });
+ * defineEmailEvent({ event: 'review.approved', templateKey: 'review-approved', ... });
  *
- * export default reviewApproved.handler;
- * export const config = reviewApproved.subscriberConfig;
+ * export default async function handler({ event, container }) {
+ *   await sendEmailEventWorkflow(container).run({
+ *     input: { event: event.name, data: event.data },
+ *   });
+ * }
+ *
+ * export const config = { event: 'review.approved' };
  * ```
+ *
+ * `defineEmailEvent` only registers the definition and returns it; the
+ * subscriber itself is the host's, as above. The README has a complete
+ * example.
  */
 export {
   defineEmailEvent,
