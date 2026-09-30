@@ -55,7 +55,7 @@ export const resolveEmailEventStep = createStep(
     );
     const template = await findEmailTemplate(service, definition.templateKey);
 
-    // No saved template counts as disabled (PLAN.md D4).
+    // No saved template counts as disabled.
     if (!template?.enabled) {
       return new StepResponse<ResolvedEmailEvent>({
         send: false,

@@ -42,10 +42,7 @@ const EmailTemplateEditor = lazy(
   () => import('../../../../../components/editor/email-template-editor'),
 );
 
-/*
- * Lazy for the same reason as the body: it pulls in `@tiptap/react` and the
- * variable pill, which should not land in any other admin route's bundle.
- */
+// Lazy like the body editor, keeping `@tiptap/react` out of other routes.
 const SubjectEditor = lazy(
   () => import('../../../../../components/editor/subject-editor'),
 );
@@ -53,11 +50,8 @@ const SubjectEditor = lazy(
 const SETTINGS_PATH = '/settings/email';
 
 /**
- * Inline code: the event name in the header, the slash key in the body hint.
- *
- * The list page sets the event in bare `font-mono`; a chip is the same idea
- * with an edge, which is what keeps it readable mid-sentence rather than
- * looking like emphasised prose.
+ * Inline code chip (the event name, the `/` hint). The border keeps it
+ * readable mid-sentence.
  */
 const CodeChip = ({ children }: { children: string }) => (
   <code className="bg-ui-bg-component text-ui-fg-subtle rounded-md px-1 py-px font-mono text-xs">
@@ -81,18 +75,11 @@ const EmailTemplatePage = () => {
 
   const subjectRef = useRef<SubjectEditorHandle>(null);
   const editorRef = useRef<EmailTemplateEditorHandle>(null);
-  /*
-   * Both fields are uncontrolled: each editor owns its document, and the value
-   * is read back only when saving. Mirroring the subject into state would
-   * reseed the editor on every keystroke, and `useEditor` takes its content
-   * once anyway.
-   */
+  // Both editors are uncontrolled and read back on save; mirroring into state
+  // would reseed them on every keystroke.
   const [subjectDirty, setSubjectDirty] = useState(false);
   const [bodyDirty, setBodyDirtyState] = useState(false);
-  /*
-   * The same flag, for `getDraft`, which must keep a stable identity and so
-   * cannot read state. Written alongside it rather than synced during render.
-   */
+  // Mirror for `getDraft`, which keeps a stable identity and can't read state.
   const bodyDirtyRef = useRef(false);
   const setBodyDirty = useCallback((dirty: boolean) => {
     bodyDirtyRef.current = dirty;
@@ -100,15 +87,9 @@ const EmailTemplatePage = () => {
   }, []);
 
   /*
-   * How many edits each field has had, so a save can tell whether anything
-   * changed while its request was in flight.
-   *
-   * A save captures the field's content when it starts and clears the dirty
-   * flag when it finishes. Clearing it unconditionally discarded whatever was
-   * typed in between: those keystrokes were not in the request, yet Save
-   * disabled itself and leaving asked no questions, so they were lost without
-   * a word. Comparing counts clears a flag only if its field is still exactly
-   * what was sent.
+   * Edit counters, so a finished save only clears a field's dirty flag if the
+   * field wasn't edited while the request was in flight. Otherwise those
+   * edits would be silently marked as saved.
    */
   const subjectEdits = useRef(0);
   const bodyEdits = useRef(0);
@@ -134,12 +115,7 @@ const EmailTemplatePage = () => {
   const [previewing, setPreviewing] = useState(false);
   const [testing, setTesting] = useState(false);
 
-  /**
-   * The editor places the pill at its own selection, so there is no caret
-   * arithmetic here any more. `attributesFor` carries the format and currency
-   * source across, so a money or date variable arrives formatted rather than
-   * as a raw number.
-   */
+  // Inserted at the editor's selection, already formatted for money/dates.
   const insertVariable = (key: string, format?: VariableFormat) => {
     const variable = template?.variables.find((entry) => entry.key === key);
 
@@ -148,25 +124,15 @@ const EmailTemplatePage = () => {
   };
 
   /**
-   * What the editors currently hold, so a preview or test uses the work in
-   * progress rather than the last save.
+   * The unsaved work, so preview and test send use it instead of the last
+   * save. Read on demand (the drawers are modal). Stable identity: the
+   * preview drawer keys an effect on it.
    *
-   * Read on demand rather than tracked: both drawers are modal, so nothing can
-   * change while one is open, and closing unmounts it — the next open reads
-   * again.
-   *
-   * Stable identity on purpose: the preview drawer keys an effect on this.
-   *
-   * Both omissions are the schema talking. `subject_template` is `min(1)`, and
-   * mid-edit the field really can be empty, so an empty subject is left out
-   * rather than sent as `''` and rejected. And the draft is a strict object, so
-   * only `html_template` goes over even though `getBody` also returns
-   * `editor_content` — including it would fail the whole request.
-   *
-   * The body only once it has been edited. Untouched, the server renders what
-   * a real send would — the stored HTML, or the default — rather than the
-   * editor's re-export of it, which for HTML written outside the editor is not
-   * the same email: Liquid the editor cannot represent comes back escaped.
+   * - An empty subject is omitted (the schema requires `min(1)`).
+   * - Only `html_template` is sent; the draft schema is strict.
+   * - The body is sent only once edited. Untouched, the server renders the
+   *   stored HTML, exactly as a real send would; the editor's re-export can
+   *   differ for HTML written outside the editor.
    */
   const getDraft = useCallback(async (): Promise<EmailTemplateDraft> => {
     const subject = subjectRef.current?.getText() ?? '';
@@ -181,13 +147,12 @@ const EmailTemplatePage = () => {
   }, []);
 
   const save = async () => {
-    // Taken first, before the export awaits: an edit landing during it may or
-    // may not be in what is sent, so it counts as unsaved.
+    // Before the export awaits, so edits made during it count as unsaved.
     const sentSubjectEdits = subjectEdits.current;
     const sentBodyEdits = bodyEdits.current;
 
-    // Partial update: an untouched body is left out entirely rather than
-    // resent, so the stored HTML cannot be clobbered by an export.
+    // Partial update: an untouched body is omitted, so an export can't
+    // clobber the stored HTML.
     let body;
 
     if (bodyDirty) {
@@ -201,9 +166,7 @@ const EmailTemplatePage = () => {
 
     saveTemplate.mutate(
       {
-        // `getText()` serialises each pill back through the node's own
-        // `renderText`, so this is the same Liquid string the field has always
-        // stored.
+        // `getText()` serialises pills back to the stored Liquid string.
         ...(subjectDirty
           ? { subject_template: subjectRef.current?.getText() ?? '' }
           : {}),
@@ -211,7 +174,7 @@ const EmailTemplatePage = () => {
       },
       {
         onSuccess: () => {
-          // Only a field nobody touched since the request left is now saved.
+          // Only fields untouched since the request left are now saved.
           if (subjectEdits.current === sentSubjectEdits) {
             setSubjectDirty(false);
           }
@@ -284,14 +247,8 @@ const EmailTemplatePage = () => {
             </IconButton>
             <div className="flex min-w-0 flex-col gap-y-0.5">
               <Heading level="h2">{template.label}</Heading>
-              {/*
-                The event's own description, not one fixed sentence. Only the
-                order template goes to a customer — the invite and the admin
-                password reset go to an admin user, so copy that said "sent to
-                the customer" would be wrong on half the built-ins. Each event
-                already carries the right sentence; the chip names the event
-                behind it.
-              */}
+              {/* The event's own description: not every template goes to a
+                  customer (invites and admin resets go to admin users). */}
               <Text
                 size="small"
                 className="text-ui-fg-subtle flex flex-wrap items-center gap-x-1.5"
@@ -381,13 +338,8 @@ const EmailTemplatePage = () => {
               </Suspense>
             </div>
             <DropdownMenu>
-              {/*
-                Icon plus a visible label. `aria-label` repeats that label and
-                takes precedence over the text in the accessible name, so it is
-                what a screen reader announces and what the tests query by.
-                `shrink-0` stops the field beside it squeezing the button as it
-                grows.
-              */}
+              {/* `aria-label` sets the accessible name (and what tests query
+                  by). `shrink-0` stops the growing field squeezing it. */}
               <DropdownMenu.Trigger asChild>
                 <Button
                   size="small"
@@ -401,9 +353,7 @@ const EmailTemplatePage = () => {
               </DropdownMenu.Trigger>
               <DropdownMenu.Content>
                 {groups.map(([group, variables], index) => (
-                  // `Group`, not a bare `div`: it renders the same element but
-                  // with `role="group"`, so the label names a group of items
-                  // rather than floating above a flat list.
+                  // `Group` adds `role="group"`, so the label names the items.
                   <DropdownMenu.Group key={group}>
                     {index > 0 && <DropdownMenu.Separator />}
                     <DropdownMenu.Label>{group}</DropdownMenu.Label>
@@ -411,11 +361,9 @@ const EmailTemplatePage = () => {
                       const formats = formatsFor(variable);
 
                       /*
-                       * A variable with one sensible rendering inserts on the
-                       * spot. Totals and dates open a submenu instead, because
-                       * the default is only a guess — a total might belong in
-                       * a subject as a plain number, and a date has four
-                       * shapes. Without this the format was decided for you.
+                       * One format: insert directly. Money and dates open a
+                       * submenu to choose (a subject may want a plain number;
+                       * dates have several shapes).
                        */
                       if (formats.length === 1) {
                         return (
@@ -457,21 +405,16 @@ const EmailTemplatePage = () => {
       </Container>
 
       {/*
-        The body is its own card, so the two things being edited read as two
-        sections rather than one long surface.
-
-        Its rule is an explicit `border-t`, not `divide-y`: the editor renders
-        its bubble menus and slash menu as siblings of the canvas, and
-        `divide-y` would stripe a rule above each of them. `overflow-hidden`
-        keeps the Inspector's rail from squaring off the bottom corners.
+        The body gets its own card. `border-t`, not `divide-y`, which would
+        also draw a rule above the editor's menus (siblings of the canvas).
+        `overflow-hidden` keeps the Inspector from squaring the corners.
       */}
       <Container className="overflow-hidden p-0">
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-6 py-4">
           <Text size="small" weight="plus">
             Body
           </Text>
-          {/* The slash menu is the only way to reach most block types, and
-              nothing else on the page advertises it. */}
+          {/* The only hint that the slash menu exists. */}
           <Text
             size="small"
             className="text-ui-fg-subtle flex items-center gap-x-1.5"
@@ -511,9 +454,8 @@ const EmailTemplatePage = () => {
 };
 
 /**
- * Must return a non-empty string, so this shows the template key from the URL
- * rather than the label, which would need a request the breadcrumb cannot
- * wait for.
+ * Must return a non-empty string synchronously, so it shows the template key
+ * from the URL rather than the label (which needs a request).
  */
 export const handle = {
   breadcrumb: (match: UIMatch<unknown, unknown>) =>

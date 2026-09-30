@@ -130,12 +130,8 @@ export const orderPlacedEmailEvent = defineEmailEvent<OrderPlacedEventData>({
         })),
         shipping_address: order.shipping_address ?? null,
       },
-      /*
-       * Composed here rather than left to the editor. An admin could write
-       * `https://shop.test/orders/{{ order.id }}` by hand, but the base would
-       * be baked into the template and wrong in every other environment. Built
-       * from `storefront_url`, it follows the deployment instead.
-       */
+      // Built from `storefront_url` so it follows the deployment; a URL typed
+      // into the template would be wrong in other environments.
       order_url: getOrderUrl(container, order.id),
       store: { name: await retrieveStoreName(container) },
     };
@@ -173,11 +169,8 @@ export const orderPlacedEmailEvent = defineEmailEvent<OrderPlacedEventData>({
       type: 'date',
       group: 'Order',
     },
-    /*
-     * A list, so the editor offers it as a Repeat block's source and never as
-     * a pill — printed directly it would send "[object Object]". The fields
-     * are what `getContext` maps each item to.
-     */
+    // A list: a Repeat block source, never a pill (it would print
+    // "[object Object]"). Fields match what `getContext` maps each item to.
     {
       key: 'order.items',
       label: 'Order items',
@@ -278,16 +271,12 @@ export const orderPlacedEmailEvent = defineEmailEvent<OrderPlacedEventData>({
   ],
 
   /*
-   * Reported, not enforced. Unlike the password reset, this email is worth
-   * sending without a storefront — most of it is the order summary — so a
-   * missing `storefront_url` leaves `order_url` unresolved rather than
-   * skipping the send, and this is what tells an admin why the link is the
-   * one thing that will not work.
+   * Reported, not enforced: without `storefront_url` the email still sends,
+   * just without `order_url`.
    *
-   * Its own code, not the password reset's `storefront_url_not_configured`.
-   * The cause is the same but the consequence is not — that one stops the
-   * email, this one only loses a link — and sharing a code told admins their
-   * order confirmations were not sending while customers were receiving them.
+   * Its own code, distinct from the password reset's
+   * `storefront_url_not_configured` (which does stop the email), so admins
+   * aren't told confirmations aren't sending.
    */
   getWarnings: (container) => {
     try {

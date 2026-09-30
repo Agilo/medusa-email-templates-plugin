@@ -76,9 +76,8 @@ const editorPath = (templateKey: string) =>
   `/settings/email/templates/${encodeURIComponent(templateKey)}`;
 
 /**
- * The table makes the whole row clickable, but the row also holds a switch and
- * an action menu. Medusa stops propagation on menu *items* only, so a click on
- * any control would otherwise both act and navigate.
+ * Rows are clickable but hold a switch and a menu. Medusa stops propagation
+ * only on menu items, so controls would otherwise also navigate.
  */
 const isInteractive = (target: EventTarget | null): boolean =>
   target instanceof Element &&
@@ -109,9 +108,8 @@ const TemplatesSection = () => {
         return;
       }
 
-      // @medusajs/ui types this as the row data, but the table actually passes
-      // the TanStack row wrapper. Read through `original`, falling back in case
-      // the types ever become true.
+      // Typed as row data, but the table passes the TanStack row; read
+      // `original`, with a fallback in case the types get fixed.
       const template =
         (row as unknown as { original?: EmailTemplateListItem }).original ??
         row;
@@ -196,16 +194,10 @@ const TemplatesSection = () => {
                   )
                 }
               />
-              {/* A warning belongs with the state it affects. The label says
-                  "cannot send" only for a warning that really stops the
-                  email; the order confirmation's missing link does not, and
-                  saying so told admins confirmations were blocked while
-                  customers were receiving them.
+              {/* Next to the switch it affects. Says "cannot send" only for
+                  warnings that really block the email.
 
-                  Amber rather than `text-ui-fg-warning`, which looks right but
-                  does not exist: Medusa's theme has no `warning` foreground at
-                  all, so that class generated nothing and the icon rendered in
-                  the inherited body colour. */}
+                  Orange tag colour: Medusa has no `text-ui-fg-warning`. */}
               {warning && (
                 <Tooltip content={warning.text}>
                   <span
@@ -224,8 +216,7 @@ const TemplatesSection = () => {
           );
         },
       }),
-      // Accessor columns render through the table, which truncates long values
-      // and reveals the full text on hover.
+      // Accessor columns truncate long values and show them on hover.
       columnHelper.accessor(
         (row) => (row.is_customized ? 'Custom' : 'Default'),
         { id: 'source', header: 'Source' },
@@ -283,7 +274,7 @@ const TemplatesSection = () => {
     onRowClick: openTemplate,
   });
 
-  // A failed query has no table to head, so the error replaces it entirely.
+  // With no data, the error replaces the table.
   if (isError) {
     return (
       <Container className="divide-y p-0">

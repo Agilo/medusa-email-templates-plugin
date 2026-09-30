@@ -6,7 +6,7 @@ import EmailProviderConfiguration from './email-provider-configuration';
 /**
  * Credential for a transport. For `environment` only the variable name is
  * stored, never the secret. `ciphertext` and `key_fingerprint` are reserved
- * for the `encrypted_database` source (PLAN.md §5).
+ * for the `encrypted_database` source.
  */
 const EmailProviderCredential = model
   .define('email_provider_credential', {

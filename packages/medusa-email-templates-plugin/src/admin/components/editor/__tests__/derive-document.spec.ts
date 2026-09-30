@@ -301,14 +301,9 @@ describe('deriveEditorContent', () => {
   });
 
   /*
-   * A call to action has to arrive as a `button` node, not as link-marked text
-   * in a paragraph. Both render an anchor, so the difference is invisible in
-   * the inbox and total in the editor: the button's inspector section and
-   * bubble menu key off the node type, and neither reaches a link mark.
-   *
-   * What decides it is one attribute. `@react-email/editor` parses buttons
-   * from `a[data-id="react-email-button"]` alone, so an anchor styled to look
-   * like a button — which is what these templates had — degrades silently.
+   * A call to action must parse as a `button` node, not link text — the
+   * button's Inspector and bubble menu depend on it. Only
+   * `a[data-id="react-email-button"]` parses as a button.
    */
   it('derives the account templates call to action as a button', () => {
     const doc = deriveEditorContent(
@@ -342,11 +337,9 @@ describe('deriveEditorContent', () => {
   });
 
   /*
-   * A row's height is set in one place, and it is a place the Inspector can
-   * show and change. The theme's per-paragraph 0.5em used to stack on top of
-   * the column's padding, with no control anywhere for it, and the Spacing
-   * field showed 0 because the padding was written as a shorthand it never
-   * reads.
+   * Row height comes only from column padding, which the Inspector can show
+   * and edit: no theme paragraph padding stacked on top, and longhand values
+   * (the Spacing field ignores shorthand).
    */
   it('spaces each row by its column padding alone', async () => {
     const doc = deriveEditorContent(
@@ -560,13 +553,8 @@ describe('deriveEditorContent', () => {
     });
     editors.push(editor);
 
-    /*
-     * `unformattedHtml`, not `html`. The formatted variant exists for source
-     * views and wraps long lines, which splits the longest expression here
-     * across a line break — the Liquid stays valid but stops being a
-     * contiguous substring. The unformatted variant is what `getBody` stores
-     * as `html_template`, so it is also the one that actually sends.
-     */
+    // `unformattedHtml` (what `getBody` stores and sends): the formatted
+    // variant wraps long lines, splitting expressions across line breaks.
     const { unformattedHtml } = await composeReactEmail({ editor });
 
     [
@@ -585,15 +573,10 @@ describe('deriveEditorContent', () => {
   });
 
   /*
-   * The whole reason `design.ts` exists. The default templates and the editor
-   * theme describe one email from one set of numbers, so a template that is
-   * opened and saved comes back looking like itself — grey page, white card,
-   * rounded, padded, near-black text. Left to `basic` the export is white on
-   * white, square, and with the text against the card's edge.
-   *
-   * Asserted against `EMAIL_DESIGN` rather than against literals, so the test
-   * follows a deliberate change to the design and still fails when the two
-   * sides drift apart, which is the thing worth catching.
+   * A template opened and saved must keep its design (grey page, white
+   * rounded padded card), since the default HTML and the editor theme share
+   * `design.ts`. Asserted against `EMAIL_DESIGN`, so design changes pass but
+   * drift between the two fails.
    */
   it('exports the design the default template describes', async () => {
     const editor = new Editor({
@@ -619,15 +602,9 @@ describe('deriveEditorContent', () => {
   });
 
   /*
-   * The same property, for the button's size rather than its expressions.
-   *
-   * React Email's `Button` parses the padding out of the style it is handed
-   * and re-emits the four longhand properties after spreading that style, and
-   * `parsePadding` lets a longhand key override whatever the shorthand set.
-   * The editor's theme supplies button padding in longhand, so a `padding`
-   * shorthand on the node is always overridden and never reaches the export —
-   * silently, and at any value. Opening a template and saving it would then
-   * resize its button to the theme default.
+   * The button keeps its size through a save. The theme's longhand button
+   * padding overrides any shorthand on export, so the template must use
+   * longhand too.
    */
   it('exports the button at the size the template asked for', async () => {
     const editor = new Editor({

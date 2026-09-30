@@ -56,7 +56,7 @@ export const validateEmailProviderConfigurationStep = createStep(
         );
       }
 
-      // Storing an API key needs the encryption key up front (PLAN.md §5).
+      // Storing an API key needs the encryption key up front.
       if (input.credential.source === 'encrypted_database') {
         if (input.credential.api_key && !readEncryptionKey()) {
           throw invalidDataError(

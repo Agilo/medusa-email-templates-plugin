@@ -10,8 +10,8 @@ import type {
 export const emailProviderQueryKey = ['email', 'provider'] as const;
 
 /**
- * The saved transports and which one sends. Loads on mount — never gate this
- * on drawer or modal state, or the page renders empty after a refresh.
+ * The saved transports and which one sends. Loads on mount; don't gate it on
+ * drawer state, or the page renders empty after a refresh.
  */
 export const useEmailProvider = () =>
   useQuery({
@@ -24,9 +24,8 @@ export const useEmailProvider = () =>
   });
 
 /**
- * Saves one transport's configuration and credential. Passing the transport
- * that is already selected updates it in place; passing another one also
- * makes it active, which is why the drawer's button reads "Save & activate".
+ * Saves a transport's configuration and credential. Saving a different
+ * transport also makes it active (hence "Save & activate").
  */
 export const useSaveEmailProvider = () => {
   const queryClient = useQueryClient();
@@ -46,12 +45,11 @@ export const useSaveEmailProvider = () => {
 };
 
 /**
- * Sends a fixed test email through a transport, defaulting to the selected
- * one. Pass `transport_id` to verify a configured transport before switching
- * to it.
+ * Sends a fixed test email through a transport (default: the selected one;
+ * pass `transport_id` to test before switching).
  *
- * Rejects with `email_provider_not_ready` (409) when that transport cannot
- * send, or `email_transport_failed` (502) when the provider refuses it.
+ * Rejects with `email_provider_not_ready` (409) if it can't send, or
+ * `email_transport_failed` (502) if the provider refuses.
  */
 export const useSendProviderTestEmail = () =>
   useMutation({

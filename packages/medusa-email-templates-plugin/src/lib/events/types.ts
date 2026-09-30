@@ -8,48 +8,39 @@ export interface EmailTemplateVariable {
   example: unknown;
   group?: string;
   /**
-   * What the value holds, which decides the display formats the editor offers
-   * for it. Omitted means plain text. Marking a value `money` or `date` when
-   * it is neither renders an empty string, so the editor uses this to stop an
-   * impossible choice being made rather than to decorate the picker.
+   * What the value holds; omitted means plain text.
    *
-   * `url` is the same idea applied to link and button hrefs: it is the only
-   * thing that distinguishes a value that can *be* a URL from one that merely
-   * reads like it, so the editor's link picker offers these and nothing else.
-   * A `url` value is still a plain string everywhere else — it can be dropped
-   * into body text like any other variable.
-   *
-   * `list` is an array the editor repeats content over, never a value to
-   * print: it is offered as the source of a Repeat block rather than as a
-   * pill, and its `fields` become the `item.*` values inside that block.
+   * - `money` / `date`: unlock those display formats. Don't mark other values
+   *   this way — a wrong format renders an empty string.
+   * - `url`: the only variables the link picker offers for hrefs. Still usable
+   *   as ordinary text elsewhere.
+   * - `list`: an array to repeat content over. Offered as a Repeat block
+   *   source, never as a pill; its `fields` become `item.*` inside the block.
    */
   type?: 'text' | 'number' | 'money' | 'date' | 'url' | 'list';
   /**
-   * For a `money` value, the key holding its currency code. The editor emits
-   * this as a Liquid filter argument, so it must be a bare identifier path —
-   * a quoted literal would be corrupted on export.
-   *
-   * On a list field it stays absolute (`order.currency_code`, not
-   * `item.currency_code`): Liquid reads the outer scope inside a loop.
+   * For `money`, the key holding its currency code. Must be a bare identifier
+   * path (it becomes a Liquid filter argument; quotes would be corrupted).
+   * On a list field keep it absolute (`order.currency_code`) — loops can read
+   * the outer scope.
    */
   currencyKey?: string;
   /**
-   * For a `list`, what one entry holds. Keys are relative to the entry —
-   * `title`, which the editor offers as `item.title` inside the block.
+   * For `list`, the fields of one entry, keyed relative to it (`title` is
+   * offered as `item.title` inside the block).
    */
   fields?: EmailTemplateVariable[];
   /**
-   * For a `list`, the HTML of one entry, written with `{{ item.* }}`
-   * expressions. The editor inserts it as the block's starting content, and a
-   * default template can reuse the same string so the two cannot drift.
+   * For `list`, one entry's HTML using `{{ item.* }}` expressions: the
+   * starting content of a newly inserted block. Reuse it in the default
+   * template so the two match.
    */
   itemTemplate?: string;
 }
 
 /**
- * A ready-made piece of email the editor can insert, such as an order's
- * totals. Offered as a slash command; once inserted it is ordinary editable
- * content, not a block of its own.
+ * Ready-made content the editor offers as a slash command (e.g. order
+ * totals). Once inserted it is ordinary editable content.
  */
 export interface EmailTemplateSnippet {
   /** Stable identifier, unique within the event. */
@@ -58,9 +49,8 @@ export interface EmailTemplateSnippet {
   label: string;
   description?: string;
   /**
-   * The HTML inserted, written with the event's `{{ … }}` expressions, which
-   * become pills. Use `columns()` for side-by-side cells, so the result can
-   * be reshaped in the editor.
+   * HTML to insert; its `{{ … }}` expressions become pills. Use `columns()`
+   * for side-by-side cells so they stay reshapeable.
    */
   html: string;
 }
@@ -79,9 +69,8 @@ export interface EmailEventDefinition<TData = unknown> {
   label: string;
   description?: string;
   /**
-   * Selects between definitions that share an event (for example password
-   * resets for admins and customers). Required when an event has more than
-   * one definition.
+   * Picks between definitions sharing an event (e.g. admin vs customer
+   * password resets). Required when an event has several definitions.
    */
   matches?: (data: TData) => boolean;
   /** Returns null to skip sending, for example when there is no email. */
@@ -103,13 +92,11 @@ export interface EmailEventDefinition<TData = unknown> {
     resource_type?: string;
   };
   /**
-   * Configuration problems surfaced in the admin list, as codes the dashboard
-   * turns into text. For example a customer link with no storefront URL.
+   * Configuration problems shown in the admin, as codes the dashboard turns
+   * into text (e.g. a customer link without a storefront URL).
    *
-   * Not only problems that stop a send. The password reset cannot go at all
-   * without its link, while an order confirmation sends perfectly well and
-   * merely loses `order_url` — both are worth telling an admin about, and the
-   * rendered text says what is broken rather than what was prevented.
+   * Not only send-blocking ones: a password reset can't send without its link,
+   * but an order confirmation still sends and merely loses `order_url`.
    */
   getWarnings?: (container: MedusaContainer) => string[];
 }

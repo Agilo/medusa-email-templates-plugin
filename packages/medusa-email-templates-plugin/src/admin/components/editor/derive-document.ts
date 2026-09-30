@@ -8,27 +8,15 @@ import {
 import { findLiquidExpressions } from '../../../lib/rendering/variable-format';
 
 /**
- * Turns a template's stored HTML into an editor document.
- *
- * A template that nobody has edited has no `editor_content`, only the HTML its
- * event declared. Opening the editor on an empty document was the dangerous
- * part: the body would look blank, and the first keystroke made it dirty, so
- * saving exported that blankness over a designed email. Deriving means the
- * editor opens showing the real thing.
- *
- * Nothing here is persisted. The derived document is rebuilt each time the
- * editor opens, so it cannot go stale against an HTML default that changed
- * underneath it — `editor_content` stays null until someone actually edits.
+ * Turns a template's HTML into an editor document, for templates with no
+ * `editor_content`, so the editor opens showing the real email rather than a
+ * blank canvas. Rebuilt on every open and never persisted, so it can't go
+ * stale.
  */
 
 /**
- * Splits one text run around every expression inside it.
- *
- * Expressions arrive as literal text — `Hi {{ order.customer_name }},` — and
- * leaving them that way would put raw Liquid on the canvas, which is the one
- * thing the structured variable model exists to prevent. Splitting rather than
- * replacing matters because an expression is usually embedded in prose rather
- * than filling the run.
+ * Splits a text run around each expression, replacing it with a pill, so no
+ * raw Liquid reaches the canvas (`Hi {{ order.customer_name }},`).
  */
 const splitTextNode = (node: JSONContent): JSONContent[] => {
   const text = typeof node.text === 'string' ? node.text : '';
@@ -42,14 +30,12 @@ const splitTextNode = (node: JSONContent): JSONContent[] => {
   let cursor = 0;
 
   matches.forEach((match) => {
-    // Spreading the original keeps whatever marks the run carried, so a bold
-    // sentence stays bold either side of the pill.
+    // Spread to keep the run's marks either side of the pill.
     if (match.start > cursor) {
       pieces.push({ ...node, text: text.slice(cursor, match.start) });
     }
 
-    // The pill takes the run's marks too — `<strong>{{ item.title }}</strong>`
-    // is a bold title, and a pill can carry marks like any inline content.
+    // The pill keeps them too: `<strong>{{ item.title }}</strong>` is bold.
     pieces.push({
       type: 'variable',
       attrs: {
@@ -92,16 +78,11 @@ const COLUMN_LAYOUTS: Record<number, string> = {
 };
 
 /**
- * Rewrites every `table[data-columns]` into the editor's Columns markup.
+ * Rewrites each `table[data-columns]` into the editor's Columns markup before
+ * parsing, so the library's own nodes read it (no custom parse rules needed).
  *
- * The table is what a mail client needs, so it is what a default template
- * sends; the Columns layout is what the editor can reshape. Rewriting before
- * parsing lets the library's own nodes read it, rather than replacing them
- * with copies that carry an extra parse rule.
- *
- * A cell's inline style moves to its column, where the Inspector reaches it.
- * A table whose cell count has no layout (one, or more than four) is left as
- * a table — still correct, just not reshapeable.
+ * Cell styles move to their column, where the Inspector reaches them. Tables
+ * with 1 or more than 4 cells stay tables.
  */
 export const columnsFromTables = (html: string): string => {
   const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -137,24 +118,17 @@ export const columnsFromTables = (html: string): string => {
     table.replaceWith(layout);
   });
 
-  /*
-   * Handed back in the shape it arrived in. A whole template keeps its
-   * `<body>`, whose styling the theme reads back as the page colour; a
-   * fragment such as an `itemTemplate` must not gain one, because the editor
-   * has a Body node that would parse it as an extra wrapper.
-   */
+  // Keep the input's shape: a full template keeps its `<body>` (the theme
+  // reads the page colour from it), but a fragment must not gain one, or the
+  // Body node would add a wrapper.
   return /<body[\s>]/i.test(html)
     ? doc.documentElement.outerHTML
     : doc.body.innerHTML;
 };
 
 /**
- * Replaces the page table around the card with the card itself.
- *
- * That table paints the page colour for mail clients. The editor paints its
- * own page, and its export puts the card in an equivalent cell, so the table
- * has no job here — and kept, it would parse as a Table node with the whole
- * email inside one cell.
+ * Replaces the page table (see `PAGE_ATTRIBUTE`) with the card inside it. The
+ * editor draws its own page; kept, the whole email would parse as one Table.
  */
 export const unwrapPageTables = (html: string): string => {
   const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -177,12 +151,9 @@ export const unwrapPageTables = (html: string): string => {
 };
 
 /**
- * Builds an editor document from a template's HTML.
- *
- * `extensions` is passed in rather than built here on purpose: the document
- * has to be generated against the same schema the editor will load it into.
- * Two separately assembled arrays could drift, and a document generated
- * against one schema throws on `nodeFromJSON` in another.
+ * Builds an editor document from a template's HTML. Takes the editor's own
+ * `extensions`: a document built against a different schema throws on
+ * `nodeFromJSON`.
  */
 export const deriveEditorContent = (
   html: string,

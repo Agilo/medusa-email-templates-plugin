@@ -2,13 +2,11 @@ import { container } from '@medusajs/framework';
 import { MedusaError } from '@medusajs/framework/utils';
 
 /**
- * Resolves a registration from the global Medusa application container.
+ * Resolves a registration from the global Medusa container.
  *
- * Notification Module providers are built with the notification module's
- * isolated container, which cannot resolve this plugin's own module. Every
- * loaded module service is also registered in the global container, so the
- * provider resolves plugin services from there lazily, at send time.
- * See PLAN.md §1.1 and risk R1.
+ * Notification providers get the notification module's isolated container,
+ * which can't see this plugin's module. Module services are also registered
+ * globally, so the provider resolves them from there at send time.
  */
 export const resolveFromAppContainer = <T>(key: string): T => {
   const resolved = container.hasRegistration(key)

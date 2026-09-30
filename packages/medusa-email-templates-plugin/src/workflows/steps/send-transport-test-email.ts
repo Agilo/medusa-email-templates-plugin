@@ -22,14 +22,11 @@ export type SendTransportTestEmailStepInput = {
 export const sendTransportTestEmailStepId = 'send-transport-test-email';
 
 /**
- * Sends the fixed test email straight through a transport, rather than through
- * the Notification module.
- *
- * The module routes every email to the *selected* transport, so going through
- * it would make "test Mailgun" silently send through Resend. A direct send
- * still resolves the credential, checks availability and calls the provider's
- * API, which is everything a test needs to prove — it just isn't recorded as a
- * notification, because it is a diagnostic rather than a real email.
+ * Sends the fixed test email directly through a transport, bypassing the
+ * Notification module, which always uses the *selected* transport (so testing
+ * Mailgun would send via Resend). It still resolves the credential, checks
+ * availability and calls the provider; it just isn't recorded as a
+ * notification.
  */
 export const sendTransportTestEmailStep = createStep(
   sendTransportTestEmailStepId,

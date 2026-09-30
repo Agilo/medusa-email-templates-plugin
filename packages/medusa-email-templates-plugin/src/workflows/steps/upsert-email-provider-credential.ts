@@ -34,9 +34,8 @@ type CredentialData = {
 };
 
 /**
- * Builds the row to store. A stored API key is encrypted here; when none is
- * given, the existing ciphertext is kept, so the admin UI can leave the field
- * blank to mean "unchanged".
+ * Builds the row to store, encrypting any new API key. Without one, the
+ * existing ciphertext is kept (a blank field means "unchanged").
  */
 const buildCredentialData = (
   credential: NormalizedEmailProviderCredential,

@@ -1,12 +1,9 @@
 /**
- * URL validation that admits Liquid.
+ * URL validation that allows Liquid.
  *
- * A link or button href is an *attribute*, not a text node, so a variable pill
- * cannot live there — the value has to be the Liquid expression itself. The
- * editor's own validator rejects that on two counts: `new URL('{{ x }}')`
- * throws, and its fallback branch refuses anything containing a space. A
- * rejected value is not merely ignored either — both bubble-menu forms clear
- * the href, which is why typing a variable made the link disappear.
+ * An href is an attribute, so it holds the raw Liquid expression rather than
+ * a pill. The editor's validator rejects that (`new URL('{{ x }}')` throws,
+ * and spaces are refused), and a rejected href is cleared by the bubble menus.
  */
 
 /** Matches the editor's own `SAFE_PROTOCOLS`, which it does not export. */
@@ -16,12 +13,9 @@ const LIQUID = /\{\{[^{}]*\}\}/;
 const SCHEME = /^([a-z][a-z0-9+.-]*):/i;
 
 /**
- * Whether a value carries Liquid and is safe to pass through untouched.
- *
- * Covers both `{{ invite_url }}` on its own and a URL with an expression in it
- * (`https://shop.test/{{ token }}`). A scheme, when present, still has to be
- * one of the safe four — otherwise `javascript:{{ x }}` would smuggle itself
- * past the check that exists to stop exactly that.
+ * Whether a value contains Liquid and is safe to pass through untouched:
+ * `{{ invite_url }}` or `https://shop.test/{{ token }}`. Any scheme must still
+ * be a safe one, so `javascript:{{ x }}` is rejected.
  */
 export const isLiquidUrl = (value: string): boolean => {
   if (!LIQUID.test(value)) {
@@ -30,8 +24,7 @@ export const isLiquidUrl = (value: string): boolean => {
 
   const scheme = SCHEME.exec(value.trim());
 
-  // No scheme at all is the common case: `{{ invite_url }}` renders to a full
-  // URL at send time, so there is nothing to check here.
+  // No scheme (the common case): `{{ invite_url }}` becomes a full URL at send.
   if (!scheme) {
     return true;
   }
@@ -40,10 +33,8 @@ export const isLiquidUrl = (value: string): boolean => {
 };
 
 /**
- * Reproduces the editor's `getUrlFromString`, which is internal.
- *
- * Kept faithful on purpose: anything that is not Liquid must behave exactly as
- * it did before, including the bare-domain case that gets an `https://` prefix.
+ * Reproduces the editor's internal `getUrlFromString` exactly, so non-Liquid
+ * values behave as before (including adding `https://` to a bare domain).
  */
 const stockUrl = (value: string): string | null => {
   if (value === '#') {

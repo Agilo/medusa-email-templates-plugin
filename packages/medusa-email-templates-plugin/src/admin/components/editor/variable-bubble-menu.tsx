@@ -1,23 +1,15 @@
 import { BubbleMenu } from '@react-email/editor/ui';
 import { NodeSelection, PluginKey, type EditorState } from '@tiptap/pm/state';
 
-/*
- * Its own key, because the bubble menu plugin is registered per key: sharing
- * the stock text menu's would make the two instances overwrite each other.
- */
+// Its own key: bubble menus sharing a key overwrite each other.
 const variableBubbleMenuKey = new PluginKey('variableBubbleMenu');
 
 /**
- * Shows the menu only for a pill selected on its own.
+ * Shows the menu only when a pill alone is selected (a NodeSelection). A text
+ * selection that includes a pill uses the stock text menu, whose marks reach
+ * the pill too.
  *
- * A NodeSelection, not `editor.isActive('variable')`: that also answers true
- * for a text selection lying wholly inside one, which a pill cannot hold, and
- * a mixed selection that merely includes a pill is already served by the
- * stock text menu — its marks reach the pill along with the text around it.
- *
- * Linked pills are left to the link menu. A variable is never turned into a
- * link from here, but a pill can still sit inside a link that was drawn over
- * a sentence, and two menus anchored to one selection would stack.
+ * Pills inside a link are left to the link menu, so two menus don't stack.
  */
 export const isVariableSelected = ({ state }: { state: EditorState }) =>
   state.selection instanceof NodeSelection &&
@@ -27,18 +19,12 @@ export const isVariableSelected = ({ state }: { state: EditorState }) =>
 /**
  * Formatting for a selected variable.
  *
- * Marks, which the export wraps around the pill's Liquid —
- * `<strong>{{ order.total | money: … }}</strong>` — so the sent email carries
- * them without any change to the node.
+ * - Marks: the export wraps them around the pill's Liquid
+ *   (`<strong>{{ order.total | money: … }}</strong>`).
+ * - Alignment: applies to the paragraph containing the pill.
  *
- * And alignment, which is the paragraph's rather than the pill's: the stock
- * buttons align every textblock the selection touches, and a selected pill
- * touches the one it sits in. That is what an admin means by aligning a
- * value that sits alone on its line, such as a total in its column.
- *
- * Still no "Turn into", which would convert that whole paragraph from a
- * single inline pill, and no link selector, which would hand the pill to the
- * link Inspector in place of the variable one.
+ * No "Turn into" (it would convert the whole paragraph) and no link selector
+ * (it would hand the pill to the link Inspector).
  */
 export const VariableBubbleMenu = () => (
   <BubbleMenu.Root

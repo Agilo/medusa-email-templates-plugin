@@ -5,13 +5,9 @@ import type { EmailTemplateSnippet } from '../../lib/types';
 import { deriveEditorContent } from './derive-document';
 
 /**
- * One command per snippet the event declares — "Order totals" — inserting
- * its HTML as ordinary content.
- *
- * Through `deriveEditorContent`, the same path a default template takes, so
- * its expressions arrive as pills and its `columns()` rows as Columns
- * layouts. A snippet is a starting point, not a block: once inserted, nothing
- * remembers where it came from, and every row can be edited or deleted.
+ * One slash command per snippet (e.g. "Order totals"), inserting its HTML as
+ * ordinary editable content. Converted via `deriveEditorContent`, so
+ * expressions become pills and `columns()` rows become Columns layouts.
  */
 export const snippetSlashCommands = (
   snippets: EmailTemplateSnippet[],
@@ -35,8 +31,7 @@ export const snippetSlashCommands = (
           deriveEditorContent(snippet.html, editor.extensionManager.extensions)
             .content ?? [];
       } catch {
-        // A host's snippet that does not parse inserts nothing, rather than
-        // taking the editor down with it.
+        // An unparseable host snippet inserts nothing instead of crashing.
         content = [];
       }
 

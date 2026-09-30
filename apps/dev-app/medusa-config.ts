@@ -45,24 +45,16 @@ module.exports = defineConfig({
         server: {
           ...config.server,
           /*
-           * HMR stays off behind a tunnel, where the client cannot reach the
-           * websocket, but is left on locally — and it is load-bearing there.
+           * HMR is off behind a tunnel (the websocket is unreachable) but must
+           * stay on locally.
            *
-           * The plugin admin entry is excluded from `optimizeDeps` below, so
-           * Vite's initial dependency scan never crawls it and everything it
-           * imports is discovered at request time instead. Each discovery
-           * re-runs the optimizer and moves `browserHash`, which is the `?v=`
-           * Vite stamps onto every optimized import. Vite's answer to that is
-           * to push a full page reload so the whole graph comes from one
-           * generation; with no websocket there is nothing to push it down,
-           * and the page ends up holding several generations at once. Two
-           * copies of React then run side by side, the second one's dispatcher
-           * is null, and mounting the lazily loaded editor dies with "Cannot
-           * read properties of null (reading 'useMemo')".
-           *
-           * Listing the plugin's imports under `include` is not a substitute:
-           * it removes the discoveries you can name, while transitive ones
-           * (`@medusajs/admin-shared`, say) still arrive late.
+           * With the plugin excluded from `optimizeDeps` (below), its imports
+           * are discovered at request time, which re-runs the optimizer and
+           * changes the `?v=` hash. Vite then pushes a full reload over the
+           * websocket. Without it the page mixes generations, loads two
+           * Reacts, and the editor crashes ("Cannot read properties of null
+           * (reading 'useMemo')"). `include` can't fully prevent this:
+           * transitive imports still arrive late.
            */
           ...(tunnelHost
             ? {
@@ -78,23 +70,14 @@ module.exports = defineConfig({
         },
         optimizeDeps: {
           ...config.optimizeDeps,
-          // The plugin admin entry is excluded below so plugin rebuilds reload
-          // without a stale cache. Dependencies it imports are then not
-          // pre-bundled automatically, and CommonJS packages in their graph
-          // (e.g. deepmerge via @react-email/render → html-to-text) fail to
-          // load in the browser. Pre-bundle the plugin's admin dependencies
-          // explicitly.
+          // The plugin is excluded below so rebuilds reload without a stale
+          // cache, so its dependencies must be pre-bundled explicitly (CommonJS
+          // ones like deepmerge otherwise fail in the browser).
           //
-          // Every bare specifier the built admin chunks import belongs here,
-          // not only the ones that fail outright. Being excluded, those chunks
-          // are served raw, and Vite rewrites their imports to
-          // `/.vite/deps/…?v=<browserHash>` using whichever hash is current
-          // when it transforms the file. A specifier missing from this list is
-          // discovered at request time instead, which re-runs the optimizer
-          // and moves that hash, leaving the page mixing two generations of
-          // the same dependency. Listing them here keeps the first pass
-          // complete; the HMR note above covers what catches the ones that
-          // still slip through.
+          // List every bare specifier the built admin chunks import. A missing
+          // one is discovered at request time, re-runs the optimizer and
+          // changes the `?v=` hash mid-load (e.g. a 504 "Outdated Optimize
+          // Dep"). See the HMR note above for what catches stragglers.
           include: [
             ...(config.optimizeDeps?.include ?? []),
             '@react-email/editor',

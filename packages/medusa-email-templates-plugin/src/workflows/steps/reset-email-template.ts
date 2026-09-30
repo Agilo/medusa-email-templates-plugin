@@ -29,10 +29,9 @@ export const resetEmailTemplateStepId = 'reset-email-template-record';
 /**
  * Puts an event back on its built-in template.
  *
- * A template that is sending keeps sending: `enabled` lives on the same row as
- * the content, so dropping the row would silently switch the email off. The
- * row is reverted to the default content instead, and only removed when the
- * template is disabled and therefore has nothing worth keeping.
+ * `enabled` lives on the same row, so an enabled template's row is reverted
+ * to the default content (deleting it would switch the email off). A
+ * disabled template's row is removed.
  */
 export const resetEmailTemplateStep = createStep(
   resetEmailTemplateStepId,
@@ -65,13 +64,9 @@ export const resetEmailTemplateStep = createStep(
     };
 
     if (!existing.enabled) {
-      /*
-       * Soft, so the compensation below can bring it back: `restore` only
-       * finds soft-deleted rows, and a hard delete left a rolled-back reset
-       * with nothing to restore — the admin's customised template gone for
-       * good. The unique index on `template_key` ignores deleted rows, so
-       * saving the template again still creates a fresh one.
-       */
+      // Soft-deleted so the compensation can restore it (`restore` only finds
+      // soft-deleted rows). The unique index ignores deleted rows, so saving
+      // again still works.
       await service.softDeleteEmailTemplates(existing.id);
 
       return new StepResponse({ reset: true }, {

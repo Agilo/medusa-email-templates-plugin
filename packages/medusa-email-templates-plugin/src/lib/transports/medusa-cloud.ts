@@ -16,8 +16,8 @@ export const CLOUD_UNAVAILABLE_REASON =
   'Medusa Emails is only available when the application runs on Medusa Cloud with the MEDUSA_CLOUD_* settings injected. It is not available in local development.';
 
 export const medusaCloudConfigSchema = z.object({
-  // Optional: a custom sender needs a verified domain on a paid plan, so by
-  // default nothing is sent and Cloud uses its own address (PLAN.md D12).
+  // Optional: a custom sender needs a verified domain on a paid plan; by
+  // default Cloud uses its own address.
   from_address: emailAddressSchema.optional(),
 });
 
@@ -37,9 +37,9 @@ const parseCloudConfig = (config: unknown): MedusaCloudConfig => {
 
 /**
  * Sends through Medusa's internal Cloud email endpoint, reproducing the
- * request Medusa's own provider makes (see PLAN.md §1.2 and the contract test
- * in integration-tests/module/cloud-transport.spec.ts). Credentials are
- * managed by Cloud, so nothing is stored by the plugin.
+ * request of Medusa's own provider (verified by
+ * integration-tests/module/cloud-transport.spec.ts). Cloud manages the
+ * credentials; the plugin stores none.
  */
 export const medusaCloudTransport: EmailTransport = {
   id: MEDUSA_CLOUD_TRANSPORT_ID,
@@ -78,13 +78,12 @@ export const medusaCloudTransport: EmailTransport = {
 
     let response: Response;
 
-    // Only the request itself: a failure here means Cloud was never reached.
+    // Only the request: failing here means Cloud was never reached.
     try {
       response = await fetch(`${cloud!.emailsEndpoint}/send`, {
         method: 'POST',
         headers,
-        // Key order matches Medusa's provider, so the contract test can
-        // compare the raw body.
+        // Key order matches Medusa's provider for the contract test.
         body: JSON.stringify({
           to: email.to,
           from: email.from,
@@ -101,20 +100,15 @@ export const medusaCloudTransport: EmailTransport = {
       );
     }
 
-    /*
-     * Parsed apart from the request, and allowed to fail. A gateway in front
-     * of Cloud answers an outage with an HTML error page; parsing that inside
-     * the try above threw "Unexpected token <" and hid the status that says
-     * what actually happened. The same fallback the Mailgun transport uses.
-     */
+    // Allowed to fail: a gateway error page is HTML, and a parse error would
+    // hide the HTTP status. Same fallback as the Mailgun transport.
     const body = (await response.json().catch(() => null)) as {
       id?: string;
       message?: string;
     } | null;
 
     if (!response.ok) {
-      // Medusa core's own wording, with the message dropped when there is
-      // none rather than printed as "undefined".
+      // Medusa core's wording, minus the message when there is none.
       throw transportFailedError(
         `Failed to send email: ${response.status} - ${response.statusText}${body?.message ? `: ${body.message}` : ''}`,
       );

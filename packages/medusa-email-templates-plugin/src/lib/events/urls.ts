@@ -8,9 +8,8 @@ import type { EmailTemplatesModuleOptions } from '../../modules/email-templates/
 export const DEFAULT_STOREFRONT_RESET_PATH = '/reset-password';
 
 /**
- * Storefronts disagree about this one — the Next.js starter has moved it more
- * than once — so the default is the plainest thing that could be right and the
- * option exists to correct it.
+ * Storefronts differ here (the Next.js starter has moved it), so this is a
+ * plain default that the option can override.
  */
 export const DEFAULT_STOREFRONT_ORDER_PATH = '/orders';
 
@@ -40,10 +39,7 @@ const trimTrailingSlash = (value: string): string =>
 const withLeadingSlash = (value: string): string =>
   value.startsWith('/') ? value : `/${value}`;
 
-/**
- * Base URL of the Medusa admin. Falls back to the application's configured
- * backend URL plus the admin path, which is where the dashboard is served.
- */
+/** Base URL of the Medusa admin; defaults to the backend URL + admin path. */
 export const getAdminUrl = (container: MedusaContainer): string => {
   const { admin_url: adminUrl } = readOptions(container);
 
@@ -85,15 +81,11 @@ export const getStorefrontOrderPath = (container: MedusaContainer): string =>
   );
 
 /**
- * A link to an order on the storefront, or null when there is no storefront to
- * link to.
+ * A link to an order on the storefront, or null without a storefront.
  *
- * Null rather than a throw, which is what sets this apart from the password
- * reset. That email *is* its link, so `getStorefrontUrl` throwing there skips
- * the send rather than delivering something useless. An order confirmation is
- * a complete email without one — it has been sending for as long as this plugin
- * has existed, with no storefront configured — so a missing URL must not stop
- * it. The variable simply goes unresolved, and `getWarnings` says why.
+ * Null, not a throw: unlike a password reset (which is useless without its
+ * link, so it skips), an order confirmation is complete without it. The
+ * variable goes unresolved and `getWarnings` explains why.
  */
 export const getOrderUrl = (
   container: MedusaContainer,

@@ -12,10 +12,8 @@ type TemplateTestEmailDrawerProps = {
   template: EmailTemplateListItem;
   onClose: () => void;
   /**
-   * The unsaved subject and body, read when Send is pressed. Without it the
-   * test sends the stored template, which is not what the editor is showing.
-   *
-   * Omitted by the templates list, which has no editor behind it.
+   * The unsaved subject and body, read on Send, so the test matches the
+   * editor. Omitted by the templates list, which sends the stored template.
    */
   getDraft?: () => Promise<EmailTemplateDraft>;
 };
@@ -35,8 +33,7 @@ const TemplateTestEmailDrawer = ({
       try {
         draft = await getDraft();
       } catch (error) {
-        // Exporting failed, so there is nothing to send. Better to say so than
-        // to quietly send the saved template instead.
+        // Export failed: report it rather than quietly send the saved template.
         toast.error(getApiErrorMessage(error));
         return;
       }

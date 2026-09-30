@@ -22,9 +22,8 @@
  * export const config = { event: 'review.approved' };
  * ```
  *
- * `defineEmailEvent` only registers the definition and returns it; the
- * subscriber itself is the host's, as above. The README has a complete
- * example.
+ * `defineEmailEvent` only registers the definition; the subscriber is the
+ * host's own, as above. See the README for a complete example.
  */
 export {
   defineEmailEvent,
@@ -39,11 +38,11 @@ export type {
   EmailTemplateSnippet,
   EmailTemplateVariable,
 } from './lib/events';
-// For side-by-side cells in a default template or snippet, which the editor
-// opens as a Columns layout it can reshape.
+// Side-by-side cells for default templates and snippets; opens as an editable
+// Columns layout.
 export { columns } from './lib/events/built-in/default-templates/design';
-// For a default template that repeats over a `list` variable, in the shape
-// the editor reads back as a Repeat block.
+// Repeats default-template HTML over a `list` variable; opens as a Repeat
+// block.
 export { repeat } from './lib/events/built-in/default-templates/repeat';
 export { registerEmailTransport } from './lib/transports/registry';
 export type {

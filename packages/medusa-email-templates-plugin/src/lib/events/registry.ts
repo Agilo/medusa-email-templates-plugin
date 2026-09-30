@@ -4,8 +4,8 @@ import type { EmailEventDefinition, EmailTemplateVariable } from './types';
 const definitions: EmailEventDefinition<never>[] = [];
 
 /**
- * Every key a definition declares that the editor would turn into Liquid:
- * each variable's key and currency key, and a list's field keys and theirs.
+ * Every key the editor would write into Liquid: each variable's key and
+ * currency key, including list fields.
  */
 const declaredKeys = (
   variables: EmailTemplateVariable[],
@@ -20,15 +20,10 @@ const declaredKeys = (
   ]);
 
 /**
- * Rejects a key the editor cannot emit, at registration rather than at save.
- *
- * The editor writes each key into Liquid through `toLiquidExpression`, which
- * accepts only lowercase dotted identifiers — that restriction is what keeps
- * a quote out of the exported template. A key like `order.displayId` or
- * `customer-name` was accepted here, offered in every picker, and could be
- * inserted; it failed only when the template was saved, and in the subject
- * that failure escaped as an unhandled rejection with nothing saved and no
- * message. Failing here names the event and the key at startup instead.
+ * Rejects keys the editor can't emit, at startup rather than when an admin
+ * uses them. `toLiquidExpression` accepts only lowercase dotted identifiers
+ * (keeping quotes out of templates), so a key like `order.displayId` or
+ * `customer-name` would otherwise appear in pickers and then fail.
  */
 const assertEditableKeys = (definition: EmailEventDefinition<never>): void => {
   const invalid = declaredKeys(definition.variables).filter(
@@ -52,8 +47,8 @@ const asInternal = <TData>(definition: EmailEventDefinition<TData>) =>
   definition as unknown as EmailEventDefinition<never>;
 
 /**
- * Registers an email event definition. Template keys are unique, and an event
- * may have several definitions only when each one has a `matches` predicate.
+ * Registers an email event definition. Template keys must be unique; an event
+ * may have several definitions only if each has a `matches` predicate.
  */
 export const registerEmailEvent = <TData>(
   definition: EmailEventDefinition<TData>,

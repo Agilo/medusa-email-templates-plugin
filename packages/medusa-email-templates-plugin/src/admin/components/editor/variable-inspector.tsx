@@ -34,20 +34,13 @@ type SectionName =
   | 'border';
 
 /**
- * Mirrors the library's own `getDefaultLayout`.
+ * Mirrors the library's internal `getDefaultLayout`. Custom children replace
+ * `Inspector.Node`'s defaults entirely, so every node type's sections must be
+ * supplied here. Will drift if the library changes its defaults.
  *
- * Passing children to `Inspector.Node` replaces `InspectorNodeDefaults`
- * entirely, and that component is internal — so branching on our node type
- * means supplying the panel for every other type too. Reproduced rather than
- * invented, but it will drift if the library changes its defaults.
- *
- * One deliberate divergence: `link` on `button`. The library's own layout
- * lists a `link` section but its renderer has no case for it and drops it, so
- * a button's href had no home in the panel at all. Ours is first because it is
- * the property a button is most often opened to change.
- *
- * Images can carry an href too, and would take the same section — left out
- * only because nothing has asked for it.
+ * One divergence: `button` gets a working `link` section, first. The
+ * library lists one but never renders it. (Images could use it too; not yet
+ * needed.)
  */
 const SECTIONS_BY_NODE: Record<string, readonly SectionName[]> = {
   image: ['attributes', 'size', 'padding', 'border'],
@@ -95,12 +88,8 @@ const DefaultSections = ({
 }) => {
   const sections = SECTIONS_BY_NODE[context.nodeType] ?? FALLBACK_SECTIONS;
 
-  /*
-   * `Typography` is typed against the text context but the library hands it
-   * the node context here too, leaving its mark and alignment props
-   * undefined. Matching that behaviour needs the cast; the alternative is
-   * dropping a section the panel has always shown.
-   */
+  // `Typography` is typed for the text context, but the library passes it the
+  // node context too (marks and alignment undefined). The cast matches that.
   const textContext = context as unknown as InspectorTextContext;
 
   return (
@@ -142,19 +131,15 @@ type VariableSectionProps = InspectorNodeContext & {
 };
 
 /**
- * Which value a pill shows, and how it is displayed.
+ * Which variable a pill shows, and its format.
  *
- * Styling lives in its own section, `VariableTypography`, and stops at type:
- * background, border and padding on an inline value would fight the pill's
- * chrome on the canvas and render unpredictably in mail clients.
+ * Styling is limited to typography (`VariableTypography`): background, border
+ * and padding on an inline value would clash with the pill and render
+ * unreliably in mail clients.
  *
- * The markup mirrors the library's own `Section` / `PropRow` / `Label` /
- * `Select` primitives, which are internal — the `Inspector` compound exports
- * whole sections only. Emitting the same `data-re-inspector-*` attributes is
- * what makes this panel inherit the panel's styling rather than reading as a
- * different component: a row per property with the label beside its control,
- * and a select at the shared 1.6rem height. Reproduced rather than invented,
- * so it will drift if the library changes those attributes.
+ * Reproduces the library's internal section markup so the
+ * `data-re-inspector-*` attributes pick up the panel's styling. Will drift if
+ * the library changes them.
  */
 const VariableSection = ({
   getAttr,
@@ -163,7 +148,7 @@ const VariableSection = ({
   variables: declared,
 }: VariableSectionProps) => {
   const { editor } = useCurrentEditor();
-  // What a pill *here* may show: `item.*` values only inside a Repeat block.
+  // Variables valid here: `item.*` only inside a Repeat block.
   const variables = editor
     ? variablesAt(editor.state.doc, nodePos.pos, declared)
     : scalarVariables(declared);
@@ -180,8 +165,7 @@ const VariableSection = ({
     const next = variables.find((entry) => entry.key === nextKey);
     const attrs = attributesFor(next);
 
-    // Three writes because `setAttr` takes one attribute at a time. They
-    // compose: each re-reads the node from the document before writing.
+    // One attribute per `setAttr`; each re-reads the node, so they compose.
     setAttr('key', attrs.key);
     setAttr('format', attrs.format);
     setAttr('currencySource', attrs.currencySource);
@@ -190,8 +174,7 @@ const VariableSection = ({
   return (
     <div data-re-inspector-section="" data-has-title="">
       <div data-re-inspector-section-header="">
-        {/* "Attributes" rather than "Variable": it matches what the library
-            calls a node's own settings, and the row beneath is already
+        {/* The library's name for a node's own settings; the row below is
             labelled Variable. */}
         <button
           type="button"
@@ -226,9 +209,6 @@ const VariableSection = ({
               ))}
             </select>
           </div>
-
-          {/* Only worth showing when the value can be displayed more than one
-              way. */}
           {formats.length > 1 && (
             <div data-re-inspector-prop-row="">
               <label data-re-inspector-label="" htmlFor="variable-format">
@@ -260,13 +240,9 @@ const FORMAT_MARKS = ['bold', 'italic', 'underline', 'strike', 'code'];
 /**
  * The library's Typography section, pointed at the pill.
  *
- * Colour, size and line height come from the node context, whose style
- * helpers write the pill's own `style` — so they style the value alone, not
- * the words around it, and the export wraps just the expression in a span.
- *
- * Format and Align are what the bubble menu offers: marks on the pill, and
- * the alignment of the paragraph it sits in, through the same helpers the
- * stock align buttons use.
+ * Colour, size and line height write the pill's own `style`, styling only the
+ * value. Format toggles marks on the pill; Align sets the paragraph's
+ * alignment, as the bubble menu does.
  */
 const VariableTypography = ({ context }: { context: InspectorNodeContext }) => {
   const { editor } = useCurrentEditor();
@@ -303,13 +279,9 @@ const VariableTypography = ({ context }: { context: InspectorNodeContext }) => {
 };
 
 /**
- * Which list a Repeat block repeats over.
- *
- * Deliberately no styling controls: the block is a loop around its content
- * rather than a box of its own, so spacing and colour belong to the content
- * inside it, where the usual sections apply.
- *
- * The same `data-re-inspector-*` markup as `VariableSection`.
+ * Which list a Repeat block repeats over. No styling controls: the block is a
+ * loop, not a box, so style its content instead. Same markup as
+ * `VariableSection`.
  */
 const RepeatSection = ({
   getAttr,

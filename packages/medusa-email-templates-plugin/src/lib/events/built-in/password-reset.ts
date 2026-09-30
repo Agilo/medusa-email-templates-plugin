@@ -16,7 +16,7 @@ import { retrieveStoreName } from './store';
 
 /**
  * Medusa emits one `auth.password_reset` event for every actor, so the two
- * definitions below are told apart by `actor_type` (PLAN.md D2).
+ * definitions below are told apart by `actor_type`.
  */
 export type PasswordResetEventData = {
   entity_id: string;

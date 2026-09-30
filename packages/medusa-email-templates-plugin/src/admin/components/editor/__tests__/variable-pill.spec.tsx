@@ -13,13 +13,9 @@ import { VariableInspector } from '../variable-inspector';
 import { UNSET_VARIABLE_LABEL, VariableNode } from '../variable-node';
 
 /**
- * These mount through `EditorContent` on purpose.
- *
- * `ReactNodeViewRenderer` returns a stub node view when
- * `editor.contentComponent` is unset, and only `EditorContent` sets it — so a
- * bare `new Editor()` never instantiates the pill at all. Every other spec in
- * this folder builds a bare editor, which is exactly why three separate pill
- * bugs shipped without a single test failing.
+ * Mounted through `EditorContent` on purpose: without it,
+ * `ReactNodeViewRenderer` returns a stub and the pill is never rendered. Specs
+ * using a bare `new Editor()` can't catch pill bugs.
  */
 
 const variables: EmailTemplateVariable[] = [
@@ -97,11 +93,8 @@ const Harness = ({
 };
 
 /**
- * Mounts and waits for the pill to actually exist.
- *
- * Node views render through React portals that `createContentComponent`
- * publishes via `queueMicrotask`, so nothing is in the DOM the instant
- * `render()` returns — asserting synchronously finds an empty paragraph.
+ * Mounts and waits for the pill: node views render via portals published in a
+ * microtask, so they aren't in the DOM when `render()` returns.
  */
 const mountEditor = async (content: JSONContent) => {
   let editor: Editor | null = null;
@@ -169,13 +162,9 @@ describe('variable pill', () => {
   });
 
   /*
-   * The pill no longer says which variable it is, so something has to. A
-   * `title` attribute did not: it never surfaced inside the contenteditable.
-   *
-   * Opened by focus rather than by pointer. Radix answers both, and focus
-   * skips the hover delay and the pointer-event support jsdom lacks — what is
-   * being pinned here is that a tooltip exists and names the variable, not
-   * which gesture reveals it.
+   * The pill shows a value, so a tooltip must name the variable (`title`
+   * never appears in contenteditable). Opened by focus: it skips the hover
+   * delay and pointer events jsdom lacks.
    */
   it('names the variable in a tooltip', async () => {
     await mountEditor(docWith(MONEY));
@@ -245,12 +234,8 @@ describe('variable pill', () => {
   });
 
   /*
-   * The pill is one text run to a screen reader, and the blue/orange
-   * distinction carries meaning that colour alone does not convey.
-   *
-   * The format stays here even though the tooltip dropped it: `aria-label`
-   * replaces the element's text, so a screen reader hears "Total, Money" and
-   * never the `€55.00` a sighted reader is looking at.
+   * Screen readers can't see the colours, and `aria-label` replaces the
+   * visible value, so it must name the variable, format and state.
    */
   it('names the variable, its format and its state to assistive tech', async () => {
     await mountEditor(docWith(MONEY));
@@ -285,12 +270,9 @@ describe('variable pill', () => {
 });
 
 /**
- * The Inspector panel.
- *
- * `Inspector.Node`'s render-prop only receives our node once the editor
- * reports focus and the selection is a NodeSelection on it — so the Variable
- * control appearing proves the whole chain, without any of the positioning
- * the bubble menu needed.
+ * The Inspector panel. It only receives the pill once the editor is focused
+ * with a NodeSelection on it, so the Variable control appearing proves the
+ * whole click-to-select chain.
  */
 const InspectorHarness = ({ content }: { content: JSONContent }) => {
   const editor = useEditor({

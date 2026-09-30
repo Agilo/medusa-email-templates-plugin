@@ -3,21 +3,18 @@ import type { VariableFormat } from './variable-format';
 /**
  * Turns a value into the text a recipient sees.
  *
- * Shared by two callers: `./liquid.ts` registers these as Liquid filters for
- * real sends, and the admin editor calls them directly to preview what a
- * format produces. Sharing them is the point — a preview that used its own
- * formatting would be a guess rather than the truth.
+ * Shared by sends (registered as Liquid filters in `./liquid.ts`) and the
+ * editor's previews, so previews show exactly what sends.
  *
- * Keep this module dependency-free. It is bundled into the admin's browser
- * chunk, so no Node APIs, no `liquidjs`, nothing from `@medusajs/framework`.
+ * Bundled into the admin, so keep it dependency-free: no Node APIs,
+ * `liquidjs` or `@medusajs/framework`.
  */
 
 export type DateFormat = Extract<VariableFormat, `date_${string}`>;
 
 /**
- * Keyed off the shared format union, so adding a `date_*` format without
- * giving it options here is a compile error rather than a `strictFilters`
- * failure at send time.
+ * Keyed by the shared format union, so a new `date_*` format without options
+ * is a compile error, not a send-time `strictFilters` failure.
  */
 const DATE_FORMATS: Record<DateFormat, Intl.DateTimeFormatOptions> = {
   date_long: { day: 'numeric', month: 'long', year: 'numeric' },
@@ -55,14 +52,11 @@ export const formatMoney = (value: unknown, currencyCode?: unknown): string => {
 };
 
 /**
- * Dates always arrive as strings: `sanitizeTemplateContext` round-trips the
- * context through JSON, so a `Date` has become an ISO string long before a
- * filter sees it. Numbers are accepted too, for a timestamp placed into
- * context directly.
+ * Dates arrive as ISO strings (the context is round-tripped through JSON);
+ * numeric timestamps are accepted too.
  *
- * Output is pinned to UTC so a send renders the same text whatever the
- * server's timezone, and to `en-US` to match `formatMoney`. Both are recorded
- * limitations — locale awareness is a follow-up, not a decision.
+ * Pinned to UTC (same output on any server) and `en-US` (like `formatMoney`).
+ * Both are known limitations; locale support is a follow-up.
  */
 export const formatDate = (value: unknown, format: DateFormat): string => {
   if (typeof value !== 'string' && typeof value !== 'number') {

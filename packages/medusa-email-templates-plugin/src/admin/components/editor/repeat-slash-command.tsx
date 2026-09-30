@@ -6,10 +6,8 @@ import { listVariables } from '../../lib/variables';
 import { deriveEditorContent } from './derive-document';
 
 /**
- * A new block's starting content: the list's `itemTemplate`, with its
- * expressions turned into pills exactly as a default template's are.
- *
- * Without one, a single empty line — the admin builds the entry from there.
+ * A new block's starting content: the list's `itemTemplate`, converted like a
+ * default template. Without one, a single empty line.
  */
 const presetFor = (
   list: EmailTemplateVariable,
@@ -28,9 +26,8 @@ const presetFor = (
 };
 
 /**
- * One command per list the event declares — "Order items" rather than a
- * generic "Repeat", because the list is the thing being inserted. None at all
- * for an event without lists, so the menu offers nothing that cannot work.
+ * One command per list the event declares, named after it ("Order items").
+ * None for events without lists.
  */
 export const repeatSlashCommands = (
   variables: EmailTemplateVariable[],

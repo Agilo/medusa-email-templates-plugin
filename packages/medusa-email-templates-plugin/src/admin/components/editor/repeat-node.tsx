@@ -20,9 +20,8 @@ declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     repeat: {
       /**
-       * Inserts a Repeat block over `source`, holding `content`. Refused
-       * inside another Repeat block: the loop alias is always `item`, so a
-       * nested block would shadow its parent's entries.
+       * Inserts a Repeat block over `source` holding `content`. Refused inside
+       * another Repeat block, whose `item` alias it would shadow.
        */
       setRepeat: (attrs: {
         source: string;
@@ -40,10 +39,8 @@ type RepeatNodeOptions = {
 /** Shown for a block whose list has not been chosen yet. */
 export const UNSET_REPEAT_LABEL = 'Choose what to repeat';
 
-/*
- * Neutral while it repeats something real, orange — the pill's own warning
- * tone — when it repeats nothing or a list this event no longer declares.
- */
+// Neutral for a valid list; orange (the pill's warning tone) when the list is
+// unset or not declared by this event.
 const FRAME_BASE = 'my-2 rounded-md border border-dashed p-2';
 const FRAME_TONES = {
   chosen: 'border-ui-border-strong',
@@ -56,11 +53,8 @@ const LABEL_TONES = {
 } as const;
 
 /**
- * The block on the canvas: a frame around one entry, which is edited like
- * any other content.
- *
- * Only one entry is drawn. The pills inside show example values, which is
- * enough to judge a line's layout, and the label says the rest.
+ * The block on the canvas: a labelled frame around one editable entry. Only
+ * one entry is drawn; its pills show example values.
  */
 const RepeatFrame = ({
   node,
@@ -95,12 +89,9 @@ const RepeatFrame = ({
       data-repeat-state={tone}
     >
       {/*
-        The label is the handle for the block itself. Clicking inside the
-        content puts the caret in a paragraph, which is what editing a row
-        needs; clicking here selects the whole block, which is what brings up
-        its "Repeat for each" setting. Same mechanics as the variable pill —
-        see `VariablePill` for why the selection is set by hand and why
-        `focus()` is needed.
+        Clicking the label selects the whole block (showing its "Repeat for
+        each" setting); clicking the content edits it. Selection works as in
+        `VariablePill`.
       */}
       <div
         contentEditable={false}
@@ -124,18 +115,16 @@ const RepeatFrame = ({
 };
 
 /**
- * Repeats its content once per entry of a list.
- *
- * The content is ordinary editor content — tables, paragraphs, pills — so an
- * entry is styled with the same bubble menu and Inspector as everything else.
- * Pills inside it may use the list's `item.*` values; see `variablesAt`.
+ * Repeats its content once per list entry. The content is ordinary editor
+ * content, styled like everything else; pills inside may use the list's
+ * `item.*` values (see `variablesAt`).
  */
 export const RepeatNode = EmailNode.create<RepeatNodeOptions>({
   name: 'repeat',
   group: 'block',
   content: 'block+',
-  // The library's own `section` settings: a boundary that editing does not
-  // merge across, and that keeps its type when content is pasted into it.
+  // As the library's `section`: edits don't merge across it, and pasting in
+  // keeps its type.
   isolating: true,
   defining: true,
 
@@ -186,16 +175,10 @@ export const RepeatNode = EmailNode.create<RepeatNodeOptions>({
     return [
       {
         tag: `div[${REPEAT_ATTRIBUTE}]`,
-        /*
-         * Above the library's `div` rule, which would otherwise claim the
-         * element as a plain container and leave the loop tags as text.
-         */
+        // Beats the library's `div` rule, which would leave the loop tags as text.
         priority: 1000,
-        /*
-         * Content comes from the body alone, so the `{% for %}` and
-         * `{% endfor %}` either side of it are never read. Falls back to the
-         * element itself for HTML without a body — a hand-written block, say.
-         */
+        // Read only the body, skipping the loop tags around it. Falls back to
+        // the element for HTML without a body (e.g. hand-written).
         contentElement: (element: HTMLElement) =>
           element.querySelector<HTMLElement>(
             `:scope > [${REPEAT_BODY_ATTRIBUTE}]`,
@@ -204,20 +187,16 @@ export const RepeatNode = EmailNode.create<RepeatNodeOptions>({
     ];
   },
 
-  // The same shape the export writes, minus the loop, so copying a block and
-  // pasting it back parses the same way.
+  // The export's shape minus the loop, so copy-paste parses back the same.
   renderHTML({ HTMLAttributes }) {
     return ['div', HTMLAttributes, ['div', { [REPEAT_BODY_ATTRIBUTE]: '' }, 0]];
   },
 
   /**
-   * The shape `repeat()` writes for a default template, so an exported block
-   * and a built-in one are the same HTML.
+   * The same HTML shape `repeat()` writes for default templates.
    *
-   * With no list chosen the content is written once, without a loop — an
-   * unfinished block should not take the email down. A source that is
-   * present but malformed still throws, like a malformed pill key: it can
-   * only come from hand-edited JSON, and failing loudly beats sending
+   * No list chosen: content is written once, without a loop. A malformed
+   * source throws (only possible via hand-edited JSON) rather than send
    * broken Liquid.
    */
   renderToReactEmail({ node, children }) {

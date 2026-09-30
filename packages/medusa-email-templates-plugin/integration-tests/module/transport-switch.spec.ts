@@ -17,7 +17,7 @@ const MAILGUN_KEY = 'key-switch-secret-value-456';
 
 /**
  * Switching the selected transport takes effect on the next send, without a
- * restart, because the provider reads the selection per send (PLAN.md §4).
+ * restart, because the provider reads the selection per send.
  */
 pluginIntegrationSuite(({ getContainer }) => {
   let capture: CaptureServer;

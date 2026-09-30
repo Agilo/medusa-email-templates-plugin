@@ -36,11 +36,9 @@ type VariableNodeOptions = {
 };
 
 /**
- * A pill's own inline CSS as a React style object.
- *
- * The Inspector's Typography section writes it — colour, size, line height —
- * as the kebab-case declaration list its style helper produces. The library's
- * parser for that format is internal, and this is all it takes.
+ * Parses a pill's inline CSS (written by the Inspector's Typography section
+ * as `a-b: c; …`) into a React style object. The library's own parser is
+ * internal.
  */
 export const styleFromCss = (css: unknown): CSSProperties => {
   if (typeof css !== 'string' || !css.trim()) {
@@ -72,13 +70,11 @@ export const styleFromCss = (css: unknown): CSSProperties => {
 };
 
 /**
- * Builds the expression for a node's attributes.
+ * Builds the Liquid expression for a pill.
  *
- * An absent key yields an empty string rather than throwing: a freshly
- * inserted pill has no variable yet, and `renderHTML` runs on every canvas
- * render, so throwing there would take the editor down. A key that is present
- * but malformed still throws — that can only arrive through hand-edited JSON,
- * and failing loudly beats emitting broken Liquid into a real email.
+ * No key yields `''` (a new pill has none yet, and throwing here would crash
+ * the canvas). A malformed key still throws: it can only come from
+ * hand-edited JSON, and failing beats sending broken Liquid.
  */
 const expressionFor = (attrs: Record<string, unknown> | undefined): string => {
   const key = typeof attrs?.key === 'string' ? attrs.key.trim() : '';
@@ -97,22 +93,15 @@ const expressionFor = (attrs: Record<string, unknown> | undefined): string => {
 };
 
 /*
- * `inline`, not `inline-flex`: an inline-level box keeps the line box sized
- * by the surrounding text, so the pill's padding, border and focus ring paint
- * outside it without pushing a paragraph's lines apart.
+ * `inline`, not `inline-flex`, so the pill's padding and ring don't push the
+ * paragraph's lines apart.
  *
- * No font family, size or weight of its own. The pill is chrome around the
- * value, and the type is the text's: a pill in a heading reads as heading
- * text, and one made bold from the bubble menu reads as bold. ProseMirror
- * draws a mark as an element around the node view, so these only have to
- * inherit — a `font-medium` here used to override the `<strong>` and hide a
- * formatting choice that the sent email carried all along.
+ * No font family, size or weight: the pill inherits the surrounding text and
+ * its marks (e.g. bold from the bubble menu).
  *
- * These are ordinary classes again. They used to be set inline, because the
- * host's Tailwind pass never saw this plugin's code: it globs the admin
- * directory for .js/.ts/.jsx/.tsx while the admin build emits its chunks
- * without any extension. `scripts/write-admin-safelist.mjs` closes that gap
- * at build time, so a class here reaches the stylesheet like any other.
+ * These classes reach the host's stylesheet only via
+ * `scripts/write-admin-safelist.mjs`: the host's Tailwind never scans the
+ * extensionless admin chunks.
  */
 const PILL_BASE = [
   'inline whitespace-nowrap align-baseline mx-px px-[5px] py-px',
@@ -121,16 +110,9 @@ const PILL_BASE = [
 ].join(' ');
 
 /*
- * Blue is a configured variable; orange flags one that needs attention —
- * either nothing chosen yet (dashed, so the outline itself reads as a blank
- * to fill), or a key the event no longer publishes (solid, because something
- * *was* chosen and has since gone).
- *
- * `active` is the fill a selected pill takes, alongside the focus ring.
- *
- * Each tone carried a third entry, for the hairline between the label and the
- * format name. Both are gone: the pill shows the formatted example now, so
- * there is no second segment to divide.
+ * Blue: a configured variable. Orange: needs attention — dashed when nothing
+ * is chosen yet, solid when the chosen key is no longer published.
+ * `active` is the fill of a selected pill.
  */
 const PILL_TONES = {
   chosen: {
@@ -148,16 +130,12 @@ const PILL_TONES = {
 } as const;
 
 /**
- * The value a variable will stand for, rendered exactly as a recipient sees it.
+ * The variable's example, formatted exactly as a recipient would see it —
+ * through the send path's own formatters (`format-value.ts` stays
+ * dependency-free for this).
  *
- * Through the send path's own formatters, not a copy of them —
- * `format-value.ts` is kept dependency-free for this. A canvas that formatted
- * its own way would be showing a guess.
- *
- * An empty string means the example cannot be shown: `formatMoney` and
- * `formatDate` both answer that way for input they cannot read, and a host's
- * custom event is free to declare `example: {}`. The caller falls back to the
- * label, because a name is more use than `[object Object]` sitting inline.
+ * Returns `''` when the example can't be shown (unreadable money/date, or an
+ * object example); the caller then falls back to the label.
  */
 const exampleText = (
   variable: EmailTemplateVariable,
@@ -166,12 +144,8 @@ const exampleText = (
   currencySource: string | undefined,
 ): string => {
   if (format === 'money') {
-    /*
-     * The currency is another variable's example — `order.total` names
-     * `order.currency_code`, whose own example is `eur`. Without it
-     * `formatMoney` gives a bare `40.00`, which is still honest: that is what
-     * sends when the currency key is missing.
-     */
+    // The currency is another variable's example (`order.currency_code` →
+    // `eur`). Without one, `40.00` — which is also what would send.
     return formatMoney(
       variable.example,
       variables.find((entry) => entry.key === currencySource)?.example,
@@ -182,8 +156,7 @@ const exampleText = (
     return formatDate(variable.example, format);
   }
 
-  // Plain text takes the example as it stands, including a date left
-  // unformatted — an ISO string is unlovely, but it is what that pill sends.
+  // As-is, even an unformatted ISO date: that is what this pill sends.
   return typeof variable.example === 'string' ||
     typeof variable.example === 'number'
     ? String(variable.example)
@@ -191,22 +164,12 @@ const exampleText = (
 };
 
 /**
- * What the pill shows on the canvas.
+ * The pill on the canvas. It shows the example value, not the variable's
+ * name, so the canvas reads like the real email and format changes are
+ * visible (e.g. `October 1, 2026` for Long date).
  *
- * The example value, not the variable's name. The canvas is where the email is
- * composed, so it should read like the email: line lengths, wrapping and the
- * look of a formatted total are all things you are judging while you write,
- * and `Total | Money` tells you nothing about any of them. It also makes the
- * Inspector's Format control demonstrate itself — pick Long date and the pill
- * says `October 1, 2026` instead of the words "Long date".
- *
- * The name has not gone, it has moved: a tooltip on hover, `aria-label` for a
- * screen reader, and the Inspector's own Variable row whenever the pill is
- * selected. What stays as text is the two states that have no value to show —
- * a pill with no variable chosen, and one whose key the event has stopped
- * publishing.
- *
- * Either way an admin never reads Liquid; that part is unchanged.
+ * The name is in the tooltip, the `aria-label` and the Inspector. Only the
+ * unchosen and stale states show text instead of a value.
  */
 const VariablePill = ({
   node,
@@ -216,13 +179,10 @@ const VariablePill = ({
   getPos,
 }: ReactNodeViewProps) => {
   /*
-   * Resolved at the pill's position, not from the flat list: inside a Repeat
-   * block `item.title` is a real value, anywhere else it is stale.
-   *
-   * Read on render, so it follows the pill when it moves — a moved pill is a
-   * new node view. Changing an enclosing block's list does not redraw the
-   * pills already inside it; with one list per event that never changes what
-   * they resolve to.
+   * Resolved at the pill's position: `item.title` is valid only inside a
+   * Repeat block. A moved pill is a new node view, so this stays current.
+   * Changing a block's list does not redraw pills inside it, which is fine
+   * while each event has one list.
    */
   const variables = variablesAt(
     editor.state.doc,
@@ -236,9 +196,8 @@ const VariablePill = ({
     : 'text';
   const variable = variables?.find((entry) => entry.key === key);
 
-  // A key with no matching variable is not the same as no key at all: the
-  // event stopped publishing it, or it was authored against another event.
-  // Either way the export still emits it, so it has to be visible.
+  // Stale: a key the event doesn't publish (here). It still exports, so it
+  // must be visible.
   const state = !key ? 'empty' : variable ? 'chosen' : 'stale';
   const tone = PILL_TONES[state];
   const showFormat = format !== 'text';
@@ -248,12 +207,8 @@ const VariablePill = ({
       ? node.attrs.currencySource
       : undefined;
 
-  /*
-   * `||` at every step, not `??`: an unusable example renders as an empty
-   * string rather than null, and an unchosen pill's key is `''`. Both are
-   * falsy but neither is nullish, so `??` would keep them and the pill would
-   * render blank.
-   */
+  // `||`, not `??`: an unusable example is `''`, which `??` would keep and
+  // render as a blank pill.
   const text =
     state === 'empty'
       ? UNSET_VARIABLE_LABEL
@@ -266,14 +221,9 @@ const VariablePill = ({
     state === 'empty' ? UNSET_VARIABLE_LABEL : (variable?.label ?? key);
 
   /*
-   * Spelled out because the pill is one run of text to a screen reader, which
-   * would otherwise read the label and the format as unrelated words, and the
-   * blue-versus-orange distinction not at all.
-   *
-   * The format belongs here even though the tooltip drops it: `aria-label`
-   * replaces the element's text, so a screen reader is told "Total, Money" and
-   * never hears the `€55.00` a sighted reader is looking at. Commas because
-   * they are what a screen reader pauses on.
+   * For screen readers, which can't see the colours. `aria-label` replaces the
+   * visible value, so it names the variable, its format and whether it is
+   * stale. Commas give a pause between each.
    */
   const description = [
     name,
@@ -284,18 +234,8 @@ const VariablePill = ({
     .join(', ');
 
   /*
-   * The tooltip says only what the pill cannot.
-   *
-   * No format: the pill already shows `€55.00` or `October 1, 2026`, so naming
-   * the format repeats what is on screen, and the Inspector has the control
-   * for changing it. What is left is the variable's name, which the pill gave
-   * up when it started showing values.
-   *
-   * Nothing at all for a pill with no variable chosen — its text is already
-   * "Choose a variable", and a tooltip repeating that is noise.
-   *
-   * An em dash for a stale pill rather than a comma, because the warning is
-   * subordinate to the name rather than a second fact of equal weight.
+   * Only what the pill can't show: the variable's name (the format is already
+   * visible in the value). None for an unchosen pill, whose text says it all.
    */
   const tooltip =
     state === 'empty'
@@ -308,27 +248,16 @@ const VariablePill = ({
     <NodeViewWrapper
       as="span"
       /*
-       * Without this the pill cannot be clicked. `NodeView.stopEvent` swallows
-       * any event whose target `isContentEditable`, and an inline node view
-       * inherits editability from the paragraph around it — so ProseMirror
-       * never reaches `selectClickedLeaf`, which is what turns a click on a
-       * selectable atom into a NodeSelection. Block node views such as the
-       * library's own divider never hit this, because their clicks land
-       * outside the editable text run.
+       * Required for the pill to be clickable: an inline node view inherits
+       * editability, and `NodeView.stopEvent` swallows events on editable
+       * targets, so ProseMirror would never select the node.
        */
       contentEditable={false}
       /*
-       * Selection is set from the node's own position rather than left to
-       * ProseMirror, because two separate things stop a click landing:
-       * `NodeView.stopEvent` swallows events inside a node view, and
-       * `updateSelection` bails without dispatching when the new selection
-       * equals the current one.
-       *
-       * `focus()` is not optional. The Inspector's target selector starts
-       * with `if (!editor.isFocused) return BODY_FOCUSED`, so without it the
-       * panel collapses to the body and never sees this node — which is what
-       * the breadcrumb reading "Body / Text / Element" was telling us. The
-       * library's own breadcrumb pairs the two commands the same way.
+       * Select the node ourselves: ProseMirror won't, since `stopEvent`
+       * swallows the click and `updateSelection` skips an unchanged selection.
+       * `focus()` is required too — the Inspector only targets a node while
+       * the editor is focused.
        */
       onMouseDown={(event: ReactMouseEvent) => {
         const pos = getPos();
@@ -344,51 +273,26 @@ const VariablePill = ({
       className={[
         PILL_BASE,
         tone.idle,
-        /*
-         * `shadow-borders-focus`, not `…-interactive-with-active`: the pill is
-         * not a control, and the interactive ring invites a click that does
-         * nothing. This one reads as "this is the thing the Inspector is
-         * editing", which is exactly what selection means here.
-         */
+        // A focus ring, not the interactive one: the pill isn't a control.
         selected ? `shadow-borders-focus ${tone.active}` : '',
       ]
         .filter(Boolean)
         .join(' ')}
       aria-label={`Variable: ${description}`}
-      /* Always present, unlike the key, so the pill is addressable even
-         before a variable has been chosen. */
+      /* Present even before a variable is chosen. */
       data-variable-node=""
       data-variable-key={key || undefined}
       data-variable-state={state}
     >
       {/*
-        The name, now that the pill shows the value instead.
+        A real tooltip, since `title` never appears inside contenteditable.
+        On an inner span so `Tooltip`'s `asChild` handlers don't collide with
+        the wrapper's `onMouseDown`. Its own provider because Radix throws
+        without one and an ancestor isn't guaranteed. It never takes focus, so
+        the editor's focus scope is unaffected.
 
-        A real tooltip rather than `title`, which never surfaced inside the
-        contenteditable however the attribute was set — and which takes about a
-        second to appear even where it does work, too slow for something you
-        read while scanning a template.
-
-        Wrapped around an inner span on purpose. `Tooltip` renders its trigger
-        `asChild`, so it merges its handlers onto whatever element it is given,
-        and the wrapper above carries the `onMouseDown` that selection depends
-        on — the comments there explain how narrow that path already is. The
-        span keeps the two sets apart; the mousedown still reaches the wrapper
-        by bubbling.
-
-        Its own provider, rather than relying on the dashboard's. Node views
-        render through portals that do carry React context, so the app's
-        provider would reach this in the admin — but nothing guarantees an
-        ancestor, and Radix throws without one. Nesting providers is supported
-        and a provider is context and a timer, nothing more.
-
-        Unlike the picker that started all this, a tooltip never takes focus
-        and installs no outside-mousedown listener, so the editor's focus scope
-        has nothing to react to.
+        The pill's typography styles the value, not its border and fill.
       */}
-      {/* The pill's own typography goes on the value, not the chrome: a
-          coloured total reads as that colour, while the border and fill still
-          say "this is a variable". */}
       {tooltip ? (
         <TooltipProvider>
           <Tooltip content={tooltip}>
@@ -403,9 +307,8 @@ const VariablePill = ({
 };
 
 /**
- * Inline, non-editable variable pill. Stores the variable's key and how it
- * should be displayed; the Liquid expression is generated on export, so an
- * admin never types a filter and a stray keystroke cannot corrupt one.
+ * Inline, non-editable variable pill. Stores the key and display format; the
+ * Liquid is generated on export, so a keystroke can never corrupt a filter.
  */
 export const VariableNode = EmailNode.create<VariableNodeOptions>({
   name: 'variable',
@@ -429,8 +332,7 @@ export const VariableNode = EmailNode.create<VariableNodeOptions>({
         }),
       },
       format: {
-        // Documents saved before formats existed carry no attribute, so the
-        // default is what makes them keep rendering exactly as before.
+        // Keeps documents saved before formats existed rendering as before.
         default: 'text' satisfies VariableFormat,
         parseHTML: (element: HTMLElement) =>
           element.getAttribute('data-format') ?? 'text',
@@ -447,12 +349,8 @@ export const VariableNode = EmailNode.create<VariableNodeOptions>({
             ? { 'data-currency-source': attributes.currencySource }
             : {},
       },
-      /*
-       * The pill's own typography, as inline CSS. Named `style` because that
-       * is the attribute the Inspector's style helpers read and write — the
-       * Typography section then works on a pill exactly as it does on a
-       * block, and keeps the pill selected while it does.
-       */
+      // The pill's typography as inline CSS. Named `style` because that is the
+      // attribute the Inspector's style helpers read and write.
       style: {
         default: '',
         parseHTML: (element: HTMLElement) =>
@@ -464,16 +362,10 @@ export const VariableNode = EmailNode.create<VariableNodeOptions>({
   },
 
   /**
-   * Insertion lives here rather than in the caller so the selection is
-   * derived *after* the insert step is queued.
-   *
-   * Computing a position up front does not work: in a chain, `deleteRange`
-   * and `insertContent` queue into one transaction, so a coordinate captured
-   * beforehand is stale by the time it is used. `NodeSelection`'s constructor
-   * then reads `nodeAfter.nodeSize` without checking — its own comment says
-   * it "does not verify the validity of its argument" — so a wrong position
-   * throws and silently aborts the rest of the chain, leaving a pill that
-   * exists but is never selected. This mirrors `setHorizontalRule`.
+   * Inserts a pill and selects it. The selection is computed after the insert
+   * is queued: a position captured beforehand is stale within the chain, and
+   * `NodeSelection` doesn't validate it, so it would throw and abort the
+   * chain. Mirrors `setHorizontalRule`.
    */
   addCommands() {
     return {
@@ -490,9 +382,8 @@ export const VariableNode = EmailNode.create<VariableNodeOptions>({
               const { $from } = tr.selection;
               const inserted = $from.nodeBefore;
 
-              // The caret sits just after what was inserted. Only select it
-              // once confirmed, so a surprise here degrades to no selection
-              // rather than a thrown chain.
+              // The caret is just after the insert. Select only once confirmed,
+              // so anything unexpected means no selection, not a throw.
               if (inserted?.type.name === this.name) {
                 tr.setSelection(
                   NodeSelection.create(tr.doc, $from.pos - inserted.nodeSize),
@@ -526,9 +417,8 @@ export const VariableNode = EmailNode.create<VariableNodeOptions>({
   },
 
   /**
-   * The expression, in a styled `<span>` when the pill has typography of its
-   * own. The style is an attribute, not Liquid, so the quotes React puts
-   * around it cannot reach the expression.
+   * The expression, wrapped in a styled `<span>` if the pill has typography.
+   * React's quotes go around the style attribute, never into the Liquid.
    */
   renderToReactEmail({ node }) {
     const expression = expressionFor(node.attrs);

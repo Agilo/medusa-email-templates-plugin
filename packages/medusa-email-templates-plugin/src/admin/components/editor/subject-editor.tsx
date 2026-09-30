@@ -7,30 +7,22 @@ import { withVariableNodes } from './derive-document';
 import { VariableNode } from './variable-node';
 
 /**
- * The subject line, as an editor rather than a text input.
+ * The subject line as a single-line editor with variable pills, like the
+ * body, so a keystroke can't corrupt a filter or mistype a key.
  *
- * The body has always been structured — variables are pills holding
- * `{ key, format }`, and the Liquid is generated on export, so a keystroke
- * cannot corrupt a filter. The subject was the last place it could: a plain
- * input holding raw Liquid, where `{{ store.nme }}` renders as empty text and
- * ships `Your  order` to a customer with nothing raised anywhere.
- *
- * Storage does not change. `subject_template` still holds the same Liquid
- * string: `getText()` serialises the pills back through `VariableNode`'s
- * `renderText`, and `withVariableNodes` parses them out again on load.
+ * Stored as a plain Liquid string: `getText()` serialises pills back to Liquid
+ * and `withVariableNodes` turns it into pills on load.
  */
 
 /*
- * A deliberately tiny schema. Reusing the body's would drag in headings,
- * tables and columns — none of which belong on one line — and TipTap's own
- * Paragraph and Text are not reachable: `@tiptap/react` exports the base
- * `Node` and `Extension` classes but not the individual extensions, and
- * `@tiptap/core` is a devDependency, so it must not be imported at runtime.
+ * A minimal schema: the body's would allow headings and tables. TipTap's own
+ * Paragraph/Text aren't available — `@tiptap/react` exports only the base
+ * classes, and `@tiptap/core` is a devDependency.
  */
 const SubjectDocument = Node.create({
   name: 'doc',
   topNode: true,
-  // Exactly one paragraph, so there is nothing for Enter to split into.
+  // Exactly one paragraph, so Enter has nothing to split into.
   content: 'paragraph',
 });
 
@@ -53,11 +45,7 @@ const SubjectText = Node.create({
   group: 'inline',
 });
 
-/**
- * The schema already forbids a second block, but a bare Enter would still be
- * handled — swallowing it keeps the caret where it is instead of letting
- * ProseMirror hunt for somewhere legal to split.
- */
+/** Swallows Enter so ProseMirror doesn't look for somewhere else to split. */
 const SingleLine = Extension.create({
   name: 'subjectSingleLine',
 
@@ -74,8 +62,7 @@ const SingleLine = Extension.create({
 const documentFor = (subject: string): JSONContent => {
   const paragraph: JSONContent = { type: 'paragraph' };
 
-  // An empty paragraph, not one holding an empty text node: ProseMirror
-  // rejects the latter outright.
+  // ProseMirror rejects an empty text node, so leave the paragraph empty.
   if (subject) {
     paragraph.content = [{ type: 'text', text: subject }];
   }
@@ -97,12 +84,9 @@ type SubjectEditorProps = {
 };
 
 /*
- * Medusa's `Input` look, copied rather than imported: `inputBaseStyles` is not
- * re-exported from `@medusajs/ui`, whose barrel exposes only the component.
- *
- * Note there is no border utility — the border *is* `shadow-borders-base`. And
- * the real Input focuses with `focus-visible:`, which never matches a wrapper
- * around a contenteditable, so this uses `focus-within:`.
+ * Medusa's `Input` styles, copied because `@medusajs/ui` doesn't export them.
+ * The border is `shadow-borders-base`. Uses `focus-within:`, since
+ * `focus-visible:` never matches a wrapper around a contenteditable.
  */
 const FIELD_CLASS = [
   'bg-ui-bg-field hover:bg-ui-bg-field-hover shadow-borders-base',
@@ -119,21 +103,16 @@ const SubjectEditor = forwardRef<SubjectEditorHandle, SubjectEditorProps>(
         SubjectParagraph,
         SubjectText,
         SingleLine,
-        // Each pill resolves its own label from this list, so the field shows
-        // "Total | Money" rather than the generated Liquid.
         VariableNode.configure({ variables }),
       ],
       [variables],
     );
 
     /*
-     * Whether the field has ever held focus — not whether it holds it now.
-     *
-     * Opening the variable dropdown blurs the editor, so `editor.isFocused` is
-     * always false by the time an insertion runs. ProseMirror keeps its
-     * selection across a DOM blur, so the caret is still there to return to;
-     * what this distinguishes is a field nobody has clicked into, whose
-     * selection sits at the document start and would otherwise prepend.
+     * Whether the field has *ever* been focused. The dropdown blurs the
+     * editor before an insert, but the selection survives, so the caret can be
+     * restored. An untouched field's selection is at the start and would
+     * prepend.
      */
     const touched = useRef(false);
 
@@ -143,21 +122,18 @@ const SubjectEditor = forwardRef<SubjectEditorHandle, SubjectEditorProps>(
       onFocus: () => {
         touched.current = true;
       },
-      // Client-only Vite SPA: there is no hydration to guard against.
+      // Client-only SPA: no hydration to guard against.
       immediatelyRender: true,
       editorProps: {
         attributes: {
-          // Keeps `<Label htmlFor="subject">` associated, and keeps the field
-          // reachable as `getByLabelText('Subject')`.
+          // For `<Label htmlFor="subject">` and `getByLabelText('Subject')`.
           id: 'subject',
           role: 'textbox',
           'aria-label': 'Subject',
           class: 'min-w-0 flex-1 outline-none',
         },
-        /*
-         * A pasted newline would otherwise be dropped silently by the schema,
-         * losing whatever followed it. Flattening to a space keeps the text.
-         */
+        // Flatten pasted newlines to spaces; the schema would otherwise drop
+        // everything after them.
         handlePaste: (view, event) => {
           const text = event.clipboardData?.getData('text/plain');
 
@@ -173,8 +149,7 @@ const SubjectEditor = forwardRef<SubjectEditorHandle, SubjectEditorProps>(
           return true;
         },
       },
-      // Seeding fires update events of its own, so only a document-changing
-      // transaction from someone actually typing counts as an edit.
+      // Seeding fires its own updates; only real typing counts as an edit.
       onUpdate: ({ editor: instance, transaction }) => {
         if (
           transaction.docChanged &&
@@ -195,16 +170,9 @@ const SubjectEditor = forwardRef<SubjectEditorHandle, SubjectEditorProps>(
             return;
           }
 
-          /*
-           * `focus()` with no position restores the stored selection —
-           * `resolveFocusPosition` returns null for a falsy position and the
-           * command falls back to `editor.state.selection`. That is what puts
-           * the pill at the caret even though the dropdown has taken focus
-           * away.
-           *
-           * `'end'` only for a field nobody has clicked into: its selection is
-           * at the document start, so restoring it would prepend.
-           */
+          // `focus()` with no position restores the stored selection, so the
+          // pill lands at the caret. `'end'` for a never-focused field, whose
+          // selection is at the start.
           editor
             .chain()
             .focus(touched.current ? undefined : 'end')

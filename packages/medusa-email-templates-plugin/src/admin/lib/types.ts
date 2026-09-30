@@ -1,10 +1,7 @@
 /**
- * The admin API contract, mirrored for the dashboard bundle.
- *
- * These deliberately duplicate the server-side types instead of importing
- * them: the admin tsconfig has no Node types, and the server modules they
- * live in reference `NodeJS.ProcessEnv`. Keep both sides in step when the
- * API changes — the HTTP integration tests are the source of truth.
+ * The admin API contract, duplicated from the server types because the admin
+ * tsconfig has no Node types. Keep both in step; the HTTP integration tests
+ * are the source of truth.
  */
 
 export type CredentialSource =
@@ -60,10 +57,7 @@ export interface EmailSendResult {
   transport_id: string;
 }
 
-/**
- * A provider test sends straight through the transport, so it has no
- * notification row — only what the provider's API returned.
- */
+/** A provider test bypasses notifications, so only the provider's reply. */
 export interface ProviderTestResult {
   external_id: string | null;
   transport_id: string;
@@ -76,9 +70,8 @@ export interface EmailTemplateVariable {
   example: unknown;
   group?: string;
   /**
-   * Omitted means plain text. Decides which formats the editor offers, `url`
-   * decides which variables the link picker offers, and `list` is a Repeat
-   * block's source rather than a pill.
+   * Omitted means plain text. Sets the formats offered; `url` variables fill
+   * the link picker; `list` is a Repeat block source, not a pill.
    */
   type?: 'text' | 'number' | 'money' | 'date' | 'url' | 'list';
   /** For `money` values, the key holding the currency code. */
@@ -100,7 +93,7 @@ export interface EmailTemplateListItem {
   /** True once saved, rather than only defined in code. */
   is_customized: boolean;
   updated_at: string | null;
-  /** Configuration problems that stop this template sending. */
+  /** Configuration problem codes; see `describeWarning`. */
   warnings: string[];
 }
 
@@ -125,10 +118,7 @@ export interface EmailTemplateDetail extends EmailTemplateListItem {
   };
 }
 
-/**
- * A partial update: omitted fields keep their stored values, and `null`
- * explicitly clears one. Sending the subject alone leaves the bodies intact.
- */
+/** Partial update: omitted fields are kept; `null` clears a field. */
 export interface SaveEmailTemplatePayload {
   enabled?: boolean;
   subject_template?: string;

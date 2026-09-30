@@ -1,11 +1,9 @@
 /**
- * What a template warning means, for the list and the editor page alike.
+ * What each template warning code means, for the list and editor page.
  *
- * Warnings arrive as codes. A code says what is wrong *and* what follows from
- * it, because the same cause can have different consequences: a missing
- * storefront URL stops a customer's password reset outright, but only costs
- * the order confirmation its link. `blocksSending` is what lets the UI say
- * "cannot send" only when that is true.
+ * One cause can have different effects: a missing storefront URL blocks a
+ * customer password reset but only costs the order confirmation its link.
+ * `blocksSending` lets the UI say "cannot send" only when it's true.
  */
 export type TemplateWarning = {
   text: string;
@@ -24,10 +22,8 @@ const WARNINGS: Record<string, TemplateWarning> = {
 };
 
 /**
- * The known meaning of a code, or the code itself for one a host event
- * reports that this admin build does not know. An unknown warning is not
- * assumed to stop sending — the definition's contract allows warnings that
- * don't — so it is shown without that claim.
+ * The meaning of a code, or the raw code for an unknown one (e.g. from a host
+ * event). Unknown codes aren't assumed to block sending.
  */
 export const describeWarning = (code: string): TemplateWarning =>
   WARNINGS[code] ?? { text: code, blocksSending: false };

@@ -1,6 +1,6 @@
 import { Modules, NotificationStatus } from '@medusajs/framework/utils';
 // Deep import: Medusa does not export its Cloud provider. Test-only, and the
-// point of the contract test below (PLAN.md risk R2).
+// point of the contract test below.
 import { MedusaCloudEmailNotificationProvider } from '@medusajs/notification/dist/providers/medusa-cloud-email';
 
 import { medusaCloudTransport } from '../../src/lib/transports/medusa-cloud';

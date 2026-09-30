@@ -29,8 +29,8 @@ export const useEmailTemplate = (templateKey: string) =>
   });
 
 /**
- * Saves the subject, bodies and enabled flag. The server parses the Liquid
- * first, so a syntax error rejects with 400 rather than breaking a real send.
+ * Saves the subject, bodies and enabled flag. Invalid Liquid is rejected with
+ * 400 rather than breaking a real send.
  */
 export const useSaveEmailTemplate = (templateKey: string) => {
   const queryClient = useQueryClient();
@@ -53,9 +53,8 @@ export const useSaveEmailTemplate = (templateKey: string) => {
 };
 
 /**
- * Turns a template on or off from the list, without opening the editor.
- * Saving is a partial update, so sending `enabled` alone leaves the subject
- * and bodies untouched.
+ * Turns a template on or off from the list. A partial update, so the subject
+ * and bodies are untouched.
  */
 export const useToggleEmailTemplate = () => {
   const queryClient = useQueryClient();
@@ -77,9 +76,8 @@ export const useToggleEmailTemplate = () => {
 };
 
 /**
- * Discards the saved template, so the event falls back to the built-in
- * default defined in code. Idempotent: resetting an untouched template is a
- * no-op rather than an error.
+ * Discards the saved template so the event uses its built-in default.
+ * Idempotent: resetting an untouched template is a no-op.
  */
 export const useResetEmailTemplate = () => {
   const queryClient = useQueryClient();
@@ -118,8 +116,8 @@ export const usePreviewEmailTemplate = (templateKey: string) =>
   });
 
 /**
- * Sends this template, rendered with sample data, to one address. Works even
- * while the template is disabled — that is how you check it before enabling.
+ * Sends the template, with sample data, to one address. Works while disabled,
+ * so it can be checked before enabling.
  */
 export const useSendTemplateTestEmail = (templateKey: string) =>
   useMutation({

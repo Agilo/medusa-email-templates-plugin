@@ -123,12 +123,9 @@ describe('variable slash command', () => {
   const TRIGGER = '/variable';
 
   /**
-   * Runs the command the way the suggestion plugin does: the trigger text is
-   * really in the document, and `range` spans it.
-   *
-   * A collapsed range is what the first version of this test used, and it is
-   * the one shape that cannot catch a stale coordinate — deleting nothing
-   * leaves the arithmetic accidentally correct.
+   * Runs the command as the suggestion plugin does: the trigger text is in the
+   * document and `range` spans it. (A collapsed range can't catch a stale
+   * position, since deleting nothing keeps the positions correct.)
    */
   const runSlashCommand = (editor: Editor) => {
     editor.commands.focus('end');

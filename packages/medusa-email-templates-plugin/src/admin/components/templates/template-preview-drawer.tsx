@@ -12,14 +12,8 @@ type TemplatePreviewDrawerProps = {
   template: EmailTemplateListItem;
   onClose: () => void;
   /**
-   * The unsaved subject and body, read when the drawer opens.
-   *
-   * Omitted by the templates list, which has no editor behind it and previews
-   * the stored template instead.
-   *
-   * Read once rather than watched: the drawer is modal, so nothing can be
-   * edited while it is open, and closing it unmounts this component — the
-   * next open reads again.
+   * The unsaved subject and body, read once when the drawer opens (it is
+   * modal). Omitted by the templates list, which previews the stored template.
    */
   getDraft?: () => Promise<EmailTemplateDraft>;
 };
@@ -35,15 +29,11 @@ const TemplatePreviewDrawer = ({
   /** Exporting the body can throw, which is not an API error. */
   const [draftError, setDraftError] = useState<string | null>(null);
 
-  // The endpoint is a POST, so rendering is a mutation rather than a query.
-  // Fire it once when the drawer opens.
+  // A POST, so a mutation; fired once when the drawer opens.
   useEffect(() => {
     if (!getDraft) {
-      /*
-       * No editor behind this drawer, so there is nothing unsaved to send.
-       * The body stays a bare `{}`: passing `draft: undefined` would still put
-       * the key on the wire, and the schema is a strict object.
-       */
+      // A bare `{}`: `draft: undefined` would still send the key, and the
+      // schema is strict.
       mutate({});
       return;
     }
@@ -81,13 +71,11 @@ const TemplatePreviewDrawer = ({
           </Drawer.Description>
         </Drawer.Header>
 
-        {/* Drawer.Body is flex-1 but has no min-h-0, so every level between
-            it and the preview needs to be allowed to shrink — otherwise the
-            panel keeps its natural height and leaves dead space below. */}
+        {/* `min-h-0` at every level so the preview fills the drawer instead
+            of keeping its natural height. */}
         <Drawer.Body className="flex min-h-0 flex-1 flex-col gap-y-4 overflow-hidden">
-          {/* Not `preview.isPending`: with a draft the mutation has not even
-              started while the body is still exporting, so keying on that
-              leaves the drawer blank for the length of the export. */}
+          {/* Not `preview.isPending`, which is false while the draft is still
+              exporting and would leave the drawer blank. */}
           {!rendered && !draftError && !preview.isError && (
             <div className="flex flex-col gap-y-3">
               <Skeleton className="h-5 w-2/3" />
@@ -133,9 +121,8 @@ const TemplatePreviewDrawer = ({
                 </Tabs.Content>
 
                 <Tabs.Content value="text" className="min-h-0 flex-1 pt-4">
-                  {/* Neutral surface on purpose: any background here would be
-                      the drawer's, not the email's. Only the HTML tab shows
-                      the template's own page styling. */}
+                  {/* Neutral on purpose: only the HTML tab shows the email's
+                      own styling. */}
                   <div className="bg-ui-bg-base border-ui-border-base h-full w-full overflow-auto rounded-lg border p-4">
                     <pre className="txt-compact-small text-ui-fg-base whitespace-pre-wrap">
                       {rendered.text}

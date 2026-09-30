@@ -2,31 +2,17 @@
 /**
  * Makes this plugin's Tailwind classes reachable by the host admin build.
  *
- * The host assembles Tailwind's `content` in `@medusajs/admin-bundler`:
+ * The host's Tailwind scans the plugin's `.medusa/server/src/admin` for
+ * `**\/*.{js,ts,jsx,tsx}`, but `medusa plugin:build` emits chunks with no
+ * extension (`_chunks/[name]-[hash]`). So only the tiny `index.js` is
+ * scanned, and any class Medusa's own components don't also use is silently
+ * dropped.
  *
- *   createTailwindConfig(entry, sources, plugins)
- *     pluginExtensions = dirname(require.resolve(pluginAdminSpecifier))
- *                        + "**\/*.{js,ts,jsx,tsx}"
+ * This writes one `.js` file into that directory listing the class candidates
+ * found in the chunks. Nothing imports it; only Tailwind reads it.
  *
- * For an installed plugin that specifier is the package's `./admin` subpath,
- * so the glob root is `.medusa/server/src/admin`. But the same package's
- * plugin build emits every chunk through:
- *
- *   chunkFileNames: () => `_chunks/[name]-[hash]`
- *
- * with no extension, so the glob matches nothing except the 139-byte
- * `index.js` re-export — which contains no class names. Every class this
- * plugin writes that Medusa's own components do not also use is therefore
- * dropped, silently: no error, no warning, just an unstyled element.
- *
- * This writes one real `.js` file into that glob root carrying the class
- * candidates found in the built chunks, which is what the host would have
- * scanned had the chunks been named with an extension.
- *
- * Runs after `medusa plugin:build`, because that wipes `.medusa/server`.
- * Nothing imports the generated file; it exists only to be read by Tailwind.
- * If Medusa ever adds extensions to chunk names this becomes redundant rather
- * than wrong, since the chunks would then be scanned directly.
+ * Runs after `medusa plugin:build`, which wipes `.medusa/server`. Harmless if
+ * Medusa ever adds chunk extensions.
  */
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -45,28 +31,21 @@ if (!existsSync(chunksDir)) {
 }
 
 /*
- * Leans permissive. Tailwind silently discards a candidate that matches no
- * theme value, so a false positive costs a few bytes while a false negative
- * is the exact silent failure this script exists to prevent.
+ * Deliberately permissive: Tailwind ignores candidates it can't use, so a
+ * false positive is cheap and a false negative is the silent failure this
+ * script prevents.
  *
- * Two alternatives, because Tailwind classes come in two shapes here:
- *
- *   1. Anchored on a leading word — bare utilities (`flex`), variants
- *      (`hover:bg-…`), fractions (`w-2/3`), arbitrary values
- *      (`text-[0.875em]`).
- *   2. Anchored on `]:` — arbitrary variants, which begin with a bracket:
- *      `[&_[data-re-inspector-color-hex]]:bg-transparent`.
- *
- * The second deliberately excludes backticks, parentheses, dots and spreads,
- * which is what separates a real variant from the JavaScript subscripts and
- * template-literal fragments in the surrounding bundle (`[...map.entries()]`,
- * [`Node.replace`]). Matching those would leave the generated file unreadable
- * for no benefit.
+ * Two alternatives:
+ *   1. Leading-word classes: `flex`, `hover:bg-…`, `w-2/3`, `text-[0.875em]`.
+ *   2. Arbitrary variants anchored on `]:`, e.g.
+ *      `[&_[data-re-inspector-color-hex]]:bg-transparent`. These exclude
+ *      backticks, parentheses, dots and spreads, to skip JavaScript like
+ *      `[...map.entries()]` in the bundle.
  */
 const CANDIDATE =
   /\[[&a-z0-9_[\]="'-]+\]:[a-z0-9[\]#%._/-]+|[a-z][a-z0-9]*(?:[:/-][a-z0-9[\]#%._-]+)+/g;
 
-/** Only the chunks: reading the whole directory would include our own output. */
+/** Only the chunks, so our own output isn't re-read. */
 const tokens = new Set();
 
 for (const entry of readdirSync(chunksDir)) {

@@ -8,8 +8,8 @@ import { EMAIL_TEMPLATES_MODULE } from '../../modules/email-templates';
 import type EmailTemplatesModuleService from '../../modules/email-templates/service';
 
 /**
- * A partial update: omitted fields keep whatever is stored, so the list can
- * toggle `enabled` without resending — and blanking — the template body.
+ * A partial update: omitted fields are kept, so toggling `enabled` doesn't
+ * blank the body.
  */
 export type UpsertEmailTemplateInput = {
   template_key: string;
@@ -90,14 +90,10 @@ export const upsertEmailTemplateStep = createStep(
       next !== undefined ? next : existing ? current : fallback;
 
     /*
-     * New HTML without new editor content drops the stored editor content.
-     *
-     * `editor_content` is the editor's source for `html_template`, not a
-     * separate value: kept after the HTML changed underneath it, the editor
-     * reopened the old email while the new one sent, and the next body save
-     * put the old one back. Cleared, the editor derives from the HTML that is
-     * actually stored. The page always sends both, so this only ever applies
-     * to an API caller writing HTML directly.
+     * New HTML without new editor content clears the stored editor content.
+     * It is the editor's source for the HTML; kept, the editor would reopen
+     * the old email and could save it back over the new one. Only affects API
+     * callers — the page always sends both.
      */
     const editorContent =
       input.html_template !== undefined && input.editor_content === undefined

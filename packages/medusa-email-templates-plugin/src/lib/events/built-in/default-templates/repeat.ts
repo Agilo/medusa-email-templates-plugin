@@ -1,17 +1,15 @@
 import { toLiquidLoop } from '../../../rendering/variable-format';
 
 /*
- * The one HTML shape of a Repeat block, shared by three readers: a default
- * template writes it, the editor parses it into a block, and the editor
- * exports it again on save.
+ * The HTML shape of a Repeat block, written by default templates, parsed by
+ * the editor and re-exported on save.
  *
- * The loop sits *between* the two elements, so the outer one appears once and
- * only the body repeats. That is also what makes it parseable: the editor
- * reads its content from the body alone, so the `{% for %}` and `{% endfor %}`
- * either side of it never become text on the canvas.
+ * The loop sits between the outer element and the body, so only the body
+ * repeats, and the editor (reading only the body) never shows the loop tags
+ * as text.
  *
- * Imported by the admin bundle, so this file may reach nothing beyond the
- * dependency-free `variable-format`.
+ * Imported by the admin bundle: only the dependency-free `variable-format`
+ * may be imported.
  */
 
 /** On the outer element; its value is the list being repeated. */

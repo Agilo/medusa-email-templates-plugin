@@ -7,10 +7,8 @@ import {
 import type { EmailTemplateVariable } from './types';
 
 /**
- * Variables that print as a value — everything but lists.
- *
- * A list is an array: printed as a pill it sends "[object Object]", so it is
- * only ever offered as a Repeat block's source.
+ * Variables that print as a value: everything but lists, which would render
+ * as "[object Object]" and are only offered as Repeat block sources.
  */
 export const scalarVariables = (
   variables: EmailTemplateVariable[],
@@ -24,9 +22,8 @@ export const listVariables = (
   variables.filter((variable) => variable.type === 'list');
 
 /**
- * A list's fields as the variables they are inside its block: `title`
- * becomes `item.title`, grouped under the list so the picker says where it
- * comes from.
+ * A list's fields as variables inside its block (`title` → `item.title`),
+ * grouped under the list's label.
  */
 export const itemVariables = (
   list: EmailTemplateVariable,
@@ -38,12 +35,9 @@ export const itemVariables = (
   }));
 
 /**
- * What a pill at `pos` may show.
- *
- * The event's own values everywhere, plus one entry's values inside a Repeat
- * block. Scope is structural, so it is read from the document rather than
- * stored on the pill: drag an `item.title` pill out of its block and it stops
- * resolving, which is exactly when it would start sending empty text.
+ * The variables a pill at `pos` may use: the event's scalars, plus `item.*`
+ * inside a Repeat block. Read from the document, so an `item.*` pill dragged
+ * out of its block becomes stale — exactly when it would send empty text.
  */
 export const variablesAt = (
   doc: ProseMirrorNode,
@@ -89,18 +83,12 @@ export const groupVariables = (
 };
 
 /**
- * The variables a link or button href may be set to.
+ * The variables a link or button href may use: only those typed `url`.
+ * Anything else (e.g. `{{ order.total }}`) would produce a broken link that
+ * nothing catches until a recipient clicks it.
  *
- * Only those declared `url`. An href is not body text: dropping
- * `{{ order.total }}` into one produces a link to "€42.00", which is broken in
- * a way nothing downstream can catch — the Liquid renders, the anchor is
- * emitted, and it fails only when a recipient clicks it. Offering every
- * variable made that the easiest mistake in the editor to make.
- *
- * The consequence is that a host application's own URL variable has to be
- * marked `type: 'url'` to appear here. That is deliberate: guessing from key
- * names like `invite_url` would work for the built-in events and quietly fail
- * for anyone whose naming differs.
+ * Host URL variables must be marked `type: 'url'`; guessing from names like
+ * `invite_url` would fail for other naming schemes.
  */
 export const urlVariables = (
   variables: EmailTemplateVariable[],
@@ -116,11 +104,8 @@ export const FORMAT_LABELS: Record<VariableFormat, string> = {
 };
 
 /**
- * Formats an admin may choose for a variable.
- *
- * Plain text is always available — showing a raw value is a legitimate
- * choice. The rest are gated on the declared type, because applying `money`
- * to a name renders an empty string rather than failing loudly.
+ * Formats an admin may choose for a variable. Plain text always; the rest
+ * only for the matching type, since e.g. `money` on a name renders empty.
  */
 export const formatsFor = (
   variable: EmailTemplateVariable | undefined,

@@ -2,7 +2,7 @@ import { model } from '@medusajs/framework/utils';
 
 /**
  * One editable template per registered event. A row exists only after the
- * template is saved; until then the template counts as disabled (PLAN.md D4).
+ * template is saved; until then the template counts as disabled.
  */
 const EmailTemplate = model
   .define('email_template', {

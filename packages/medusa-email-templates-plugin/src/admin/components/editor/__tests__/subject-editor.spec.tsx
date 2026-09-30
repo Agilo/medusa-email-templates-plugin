@@ -6,11 +6,8 @@ import type { EmailTemplateVariable } from '../../../lib/types';
 import SubjectEditor, { type SubjectEditorHandle } from '../subject-editor';
 
 /**
- * These mount the real component rather than a bare editor.
- *
- * `ReactNodeViewRenderer` returns a stub node view when
- * `editor.contentComponent` is unset, and only `EditorContent` sets it — so a
- * bare `new Editor()` never instantiates a pill at all.
+ * Mounts the real component: with a bare `new Editor()`,
+ * `ReactNodeViewRenderer` returns a stub and pills are never rendered.
  */
 
 const variables: EmailTemplateVariable[] = [

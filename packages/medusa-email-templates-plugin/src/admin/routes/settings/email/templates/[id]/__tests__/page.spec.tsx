@@ -77,20 +77,15 @@ const renderPage = () => {
 };
 
 /**
- * The subject is a contenteditable now, not an input, so `toHaveValue` and
- * `userEvent.type` no longer apply. Its own behaviour — serialising pills back
- * to Liquid, insertion, single-line enforcement — is covered in
- * `components/editor/__tests__/subject-editor.spec.tsx`. What stays here is
- * what only the page knows: Save enabling and the discard prompt.
+ * The subject is a contenteditable, so `toHaveValue`/`userEvent.type` don't
+ * apply. Its own behaviour is tested in `subject-editor.spec.tsx`; here we test
+ * only page concerns (Save enabling, the discard prompt).
  */
 const subjectField = () => screen.getByLabelText('Subject');
 
 /**
- * Marks the subject dirty the way a user does.
- *
- * Insertion rather than typing: `userEvent.type` against ProseMirror in jsdom
- * does not reliably produce a document transaction, and the dropdown path is
- * both realistic and deterministic.
+ * Marks the subject dirty via the variable dropdown: realistic and
+ * deterministic, unlike `userEvent.type` against ProseMirror in jsdom.
  */
 const editSubject = async () => {
   await userEvent.click(
@@ -142,13 +137,8 @@ describe('EmailTemplatePage', () => {
 
     renderPage();
 
-    /*
-     * Derived from `default_template.html`, because this template has no
-     * stored `editor_content`. Opening blank was the dangerous state: the
-     * canvas looked empty, one keystroke marked it dirty, and saving exported
-     * that blankness over a designed email. Without the seeding this assertion
-     * finds nothing.
-     */
+    // Derived from `default_template.html` (no `editor_content`). A blank
+    // canvas could be saved over the designed email.
     expect(await screen.findByText('Default')).toBeInTheDocument();
   });
 
@@ -264,26 +254,13 @@ describe('EmailTemplatePage', () => {
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
   });
 
-  /*
-   * Insertion and filter generation moved to the subject editor's own spec:
-   * they are its behaviour, and testing them through a page render meant
-   * driving ProseMirror at arm's length.
-   *
-   * The old "appends when the subject was never focused" test went with them
-   * rather than being ported. It guarded a real bug — an unfocused input
-   * reports `selectionStart` as 0, so every insertion silently prepended — but
-   * that arithmetic no longer exists. The editor places a pill at its own
-   * selection, and the equivalent guard now lives in the component spec.
-   */
+  // Insertion and filter generation (including never-focused insertion) are
+  // tested in the subject editor's own spec.
 
   /*
-   * A total's default is Money, but a subject may well want the bare number —
-   * and a date has four shapes. Picking one has to reach storage, not just the
-   * menu, so this asserts the saved payload rather than what the field shows.
-   *
-   * Radix backs a submenu trigger with the same primitive as an item, so it is
-   * also `role="menuitem"`, and clicking it opens the submenu synchronously —
-   * the 100ms timer only guards the hover path.
+   * The chosen format must reach storage, so this asserts the saved payload.
+   * A submenu trigger is also `role="menuitem"`, and clicking opens it
+   * synchronously (the delay only applies to hover).
    */
   it('lets a format be chosen for a variable that has several', async () => {
     fetchMock.mockResolvedValue({ template: template() });

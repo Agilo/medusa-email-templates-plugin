@@ -6,9 +6,8 @@ import {
 } from 'medusa-email-templates-plugin/registry';
 
 /**
- * Example of a host application adding its own email event. Registering it
- * from a subscriber file means Medusa loads it at startup, before the admin
- * lists the available templates.
+ * Example of a host app adding its own email event. Subscriber files load at
+ * startup, so it is registered before the admin lists templates.
  *
  * Enable it with:
  *   yarn --cwd apps/dev-app email:template:enable product-created

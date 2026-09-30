@@ -80,15 +80,11 @@ export const listEmailTemplateRecords = async (
 };
 
 /**
- * The plain-text body to render, for a send and a preview alike.
+ * The plain-text body for sends and previews alike.
  *
- * An explicit text body wins. Otherwise the definition's default text is used
- * only while the HTML is the default too, because it was written to match that
- * HTML: once the HTML is customised, the default text describes an email that
- * no longer exists, and the text is derived from the real HTML instead (null
- * here). Sends and previews used to decide this differently — sends never used
- * the default text, previews always fell back to it — so a test email could
- * show text the customer would never receive.
+ * An explicit text body wins. The default text is used only with the default
+ * HTML it was written for; with customised HTML, return null so the text is
+ * derived from the real HTML.
  */
 const resolveTextTemplate = (
   definition: EmailEventDefinition<never>,
@@ -102,8 +98,8 @@ const resolveTextTemplate = (
 };
 
 /**
- * Returns the template to render, or null when it is disabled or not saved
- * yet. A template with no stored HTML falls back to the definition's default.
+ * The template to send, or null if disabled or never saved. Missing HTML
+ * falls back to the definition's default.
  */
 export const findEnabledEmailTemplate = async (
   service: EmailTemplatesModuleService,
@@ -127,11 +123,8 @@ export const findEnabledEmailTemplate = async (
 };
 
 /**
- * Whether anyone has actually changed this template.
- *
- * Not the same as "a row exists": enabling a template stores a row whose
- * content still matches the built-in default, and calling that customised
- * would be misleading.
+ * Whether the template's content differs from the default. A row alone
+ * doesn't count: enabling a template stores one with default content.
  */
 const isCustomized = (
   definition: EmailEventDefinition<never>,
@@ -150,22 +143,17 @@ const isCustomized = (
 };
 
 /**
- * Variables a subject uses that its event does not publish.
+ * Variables a subject uses that its event doesn't declare.
  *
- * A mistyped key is the one corruption the editor cannot prevent: the body is
- * built from pills that generate their own Liquid, but the subject is a plain
- * text field holding raw Liquid. `strictVariables` is off, so liquidjs renders
- * an unknown variable as an empty string — `Your {{ store.nme }} order` sends
- * as `Your  order`, with nothing raised anywhere.
+ * The editor only writes valid pills, but an API-saved subject is raw Liquid,
+ * and without `strictVariables` a typo renders empty
+ * (`Your {{ store.nme }} order` → `Your  order`).
  *
- * Reported rather than rejected. The declared list is what the editor *offers*,
- * not everything the context holds: `order.shipping_address.city` renders
- * correctly today and is not declared, so refusing to save on an undeclared key
- * would block working templates.
+ * Reported, not rejected: the declared list is what the editor offers, not
+ * everything the context holds (e.g. `order.shipping_address.city` works).
  *
- * `globalFullVariablesSync`, not `fullVariablesSync`: the global form leaves out
- * loop aliases and `assign` locals, so `{% for item in … %}{{ item.title }}`
- * reports only the collection rather than a phantom `item.title`.
+ * `globalFullVariablesSync` skips loop aliases and `assign` locals, so
+ * `{{ item.title }}` inside a loop isn't reported.
  */
 const unknownSubjectVariables = (
   definition: EmailEventDefinition<never>,
@@ -180,9 +168,7 @@ const unknownSubjectVariables = (
       .globalFullVariablesSync(subject)
       .filter((key) => !declared.has(key));
   } catch {
-    // Unparseable Liquid is already refused when saving, and a stored template
-    // that somehow got past that is the parser's problem to report, not this
-    // one's. Staying quiet keeps the list rendering.
+    // Invalid Liquid is refused on save; stay quiet so the list still renders.
     return [];
   }
 };
@@ -197,8 +183,7 @@ const subjectWarnings = (
     return [];
   }
 
-  // Plain prose, not a code: both admin surfaces render an unrecognised
-  // warning verbatim, so naming the keys needs no change there.
+  // Prose, not a code: the admin shows unknown warnings verbatim.
   return [
     `The subject uses ${unknown.length === 1 ? 'a variable' : 'variables'} this event does not provide: ${unknown.join(', ')}. ${unknown.length === 1 ? 'It renders' : 'They render'} as empty text.`,
   ];
@@ -214,7 +199,7 @@ const toListItem = (
   event: definition.event,
   label: definition.label,
   description: definition.description,
-  // A template that was never saved counts as disabled (PLAN.md D4).
+  // A template that was never saved counts as disabled.
   enabled: Boolean(row?.enabled),
   subject_template: row?.subject_template ?? definition.defaultTemplate.subject,
   is_customized: isCustomized(definition, row),
@@ -256,7 +241,7 @@ export const buildEmailTemplateDetail = (
 
 /**
  * Sample data for previews and test sends, from each variable's example.
- * `order.items` becomes a nested object, so `{{ order.items }}` works.
+ * Dotted keys become nested objects; list examples are kept whole.
  */
 export const buildSampleData = (
   definition: EmailEventDefinition<never>,
@@ -283,12 +268,8 @@ export const buildSampleData = (
 };
 
 /**
- * The template to render for a preview or test: the draft when the editor
- * sends unsaved edits, otherwise the saved row, otherwise the default.
- *
- * A draft's text is taken as given when it is present at all, `null`
- * included: an explicit null means "derive the text from the HTML", and
- * falling through to the stored or default text ignored that.
+ * The template for a preview or test: the draft, else the saved row, else the
+ * default. A draft's `text_template: null` is honoured (derive from HTML).
  */
 export const resolveEmailTemplateSource = (
   definition: EmailEventDefinition<never>,

@@ -11,8 +11,8 @@ import type { ResolvedEmailEvent } from './resolve-email-event';
 export type SendEmailEventNotificationResult = {
   sent: boolean;
   /**
-   * Why nothing was sent: a reason from resolving the event, or — when this
-   * event was delivered before — `already_sent` or `previously_failed`.
+   * Why nothing was sent: a reason from resolving the event, or, for a
+   * repeated delivery, `already_sent` or `previously_failed`.
    */
   skipped: string | null;
   notification_id: string | null;
@@ -23,10 +23,8 @@ export const sendEmailEventNotificationStepId = 'send-email-event-notification';
 
 /**
  * The notification an earlier delivery of this event created, if any.
- *
- * `idempotency_key` is a real column the module filters on — its own
- * `createNotifications` looks rows up by it — but the public filter type does
- * not declare it, hence the cast.
+ * `idempotency_key` is filterable (Medusa itself filters on it) but missing
+ * from the public filter type, hence the cast.
  */
 const findByIdempotencyKey = async (
   notificationModule: INotificationModuleService,
@@ -41,26 +39,17 @@ const findByIdempotencyKey = async (
 };
 
 /**
- * Creates the notification for a resolved event. The provider renders the
+ * Creates the notification for a resolved event; the provider renders the
  * managed template from `template` and `data`.
  *
- * An event can arrive more than once — a redelivery, a re-emitted event — and
- * the idempotency key is what stops the customer getting two emails. So an
- * event already delivered is settled here, before Medusa is asked, and never
- * reaches `createNotifications` with a key it has seen:
+ * An event may be delivered more than once, so a key already seen is settled
+ * here and never passed to `createNotifications` again:
  *
- *  - the earlier send succeeded (or is still in flight): skipped as
- *    `already_sent`. Medusa would answer with an empty array rather than the
- *    existing row, and reading that as `[notification]` threw on every
- *    redelivery, logging a failure for an email that had gone out fine.
- *
- *  - the earlier send failed: skipped as `previously_failed`, not resent.
- *    Medusa (2.21) does try to resend a failed key, but under a freshly
- *    generated id it never creates a row for; the email goes out and the
- *    status update then throws "Notification … not found" — in a `finally`,
- *    so it throws the same way whether the send worked or not. The failed row
- *    stays failed, so each further delivery would send another copy. The
- *    original failure is already logged and recorded on its notification.
+ *  - Earlier send succeeded or is in flight: skipped as `already_sent`.
+ *    (Medusa returns an empty array here, not the existing row.)
+ *  - Earlier send failed: skipped as `previously_failed`, not resent, because
+ *    Medusa's resend of a failed key is broken (see below). The original
+ *    failure is already logged on its notification.
  */
 export const sendEmailEventNotificationStep = createStep(
   sendEmailEventNotificationStepId,
@@ -80,14 +69,12 @@ export const sendEmailEventNotificationStep = createStep(
       : undefined;
 
     /*
-     * Workaround for a Medusa bug (seen in @medusajs/notification 2.21.0,
-     * `NotificationModuleService.createNotifications_`): a repeated
-     * idempotency key whose earlier notification failed is resent under a new
-     * generated id that is never inserted, so the email goes out and the
-     * status update in its `finally` throws "Notification with id … not
-     * found". The failed row is never updated, so every later delivery would
-     * send again. Settling repeated keys here keeps us off that path entirely.
-     * Revisit once Medusa resends under the existing row.
+     * Workaround for a Medusa bug (@medusajs/notification 2.21.0,
+     * `NotificationModuleService.createNotifications_`): a failed key is
+     * resent under a new id that is never inserted. The email goes out, then
+     * the status update throws "Notification with id … not found" (whether or
+     * not the send worked), and the row stays failed, so every redelivery
+     * sends again. Revisit once Medusa resends under the existing row.
      */
     if (previous) {
       return new StepResponse<SendEmailEventNotificationResult>({
@@ -116,11 +103,8 @@ export const sendEmailEventNotificationStep = createStep(
       },
     ]);
 
-    /*
-     * Optional chaining still: another delivery of the same event can land
-     * between the lookup above and this call, and Medusa then answers with
-     * nothing. Its own comment says it takes no lock here either.
-     */
+    // Still optional: a concurrent delivery can slip in after the lookup, and
+    // Medusa (which takes no lock) then returns nothing.
     return new StepResponse<SendEmailEventNotificationResult>({
       sent: true,
       skipped: null,

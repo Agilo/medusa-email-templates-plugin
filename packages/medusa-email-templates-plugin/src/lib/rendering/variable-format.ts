@@ -1,16 +1,13 @@
 /**
  * Maps a variable's display format to the Liquid expression that produces it.
  *
- * Shared by two sides: the admin editor generates these expressions when it
- * exports a template, and the server registers the matching filters in
- * `./liquid.ts`. Keep this module dependency-free — it is bundled into the
- * admin's browser chunk, so it must not reach for Node APIs, `liquidjs`, or
- * anything from `@medusajs/framework`.
+ * Shared by the admin editor (which emits these on export) and the server
+ * (which registers the matching filters in `./liquid.ts`). It is bundled into
+ * the admin, so keep it dependency-free: no Node APIs, `liquidjs` or
+ * `@medusajs/framework`.
  *
- * Every expression it produces is quote-free by construction. React entity-
- * encodes `"` and `'` in text children, so a filter argument written as a
- * string literal is corrupted on export; only bare identifiers and
- * no-argument filters survive intact.
+ * Expressions are quote-free by construction: React entity-encodes quotes on
+ * export, which would corrupt string-literal filter arguments.
  */
 
 const VARIABLE_FORMATS = [
@@ -23,10 +20,7 @@ const VARIABLE_FORMATS = [
 
 export type VariableFormat = (typeof VARIABLE_FORMATS)[number];
 
-/**
- * Dot-separated lowercase identifiers. Restricting the character set is what
- * guarantees a generated expression can never contain a quote.
- */
+/** Dot-separated lowercase identifiers, so an expression never has a quote. */
 export const VARIABLE_KEY_PATTERN = /^[a-z0-9_]+(\.[a-z0-9_]+)*$/;
 
 export const isVariableFormat = (value: unknown): value is VariableFormat =>
@@ -35,9 +29,8 @@ export const isVariableFormat = (value: unknown): value is VariableFormat =>
 
 type ToLiquidExpressionOptions = {
   /**
-   * Liquid path to the currency code, used by the `money` format. Emitted
-   * verbatim rather than rewritten, so inside a `{% for %}` loop it still
-   * refers to the outer scope — `order.currency_code`, not `item.*`.
+   * Liquid path to the currency code for `money`. Emitted verbatim, so inside
+   * a loop it still refers to the outer scope (`order.currency_code`).
    */
   currencySource?: string;
 };
@@ -49,8 +42,8 @@ const assertIdentifier = (value: string, label: string): void => {
 };
 
 /**
- * Builds the Liquid output tag for a variable. The admin never lets someone
- * type an expression; it stores `{ key, format }` and calls this instead.
+ * Builds the Liquid output tag for a variable. The admin stores
+ * `{ key, format }` and calls this; nobody types expressions.
  */
 export const toLiquidExpression = (
   key: string,
@@ -66,8 +59,7 @@ export const toLiquidExpression = (
   if (format === 'money') {
     const { currencySource } = options;
 
-    // `formatMoney` falls back to a plain two-decimal string without a
-    // currency, so omitting the argument is valid rather than an error.
+    // Valid without a currency: `formatMoney` falls back to two decimals.
     if (currencySource === undefined) {
       return `{{ ${key} | money }}`;
     }
@@ -80,17 +72,12 @@ export const toLiquidExpression = (
   return `{{ ${key} | ${format} }}`;
 };
 
-/**
- * The name a Repeat block gives each entry. Fixed rather than chosen, because
- * blocks do not nest — there is never a second loop whose alias could clash.
- */
+/** The loop alias for each entry. Fixed, since Repeat blocks don't nest. */
 export const LOOP_ITEM = 'item';
 
 /**
- * The tags a Repeat block wraps its content in.
- *
- * Quote-free for the same reason as `toLiquidExpression`: the source passes
- * the identifier check, and nothing else in the tag is user-supplied.
+ * The loop tags a Repeat block wraps its content in. Quote-free: the source
+ * must pass the identifier check.
  */
 export const toLiquidLoop = (
   source: string,
@@ -119,28 +106,22 @@ export type LiquidExpressionMatch = ParsedLiquidExpression & {
 };
 
 /*
- * Deliberately narrow: `{{ key }}`, `{{ key | filter }}` or
- * `{{ key | filter: argument }}`, with identifiers on both sides and nothing
- * else. It is the inverse of `toLiquidExpression`, so it recognises only what
- * that could have produced — anything richer is left as text rather than
- * guessed at, because a variable pill claiming to be an expression it cannot
- * regenerate would silently rewrite the template on the next save.
+ * Matches only what `toLiquidExpression` can produce: `{{ key }}`,
+ * `{{ key | filter }}` or `{{ key | filter: arg }}`. Anything richer stays as
+ * text, since a pill that can't regenerate it would rewrite it on save.
  */
 const EXPRESSION_PATTERN =
   /\{\{\s*([a-z0-9_]+(?:\.[a-z0-9_]+)*)\s*(?:\|\s*([a-z0-9_]+)\s*(?::\s*([a-z0-9_]+(?:\.[a-z0-9_]+)*)\s*)?)?\}\}/g;
 
 /**
- * Reads one output tag back into the attributes that produce it.
- *
- * Returns null for anything this module could not have generated, which
- * includes an unknown filter, a quoted argument, or a `money` argument that is
- * not a bare identifier path.
+ * Parses one output tag back into pill attributes, or null for anything this
+ * module couldn't have generated (unknown filter, quoted or non-identifier
+ * argument).
  */
 export const fromLiquidExpression = (
   expression: string,
 ): ParsedLiquidExpression | null => {
-  // `exec` on a global regex is stateful, so this match is taken from a
-  // one-shot copy rather than the shared pattern.
+  // A fresh regex: `exec` on the shared global one is stateful.
   const match = new RegExp(`^${EXPRESSION_PATTERN.source}$`, 's').exec(
     expression.trim(),
   );
@@ -165,17 +146,13 @@ export const fromLiquidExpression = (
       : { key, format: filter };
   }
 
-  // Every remaining format is a no-argument filter; an argument means this is
-  // something else wearing a familiar name.
+  // Remaining formats take no argument; one means it isn't ours.
   return argument ? null : { key, format: filter };
 };
 
 /**
- * Every expression inside a run of text, with its position.
- *
- * Positions matter because an expression is often embedded in prose —
- * `Hi {{ order.customer_name }},` — so importing a template has to split the
- * run around it rather than replace the run wholesale.
+ * Every expression in a run of text, with its position, so the run can be
+ * split around it (`Hi {{ order.customer_name }},`).
  */
 export const findLiquidExpressions = (
   text: string,
