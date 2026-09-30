@@ -1,7 +1,10 @@
 import type { Extensions, JSONContent } from '@tiptap/core';
 import { generateJSON } from '@tiptap/react';
 
-import { COLUMNS_ATTRIBUTE } from '../../../lib/events/built-in/default-templates/design';
+import {
+  COLUMNS_ATTRIBUTE,
+  PAGE_ATTRIBUTE,
+} from '../../../lib/events/built-in/default-templates/design';
 import { findLiquidExpressions } from '../../../lib/rendering/variable-format';
 
 /**
@@ -146,6 +149,34 @@ export const columnsFromTables = (html: string): string => {
 };
 
 /**
+ * Replaces the page table around the card with the card itself.
+ *
+ * That table paints the page colour for mail clients. The editor paints its
+ * own page, and its export puts the card in an equivalent cell, so the table
+ * has no job here — and kept, it would parse as a Table node with the whole
+ * email inside one cell.
+ */
+export const unwrapPageTables = (html: string): string => {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const pages = doc.querySelectorAll(`table[${PAGE_ATTRIBUTE}]`);
+
+  if (pages.length === 0) {
+    return html;
+  }
+
+  pages.forEach((page) => {
+    const cell = page.querySelector(':scope > tbody > tr > td');
+
+    page.replaceWith(...(cell ? [...cell.childNodes] : []));
+  });
+
+  // Same shape rule as `columnsFromTables`: a whole template keeps its body.
+  return /<body[\s>]/i.test(html)
+    ? doc.documentElement.outerHTML
+    : doc.body.innerHTML;
+};
+
+/**
  * Builds an editor document from a template's HTML.
  *
  * `extensions` is passed in rather than built here on purpose: the document
@@ -158,5 +189,8 @@ export const deriveEditorContent = (
   extensions: Extensions,
 ): JSONContent =>
   withVariableNodes(
-    generateJSON(columnsFromTables(html), extensions) as JSONContent,
+    generateJSON(
+      columnsFromTables(unwrapPageTables(html)),
+      extensions,
+    ) as JSONContent,
   );

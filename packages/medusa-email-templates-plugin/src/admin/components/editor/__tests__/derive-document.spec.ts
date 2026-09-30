@@ -22,6 +22,7 @@ import { createEmailLiquid } from '../../../../lib/rendering/liquid';
 import {
   columnsFromTables,
   deriveEditorContent,
+  unwrapPageTables,
   withVariableNodes,
 } from '../derive-document';
 import { RepeatNode } from '../repeat-node';
@@ -203,6 +204,63 @@ describe('columnsFromTables', () => {
     expect(
       columnsFromTables(columns([{ html: 'A' }, { html: 'B' }])),
     ).not.toMatch(/<body|<html/);
+  });
+});
+
+describe('the page around the card', () => {
+  const templates = [
+    ['order placed', orderPlacedDefaultTemplate],
+    ['invite created', inviteCreatedDefaultTemplate],
+    ['invite resent', inviteResentDefaultTemplate],
+    ['password reset (user)', passwordResetUserDefaultTemplate],
+    ['password reset (customer)', passwordResetCustomerDefaultTemplate],
+    ['email verification', emailVerificationDefaultTemplate],
+  ] as const;
+
+  /*
+   * What a template nobody has saved actually sends. Gmail turns `<body>`
+   * into an unpadded `<div>`, and a card sitting straight inside it lets its
+   * margins collapse out through the top and bottom — the grey band vanished
+   * above and below. Inside a table cell they cannot.
+   */
+  it.each(templates)(
+    'holds the %s card in a cell that paints the page colour',
+    (_, template) => {
+      const doc = new DOMParser().parseFromString(template.html, 'text/html');
+      const card = [...doc.querySelectorAll('table')].find(
+        (table) => table.style.maxWidth,
+      );
+      const cell = card?.parentElement;
+
+      expect(cell?.tagName).toBe('TD');
+      expect(cell?.closest('table')?.hasAttribute('data-page')).toBe(true);
+      expect(cell?.getAttribute('style')).toContain(
+        `background-color:${EMAIL_DESIGN.pageBackground}`,
+      );
+    },
+  );
+
+  it('is unwrapped for the editor, leaving the card where it was', () => {
+    const html = unwrapPageTables(orderPlacedDefaultTemplate.html);
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+
+    expect(doc.querySelector('table[data-page]')).toBeNull();
+    // The card is the body's own child again, and the body kept its styling.
+    expect(
+      [...doc.body.children].some(
+        (child) =>
+          child.tagName === 'TABLE' && (child as HTMLElement).style.maxWidth,
+      ),
+    ).toBe(true);
+    expect(doc.body.getAttribute('style')).toContain(
+      `background-color:${EMAIL_DESIGN.pageBackground}`,
+    );
+  });
+
+  it('leaves HTML without a page table untouched', () => {
+    const html = '<p>Hi</p>';
+
+    expect(unwrapPageTables(html)).toBe(html);
   });
 });
 

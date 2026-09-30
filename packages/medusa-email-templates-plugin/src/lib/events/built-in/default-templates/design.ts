@@ -61,6 +61,22 @@ export const EMAIL_DESIGN = {
 export const CARD_MARGIN = `${EMAIL_DESIGN.pageGutter}px auto`;
 
 /**
+ * Marks the table that paints the page colour around the card.
+ *
+ * It is what keeps the gutter in Gmail. Gmail turns `<body>` into a `<div>`
+ * that keeps the page colour but has no padding, so the card's top and bottom
+ * margins collapse straight through it: the grey showed either side of the
+ * card and nowhere above or below. Inside a table cell they cannot collapse,
+ * which is also why an email saved from the editor never had the problem —
+ * its export puts the card in exactly such a cell.
+ *
+ * The editor draws the page itself, so `deriveEditorContent` unwraps this
+ * table before parsing; kept, it would open as a Table node with the whole
+ * email inside one cell.
+ */
+export const PAGE_ATTRIBUTE = 'data-page';
+
+/**
  * Marks a table as a row of columns the editor may reshape.
  *
  * The editor's Table node is for keeping imported HTML intact: it has no way
@@ -108,6 +124,11 @@ export const NO_THEME_SPACING = 'padding-top:0;padding-bottom:0';
  * A table rather than a div, because Outlook's Word renderer ignores
  * `max-width` on a block element and the email would run the full width of the
  * window.
+ *
+ * Inside a full-width page table, whose cell repeats the page colour and holds
+ * the card's margins in — see `PAGE_ATTRIBUTE`. The same structure the
+ * editor's export has, so a template sends the same whether or not it has
+ * ever been saved.
  */
 export const layout = (
   heading: string,
@@ -115,13 +136,21 @@ export const layout = (
 ): string => `<!doctype html>
 <html>
   <body style="margin:0;padding:0;background-color:${EMAIL_DESIGN.pageBackground};font-family:${EMAIL_DESIGN.fontFamily};color:${EMAIL_DESIGN.textColor}">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:${EMAIL_DESIGN.cardWidth}px;margin:${CARD_MARGIN};background-color:${EMAIL_DESIGN.cardBackground};border-radius:${EMAIL_DESIGN.cardRadius}px">
+    <table ${PAGE_ATTRIBUTE}="" role="presentation" width="100%" cellpadding="0" cellspacing="0">
       <tbody>
         <tr>
-          <td style="padding:${EMAIL_DESIGN.cardPadding}px">
-            <h1 style="margin:0 0 16px;${NO_THEME_SPACING};font-size:24px">${heading}</h1>
-            ${body}
-            <p style="margin:24px 0 0;${NO_THEME_SPACING};color:${EMAIL_DESIGN.mutedColor};font-size:12px">{{ store.name }}</p>
+          <td style="background-color:${EMAIL_DESIGN.pageBackground}">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:${EMAIL_DESIGN.cardWidth}px;margin:${CARD_MARGIN};background-color:${EMAIL_DESIGN.cardBackground};border-radius:${EMAIL_DESIGN.cardRadius}px">
+              <tbody>
+                <tr>
+                  <td style="padding:${EMAIL_DESIGN.cardPadding}px">
+                    <h1 style="margin:0 0 16px;${NO_THEME_SPACING};font-size:24px">${heading}</h1>
+                    ${body}
+                    <p style="margin:24px 0 0;${NO_THEME_SPACING};color:${EMAIL_DESIGN.mutedColor};font-size:12px">{{ store.name }}</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </td>
         </tr>
       </tbody>
