@@ -1,9 +1,18 @@
 {
   "name": "medusa-email-templates-plugin",
   "version": "0.0.1",
-  "description": "Email templates plugin for Medusa v2.",
-  "author": "Medusa (https://medusajs.com)",
+  "description": "Manage transactional email templates from Medusa Admin and send them through Medusa Cloud, Resend or Mailgun.",
+  "author": "Agilo (https://agilo.com)",
   "license": "MIT",
+  "homepage": "https://github.com/Agilo/medusa-email-templates-plugin#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Agilo/medusa-email-templates-plugin.git",
+    "directory": "packages/medusa-email-templates-plugin"
+  },
+  "bugs": {
+    "url": "https://github.com/Agilo/medusa-email-templates-plugin/issues"
+  },
   "files": [
     ".medusa/server"
   ],
@@ -26,7 +35,13 @@
     "plugin",
     "medusa-plugin-other",
     "medusa-plugin",
-    "medusa-v2"
+    "medusa-v2",
+    "medusa-plugin-notification",
+    "email",
+    "email-templates",
+    "notification",
+    "resend",
+    "mailgun"
   ],
   "scripts": {
     "build": "yarn plugin:build",
@@ -90,13 +105,11 @@
     "yalc": "^1.0.0-pre.53"
   },
   "peerDependencies": {
-    "@medusajs/admin-sdk": "2.21.0",
-    "@medusajs/cli": "2.21.0",
-    "@medusajs/framework": "2.21.0",
-    "@medusajs/icons": "2.21.0",
-    "@medusajs/medusa": "2.21.0",
-    "@medusajs/test-utils": "2.21.0",
-    "@medusajs/ui": "4.2.4"
+    "@medusajs/admin-sdk": "^2.21.0",
+    "@medusajs/framework": "^2.21.0",
+    "@medusajs/icons": "^2.21.0",
+    "@medusajs/medusa": "^2.21.0",
+    "@medusajs/ui": "^4.2.4"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"

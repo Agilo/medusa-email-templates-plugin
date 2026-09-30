@@ -6,14 +6,14 @@ import {
 } from 'medusa-email-templates-plugin/lib/events/index';
 
 /**
- * Creates and enables a managed email template.
- * Temporary helper until the admin API and Settings page land.
+ * Creates and enables a managed email template, for the example app — handy
+ * after resetting the database. Settings → Email does the same in the admin.
  *
  * The bodies are left null, which means "the event's default": a send and the
  * editor both fall back to it. Copying the default HTML in instead froze it —
  * the template kept sending that version after the default had moved on.
  *
- * Usage: yarn --cwd apps/dev-app seed:email-template order-placed
+ * Usage: yarn --cwd apps/dev-app email:template:enable order-placed
  */
 export default async function enableEmailTemplate({
   container,

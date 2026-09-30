@@ -21,7 +21,15 @@ This repository is a Yarn workspace monorepo: the plugin lives in `packages/medu
 
 ## Features
 
-> Work in progress — features will be documented here as they land.
+- **Settings → Email** in Medusa Admin, with a Templates list and a Provider section.
+- **A visual editor** (React Email Editor) for each email, with variables as pills, per-variable formatting, repeating blocks for lists such as order items, and ready-made snippets such as the order totals.
+- **Built-in emails** for order confirmation, admin invites, password resets (admin and customer) and email verification — each disabled until an admin turns it on.
+- **Preview and test send** from the editor, rendered through the same code path as a real send.
+- **Transports**: Medusa Cloud, Resend and Mailgun, switchable at runtime without a redeploy.
+- **Credentials** from an environment variable or stored encrypted (AES-256-GCM); the admin API never returns them.
+- **Safe templates**: Liquid, with no file access or JavaScript, and parse, render and memory limits.
+- **Pass-through**: notifications that already carry rendered content are sent unchanged.
+- **Extensible**: host applications can register their own email events and transports.
 
 ## Getting Started
 
@@ -116,7 +124,7 @@ Then run `npx medusa db:migrate` to create the plugin's tables.
 
 #### Configure a transport
 
-Choose the transport through the admin API (the Settings → Email page follows in a later release):
+Choose the transport in Medusa Admin under **Settings → Email**, or through the admin API:
 
 ```bash
 # Resend, with the API key read from an environment variable at send time
@@ -175,7 +183,7 @@ Registered events have one editable template each, written in [Liquid](https://l
 - `password-reset-user` and `password-reset-customer` — both handle Medusa's single `auth.password_reset` event, chosen by who asked: admins get an Admin link, customers get a storefront link.
 - `email-verification` — sent on `auth.verification_requested` when the entity is an email address, containing the verification code.
 
-Templates are edited through the admin API, addressed by their template key (the Settings → Email page follows in a later release):
+Templates are edited in Medusa Admin under **Settings → Email**, where each one opens in the visual editor. The same operations are available through the admin API, addressed by template key:
 
 ```bash
 # Every registered template, whether or not it has been saved
@@ -281,7 +289,7 @@ The same module exports `registerEmailTransport` for adding a transport of your 
 
 Rendering happens when the email is sent: the subject and text body are rendered as-is, the HTML body is HTML-escaped, and the plain-text body is derived from the rendered HTML when no text template is set. Templates cannot read files or run JavaScript, and they run under parse, render and memory limits.
 
-Until the Settings → Email page ships, enable a template in the example app with:
+In the example app, a template can also be enabled from the command line, which is handy after resetting the database:
 
 ```bash
 yarn --cwd apps/dev-app email:template:enable order-placed

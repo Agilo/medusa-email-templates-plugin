@@ -14129,6 +14129,7 @@ __metadata:
     "@testing-library/react": "npm:^16.3.3"
     "@testing-library/user-event": "npm:^14.6.7"
     "@tiptap/core": "npm:3.31.3"
+    "@tiptap/pm": "npm:3.31.3"
     "@tiptap/react": "npm:3.31.3"
     "@types/html-to-text": "npm:^9.0.4"
     "@types/jest": "npm:^30.0.0"
@@ -14161,13 +14162,11 @@ __metadata:
     yalc: "npm:^1.0.0-pre.53"
     zod: "npm:4.2.0"
   peerDependencies:
-    "@medusajs/admin-sdk": 2.21.0
-    "@medusajs/cli": 2.21.0
-    "@medusajs/framework": 2.21.0
-    "@medusajs/icons": 2.21.0
-    "@medusajs/medusa": 2.21.0
-    "@medusajs/test-utils": 2.21.0
-    "@medusajs/ui": 4.2.4
+    "@medusajs/admin-sdk": ^2.21.0
+    "@medusajs/framework": ^2.21.0
+    "@medusajs/icons": ^2.21.0
+    "@medusajs/medusa": ^2.21.0
+    "@medusajs/ui": ^4.2.4
   languageName: unknown
   linkType: soft
 
