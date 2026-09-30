@@ -192,6 +192,30 @@ describe('medusaCloudTransport.send', () => {
     );
   });
 
+  /*
+   * A gateway in front of Cloud answers an outage with an HTML page. Parsing
+   * it used to throw "Unexpected token <", which hid the status.
+   */
+  it('reports the status when the error response is not JSON', async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 502,
+      statusText: 'Bad Gateway',
+      json: async () => {
+        throw new SyntaxError(
+          'Unexpected token \'<\', "<html>" is not valid JSON',
+        );
+      },
+    });
+
+    await expect(medusaCloudTransport.send(email(), context())).rejects.toThrow(
+      expect.objectContaining({
+        code: EmailErrorCodes.TRANSPORT_FAILED,
+        message: 'Failed to send email: 502 - Bad Gateway',
+      }),
+    );
+  });
+
   it('fails as not ready when Cloud is not configured', async () => {
     await expect(
       medusaCloudTransport.send(email(), context({ cloud: null })),

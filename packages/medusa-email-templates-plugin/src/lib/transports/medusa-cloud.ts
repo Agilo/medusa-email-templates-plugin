@@ -77,8 +77,8 @@ export const medusaCloudTransport: EmailTransport = {
     }
 
     let response: Response;
-    let body: { id?: string; message?: string } | null;
 
+    // Only the request itself: a failure here means Cloud was never reached.
     try {
       response = await fetch(`${cloud!.emailsEndpoint}/send`, {
         method: 'POST',
@@ -95,17 +95,28 @@ export const medusaCloudTransport: EmailTransport = {
           content: email.content,
         }),
       });
-
-      body = (await response.json()) as { id?: string; message?: string };
     } catch (error) {
       throw transportFailedError(
         `Failed to send email through Medusa Cloud: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
 
+    /*
+     * Parsed apart from the request, and allowed to fail. A gateway in front
+     * of Cloud answers an outage with an HTML error page; parsing that inside
+     * the try above threw "Unexpected token <" and hid the status that says
+     * what actually happened. The same fallback the Mailgun transport uses.
+     */
+    const body = (await response.json().catch(() => null)) as {
+      id?: string;
+      message?: string;
+    } | null;
+
     if (!response.ok) {
+      // Medusa core's own wording, with the message dropped when there is
+      // none rather than printed as "undefined".
       throw transportFailedError(
-        `Failed to send email: ${response.status} - ${response.statusText}: ${body?.message}`,
+        `Failed to send email: ${response.status} - ${response.statusText}${body?.message ? `: ${body.message}` : ''}`,
       );
     }
 
