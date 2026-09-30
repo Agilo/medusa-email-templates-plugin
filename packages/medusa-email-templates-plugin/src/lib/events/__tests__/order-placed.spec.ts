@@ -189,8 +189,10 @@ describe('order-placed email event', () => {
         storefront_url: 'https://shop.test',
       });
 
+      // Not the password reset's code: this email still sends, it only
+      // loses the link, and the admin says so.
       expect(orderPlacedEmailEvent.getWarnings?.(unset)).toEqual([
-        'storefront_url_not_configured',
+        'order_link_unavailable',
       ]);
       expect(orderPlacedEmailEvent.getWarnings?.(set)).toEqual([]);
     });

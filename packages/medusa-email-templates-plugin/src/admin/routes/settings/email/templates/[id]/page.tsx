@@ -33,6 +33,7 @@ import {
   groupVariables,
   scalarVariables,
 } from '../../../../../lib/variables';
+import { describeWarning } from '../../../../../lib/warnings';
 // Type-only, so the editor module stays out of this route's bundle.
 import type { EmailTemplateEditorHandle } from '../../../../../components/editor/email-template-editor';
 import type { SubjectEditorHandle } from '../../../../../components/editor/subject-editor';
@@ -50,11 +51,6 @@ const SubjectEditor = lazy(
 );
 
 const SETTINGS_PATH = '/settings/email';
-
-const WARNING_TEXT: Record<string, string> = {
-  storefront_url_not_configured:
-    'No storefront URL is configured, so links in this email cannot be built. It will not send until that is set.',
-};
 
 /**
  * Inline code: the event name in the header, the slash key in the body hint.
@@ -329,7 +325,7 @@ const EmailTemplatePage = () => {
 
         {warning && (
           <div>
-            <Alert variant="warning">{WARNING_TEXT[warning] ?? warning}</Alert>
+            <Alert variant="warning">{describeWarning(warning).text}</Alert>
           </div>
         )}
       </Container>

@@ -283,13 +283,18 @@ export const orderPlacedEmailEvent = defineEmailEvent<OrderPlacedEventData>({
    * missing `storefront_url` leaves `order_url` unresolved rather than
    * skipping the send, and this is what tells an admin why the link is the
    * one thing that will not work.
+   *
+   * Its own code, not the password reset's `storefront_url_not_configured`.
+   * The cause is the same but the consequence is not — that one stops the
+   * email, this one only loses a link — and sharing a code told admins their
+   * order confirmations were not sending while customers were receiving them.
    */
   getWarnings: (container) => {
     try {
       getStorefrontUrl(container);
       return [];
     } catch {
-      return ['storefront_url_not_configured'];
+      return ['order_link_unavailable'];
     }
   },
 });

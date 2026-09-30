@@ -322,8 +322,21 @@ describe('EmailTemplatePage', () => {
     renderPage();
 
     expect(
-      await screen.findByText(/No storefront URL is configured/),
+      await screen.findByText(/It will not send until that is set/),
     ).toBeInTheDocument();
+  });
+
+  it('says the email still sends when only its link is lost', async () => {
+    fetchMock.mockResolvedValue({
+      template: template({ warnings: ['order_link_unavailable'] }),
+    });
+
+    renderPage();
+
+    expect(
+      await screen.findByText(/The email still sends, without it/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/will not send/)).not.toBeInTheDocument();
   });
 
   it('opens the preview drawer', async () => {

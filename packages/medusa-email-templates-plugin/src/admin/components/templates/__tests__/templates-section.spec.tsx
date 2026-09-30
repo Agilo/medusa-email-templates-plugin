@@ -145,8 +145,37 @@ describe('TemplatesSection', () => {
     // copy, so scope the assertion to the tooltip itself.
     const [tooltip] = await screen.findAllByRole('tooltip');
     expect(tooltip).toHaveTextContent(
-      'No storefront URL is configured, so the link cannot be built.',
+      'No storefront URL is configured, so the link in this email cannot be built. It will not send until that is set.',
     );
+  });
+
+  /*
+   * Same cause as the password reset, different consequence. The order
+   * confirmation still sends without a storefront — only its link is lost —
+   * and the list used to say it "cannot send" all the same.
+   */
+  it('does not call a warning that still sends a blocker', async () => {
+    const withOrderLink = templates().map((template) =>
+      template.template_key === 'order-placed'
+        ? { ...template, warnings: ['order_link_unavailable'] }
+        : template,
+    );
+    fetchMock.mockResolvedValue({ templates: withOrderLink, count: 3 });
+
+    renderSection();
+    await screen.findByText('Order placed');
+
+    const marker = within(row('Order placed')).getByLabelText(
+      'Order placed has a warning',
+    );
+    expect(
+      within(row('Order placed')).queryByLabelText(/cannot send/),
+    ).toBeNull();
+
+    await userEvent.hover(marker);
+
+    const [tooltip] = await screen.findAllByRole('tooltip');
+    expect(tooltip).toHaveTextContent('The email still sends, without it.');
   });
 
   it('reflects enabled state in the switch', async () => {

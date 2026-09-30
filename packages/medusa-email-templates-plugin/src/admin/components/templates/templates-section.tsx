@@ -28,23 +28,17 @@ import {
 import { useEmailTemplates } from '../../hooks/use-email-templates';
 import { getApiErrorMessage } from '../../lib/api-error';
 import type { EmailTemplateListItem } from '../../lib/types';
+import { describeWarning, type TemplateWarning } from '../../lib/warnings';
 import TemplatePreviewDrawer from './template-preview-drawer';
 import TemplateTestEmailDrawer from './template-test-email-drawer';
 
-/** Warnings are codes; only the ones we can explain get friendly text. */
-const WARNING_TEXT: Record<string, string> = {
-  storefront_url_not_configured:
-    'No storefront URL is configured, so the link cannot be built.',
-};
+/** The first warning a template reports, if any, in words. */
+const firstWarning = (
+  template: EmailTemplateListItem,
+): TemplateWarning | null => {
+  const [code] = template.warnings;
 
-const warningText = (template: EmailTemplateListItem): string | null => {
-  const [warning] = template.warnings;
-
-  if (!warning) {
-    return null;
-  }
-
-  return WARNING_TEXT[warning] ?? warning;
+  return code ? describeWarning(code) : null;
 };
 
 const lastEdited = (template: EmailTemplateListItem): string => {
@@ -178,7 +172,7 @@ const TemplatesSection = () => {
         header: 'Status',
         cell: ({ row }) => {
           const template = row.original;
-          const warning = warningText(template);
+          const warning = firstWarning(template);
 
           return (
             <div className="flex items-center gap-x-2">
@@ -202,18 +196,25 @@ const TemplatesSection = () => {
                   )
                 }
               />
-              {/* A warning belongs with the state it affects: enabled or
-                  not, this template will not send until it is resolved.
+              {/* A warning belongs with the state it affects. The label says
+                  "cannot send" only for a warning that really stops the
+                  email; the order confirmation's missing link does not, and
+                  saying so told admins confirmations were blocked while
+                  customers were receiving them.
 
                   Amber rather than `text-ui-fg-warning`, which looks right but
                   does not exist: Medusa's theme has no `warning` foreground at
                   all, so that class generated nothing and the icon rendered in
                   the inherited body colour. */}
               {warning && (
-                <Tooltip content={warning}>
+                <Tooltip content={warning.text}>
                   <span
                     className="text-ui-tag-orange-text flex"
-                    aria-label={`${template.label} cannot send`}
+                    aria-label={
+                      warning.blocksSending
+                        ? `${template.label} cannot send`
+                        : `${template.label} has a warning`
+                    }
                   >
                     <ExclamationCircle />
                   </span>
