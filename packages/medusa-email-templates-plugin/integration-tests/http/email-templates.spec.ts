@@ -182,6 +182,53 @@ pluginIntegrationSuite(({ api, getContainer }) => {
       });
     });
 
+    /*
+     * `editor_content` is the editor's source for the HTML. Kept after the
+     * HTML changed underneath it, the editor reopened the old email while the
+     * new one sent, and the next body save put the old one back.
+     */
+    it('drops the editor content when HTML is saved without it', async () => {
+      const headers = await createAdminHeaders(getContainer());
+
+      await api.post('/admin/email/templates/order-placed', savedTemplate(), {
+        headers,
+      });
+      await api.post(
+        '/admin/email/templates/order-placed',
+        { html_template: '<p>Written by hand</p>' },
+        { headers },
+      );
+
+      const fetched = await api.get('/admin/email/templates/order-placed', {
+        headers,
+      });
+      expect(fetched.data.template).toMatchObject({
+        html_template: '<p>Written by hand</p>',
+        editor_content: null,
+      });
+    });
+
+    it('keeps the editor content when only the subject changes', async () => {
+      const headers = await createAdminHeaders(getContainer());
+
+      await api.post('/admin/email/templates/order-placed', savedTemplate(), {
+        headers,
+      });
+      await api.post(
+        '/admin/email/templates/order-placed',
+        { subject_template: 'New subject' },
+        { headers },
+      );
+
+      const fetched = await api.get('/admin/email/templates/order-placed', {
+        headers,
+      });
+      expect(fetched.data.template.editor_content).toEqual({
+        type: 'doc',
+        content: [],
+      });
+    });
+
     it.each([
       ['a broken subject', { subject_template: '{{ order.display_id' }],
       ['a broken body', { html_template: '{% for item in %}' }],

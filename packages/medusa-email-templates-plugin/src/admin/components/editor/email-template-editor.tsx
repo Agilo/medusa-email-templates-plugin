@@ -253,23 +253,30 @@ const EmailTemplateEditor = forwardRef<
   );
 
   /*
-   * A template nobody has edited has no `editor_content`, only the HTML its
-   * event declared, so the body is derived from that HTML rather than opening
-   * blank. Blank was the dangerous state: the canvas looked empty, the first
-   * keystroke marked it dirty, and saving then exported that blankness over a
-   * designed email.
+   * A template with no `editor_content` is derived from its HTML rather than
+   * opening blank. Blank was the dangerous state: the canvas looked empty, the
+   * first keystroke marked it dirty, and saving then exported that blankness
+   * over a designed email.
+   *
+   * The stored HTML when there is one — saved through the API, say — and the
+   * event's default otherwise. The same order a real send resolves them in,
+   * so the canvas shows the email that actually goes out. Deriving from the
+   * default alone opened the built-in email over a customised one, and the
+   * next body save replaced the custom HTML with it.
    *
    * Nothing derived is persisted. `editor_content` stays null until someone
-   * actually edits, so a derived document cannot go stale against an HTML
-   * default that changed underneath it.
+   * actually edits, so a derived document cannot go stale against HTML that
+   * changed underneath it.
    */
+  const sourceHtml = template.html_template ?? template.default_template.html;
+
   const content = useMemo(() => {
     if (template.editor_content) {
       return template.editor_content;
     }
 
     try {
-      return deriveEditorContent(template.default_template.html, extensions);
+      return deriveEditorContent(sourceHtml, extensions);
     } catch {
       /*
        * Untested, and kept deliberately. Empty strings, bare text, unclosed
@@ -281,7 +288,7 @@ const EmailTemplateEditor = forwardRef<
        */
       return '';
     }
-  }, [template.editor_content, template.default_template.html, extensions]);
+  }, [template.editor_content, sourceHtml, extensions]);
 
   const editor = useEditor({
     extensions,

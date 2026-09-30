@@ -136,7 +136,9 @@ describe('EmailTemplatePage', () => {
   });
 
   it('opens showing the default template rather than a blank body', async () => {
-    fetchMock.mockResolvedValue({ template: template() });
+    fetchMock.mockResolvedValue({
+      template: template({ html_template: null }),
+    });
 
     renderPage();
 
@@ -148,6 +150,22 @@ describe('EmailTemplatePage', () => {
      * finds nothing.
      */
     expect(await screen.findByText('Default')).toBeInTheDocument();
+  });
+
+  /*
+   * HTML saved without editor content — through the API, say — is what a real
+   * send uses, so it is what the editor opens. It used to open the default,
+   * and the next body save replaced the custom HTML with it.
+   */
+  it('opens the stored HTML over the default when there is no editor content', async () => {
+    fetchMock.mockResolvedValue({
+      template: template({ html_template: '<p>Custom body</p>' }),
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('Custom body')).toBeInTheDocument();
+    expect(screen.queryByText('Default')).not.toBeInTheDocument();
   });
 
   it('only enables Save once something changes', async () => {
@@ -318,5 +336,37 @@ describe('EmailTemplatePage', () => {
 
     const drawer = await screen.findByRole('dialog');
     expect(within(drawer).getByText('Order placed')).toBeInTheDocument();
+  });
+
+  /*
+   * An untouched body renders on the server exactly as a real send would —
+   * the stored HTML — rather than as the editor's re-export of it, which is
+   * not the same email for HTML written outside the editor.
+   */
+  it('previews an unedited body from the stored HTML, not the editor', async () => {
+    fetchMock.mockImplementation(async (input) =>
+      String(input).endsWith('/preview')
+        ? { preview: { subject: 'S', html: '<p>Rendered</p>', text: 'T' } }
+        : { template: template() },
+    );
+
+    renderPage();
+    await screen.findByText('Order placed');
+    await userEvent.click(screen.getByRole('button', { name: 'Preview' }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringMatching(/\/preview$/),
+        expect.anything(),
+      ),
+    );
+
+    const [, request] = fetchMock.mock.calls.find(([path]) =>
+      String(path).endsWith('/preview'),
+    )!;
+    const { draft } = (request as { body: { draft?: Record<string, unknown> } })
+      .body;
+
+    expect(draft?.html_template).toBeUndefined();
   });
 });

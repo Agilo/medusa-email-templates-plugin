@@ -89,16 +89,27 @@ export const upsertEmailTemplateStep = createStep(
     const keep = <T>(next: T | undefined, current: T, fallback: T): T =>
       next !== undefined ? next : existing ? current : fallback;
 
+    /*
+     * New HTML without new editor content drops the stored editor content.
+     *
+     * `editor_content` is the editor's source for `html_template`, not a
+     * separate value: kept after the HTML changed underneath it, the editor
+     * reopened the old email while the new one sent, and the next body save
+     * put the old one back. Cleared, the editor derives from the HTML that is
+     * actually stored. The page always sends both, so this only ever applies
+     * to an API caller writing HTML directly.
+     */
+    const editorContent =
+      input.html_template !== undefined && input.editor_content === undefined
+        ? null
+        : keep(input.editor_content, existing?.editor_content ?? null, null);
+
     const data = {
       event: definition.event,
       template_key: input.template_key,
       enabled: input.enabled ?? existing?.enabled ?? false,
       subject_template: subject,
-      editor_content: keep(
-        input.editor_content,
-        existing?.editor_content ?? null,
-        null,
-      ),
+      editor_content: editorContent,
       html_template: keep(
         input.html_template,
         existing?.html_template ?? null,

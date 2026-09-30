@@ -92,7 +92,16 @@ const EmailTemplatePage = () => {
    * once anyway.
    */
   const [subjectDirty, setSubjectDirty] = useState(false);
-  const [bodyDirty, setBodyDirty] = useState(false);
+  const [bodyDirty, setBodyDirtyState] = useState(false);
+  /*
+   * The same flag, for `getDraft`, which must keep a stable identity and so
+   * cannot read state. Written alongside it rather than synced during render.
+   */
+  const bodyDirtyRef = useRef(false);
+  const setBodyDirty = useCallback((dirty: boolean) => {
+    bodyDirtyRef.current = dirty;
+    setBodyDirtyState(dirty);
+  }, []);
 
   const isDirty = subjectDirty || bodyDirty;
 
@@ -133,10 +142,17 @@ const EmailTemplatePage = () => {
    * rather than sent as `''` and rejected. And the draft is a strict object, so
    * only `html_template` goes over even though `getBody` also returns
    * `editor_content` — including it would fail the whole request.
+   *
+   * The body only once it has been edited. Untouched, the server renders what
+   * a real send would — the stored HTML, or the default — rather than the
+   * editor's re-export of it, which for HTML written outside the editor is not
+   * the same email: Liquid the editor cannot represent comes back escaped.
    */
   const getDraft = useCallback(async (): Promise<EmailTemplateDraft> => {
     const subject = subjectRef.current?.getText() ?? '';
-    const body = await editorRef.current?.getBody();
+    const body = bodyDirtyRef.current
+      ? await editorRef.current?.getBody()
+      : undefined;
 
     return {
       ...(subject ? { subject_template: subject } : {}),
