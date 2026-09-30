@@ -106,6 +106,68 @@ pluginIntegrationSuite(({ getContainer }) => {
     expect(payload.text).toContain('Medusa T-Shirt');
   });
 
+  /*
+   * Medusa answers a repeated idempotency key with no notification at all,
+   * which used to throw on reading its id and log a failure for an email
+   * that had gone out fine. A redelivered event must send nothing and say so.
+   */
+  it('sends once when the same order event arrives twice', async () => {
+    await selectResend();
+    await enableOrderPlacedTemplate();
+    const order = await createOrder();
+    capture.respondWith(200, { id: 're_order_email' });
+
+    const deliver = () =>
+      sendEmailEventWorkflow(getContainer()).run({
+        input: { event: 'order.placed', data: { id: order.id } },
+      });
+
+    const { result: first } = await deliver();
+    const { result: second } = await deliver();
+
+    expect(first).toMatchObject({ sent: true, skipped: null });
+    expect(second).toMatchObject({
+      sent: false,
+      skipped: 'already_sent',
+      notification_id: first.notification_id,
+    });
+    expect(capture.requests).toHaveLength(1);
+  });
+
+  /*
+   * The other side of the same key. Medusa's own resend of a failed key is
+   * broken (see the step), so a redelivery after a failure sends nothing and
+   * says why, rather than sending a copy and throwing anyway.
+   */
+  it('does not resend when the earlier send of the event failed', async () => {
+    await selectResend();
+    await enableOrderPlacedTemplate();
+    const order = await createOrder();
+
+    const deliver = () =>
+      sendEmailEventWorkflow(getContainer()).run({
+        input: { event: 'order.placed', data: { id: order.id } },
+      });
+
+    capture.respondWith(500, { message: 'Resend is down' });
+    const failed = await deliver()
+      .then(() => null)
+      .catch((error: unknown) => error);
+
+    capture.respondWith(200, { id: 're_order_email_retry' });
+    const { result: redelivered } = await deliver();
+
+    // A workflow rejects with its serialised error, not an `Error` instance.
+    expect(failed).not.toBeNull();
+    expect(redelivered).toMatchObject({
+      sent: false,
+      skipped: 'previously_failed',
+    });
+    expect(redelivered.notification_id).toEqual(expect.any(String));
+    // Only the failed attempt reached the transport.
+    expect(capture.requests).toHaveLength(1);
+  });
+
   it('skips the email while the template is disabled', async () => {
     await selectResend();
     await enableOrderPlacedTemplate({ enabled: false });
