@@ -102,8 +102,8 @@ module.exports = defineConfig({
             '@react-email/editor/extensions',
             '@react-email/editor/plugins',
             '@react-email/editor/ui',
+            '@react-email/editor/utils',
             '@tiptap/react',
-            // Imported directly by the variable node, for `NodeSelection`.
             '@tiptap/pm/state',
           ],
           exclude: [
