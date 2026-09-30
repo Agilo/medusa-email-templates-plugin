@@ -6,8 +6,12 @@ import {
 } from 'medusa-email-templates-plugin/lib/events/index';
 
 /**
- * Creates (from the built-in default) and enables a managed email template.
+ * Creates and enables a managed email template.
  * Temporary helper until the admin API and Settings page land.
+ *
+ * The bodies are left null, which means "the event's default": a send and the
+ * editor both fall back to it. Copying the default HTML in instead froze it —
+ * the template kept sending that version after the default had moved on.
  *
  * Usage: yarn --cwd apps/dev-app seed:email-template order-placed
  */
@@ -56,9 +60,10 @@ export default async function enableEmailTemplate({
     event: definition.event,
     template_key: definition.templateKey,
     enabled: true,
+    // Required by the model, so it is stored; it is not what drifted.
     subject_template: definition.defaultTemplate.subject,
-    html_template: definition.defaultTemplate.html,
-    text_template: definition.defaultTemplate.text ?? null,
+    html_template: null,
+    text_template: null,
     editor_content: null,
   });
 
