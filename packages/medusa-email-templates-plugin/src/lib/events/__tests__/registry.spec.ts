@@ -39,6 +39,75 @@ describe('email event registry', () => {
     ).toBeUndefined();
   });
 
+  /*
+   * The editor can only emit lowercase dotted identifiers. A key it cannot
+   * emit used to register fine, appear in every picker, and fail only on
+   * save — in the subject, silently.
+   */
+  it.each([
+    ['camel case', { key: 'order.displayId', label: 'Order', example: 1 }],
+    ['a dash', { key: 'customer-name', label: 'Name', example: 'Jane' }],
+    [
+      'a bad currency key',
+      {
+        key: 'order.total',
+        label: 'Total',
+        example: 1,
+        type: 'money' as const,
+        currencyKey: 'order.currencyCode',
+      },
+    ],
+    [
+      'a bad list field',
+      {
+        key: 'order.items',
+        label: 'Items',
+        example: [],
+        type: 'list' as const,
+        fields: [{ key: 'unitPrice', label: 'Price', example: 1 }],
+      },
+    ],
+  ])('rejects a variable key with %s, naming it', (_, variable) => {
+    expect(() =>
+      registerEmailEvent(
+        definition({
+          templateKey: `bad-key-${variable.key}`,
+          event: `bad.${variable.key}`,
+          variables: [variable],
+        }),
+      ),
+    ).toThrow(/variable key.*the editor cannot use/);
+  });
+
+  it('names every bad key and where it was declared', () => {
+    expect(() =>
+      registerEmailEvent(
+        definition({
+          templateKey: 'bad-keys',
+          event: 'bad.keys',
+          variables: [
+            { key: 'order.displayId', label: 'Order', example: 1 },
+            {
+              key: 'order.items',
+              label: 'Items',
+              example: [],
+              type: 'list',
+              fields: [{ key: 'unitPrice', label: 'Price', example: 1 }],
+            },
+          ],
+        }),
+      ),
+    ).toThrow(
+      /"order\.displayId" \(key\), "unitPrice" \(order\.items fields › key\)/,
+    );
+  });
+
+  it('accepts every built-in event', () => {
+    listEmailEventDefinitions().forEach((registered) => {
+      expect(registered.variables.length).toBeGreaterThan(0);
+    });
+  });
+
   it('rejects a duplicate template key', () => {
     registerEmailEvent(definition({ templateKey: 'duplicate-key' }));
 
