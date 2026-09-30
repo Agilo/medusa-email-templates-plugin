@@ -4,6 +4,7 @@ import type { EmailEventDefinition } from '../events/types';
 import {
   buildEmailTemplateDetail,
   buildSampleData,
+  findEnabledEmailTemplate,
   resolveEmailTemplateSource,
   type EmailTemplateRecord,
 } from '../templates';
@@ -232,5 +233,76 @@ describe('resolveEmailTemplateSource', () => {
       html_template: '<p>Default html</p>',
       text_template: 'Default text',
     });
+  });
+});
+
+/*
+ * The default text was written for the default HTML. Once the HTML is
+ * customised it describes an email that no longer exists, so the text is
+ * derived from the real HTML (null). A send and a preview must agree.
+ */
+describe('choosing the plain-text body', () => {
+  const customised: EmailTemplateRecord = { ...row, text_template: null };
+  const untouched: EmailTemplateRecord = {
+    ...row,
+    html_template: null,
+    text_template: null,
+  };
+  const serviceWith = (stored: EmailTemplateRecord) =>
+    ({ listEmailTemplates: async () => [stored] }) as never;
+
+  it('previews customised HTML without the default text', () => {
+    expect(
+      resolveEmailTemplateSource(definition, customised).text_template,
+    ).toBeNull();
+    expect(
+      resolveEmailTemplateSource(definition, null, {
+        html_template: '<p>Draft html</p>',
+      }).text_template,
+    ).toBeNull();
+  });
+
+  it('sends customised HTML without the default text', async () => {
+    const source = await findEnabledEmailTemplate(
+      serviceWith(customised),
+      definition,
+    );
+
+    expect(source?.text_template).toBeNull();
+  });
+
+  it('uses the default text alongside the default HTML, in both', async () => {
+    const sent = await findEnabledEmailTemplate(
+      serviceWith(untouched),
+      definition,
+    );
+
+    expect(sent?.text_template).toBe('Default text');
+    expect(
+      resolveEmailTemplateSource(definition, untouched).text_template,
+    ).toBe('Default text');
+  });
+
+  it('keeps a stored text body, in both', async () => {
+    const withText = { ...row, text_template: 'Saved text' };
+    const sent = await findEnabledEmailTemplate(
+      serviceWith(withText),
+      definition,
+    );
+
+    expect(sent?.text_template).toBe('Saved text');
+    expect(resolveEmailTemplateSource(definition, withText).text_template).toBe(
+      'Saved text',
+    );
+  });
+
+  it('honours a draft that clears the text explicitly', () => {
+    expect(
+      resolveEmailTemplateSource(
+        definition,
+        { ...row, text_template: 'Saved text' },
+        { text_template: null },
+      ).text_template,
+    ).toBeNull();
   });
 });

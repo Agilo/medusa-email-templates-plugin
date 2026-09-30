@@ -80,6 +80,28 @@ export const listEmailTemplateRecords = async (
 };
 
 /**
+ * The plain-text body to render, for a send and a preview alike.
+ *
+ * An explicit text body wins. Otherwise the definition's default text is used
+ * only while the HTML is the default too, because it was written to match that
+ * HTML: once the HTML is customised, the default text describes an email that
+ * no longer exists, and the text is derived from the real HTML instead (null
+ * here). Sends and previews used to decide this differently — sends never used
+ * the default text, previews always fell back to it — so a test email could
+ * show text the customer would never receive.
+ */
+const resolveTextTemplate = (
+  definition: EmailEventDefinition<never>,
+  { html, text }: { html: string | null; text: string | null },
+): string | null => {
+  if (text !== null) {
+    return text;
+  }
+
+  return html === null ? (definition.defaultTemplate.text ?? null) : null;
+};
+
+/**
  * Returns the template to render, or null when it is disabled or not saved
  * yet. A template with no stored HTML falls back to the definition's default.
  */
@@ -97,7 +119,10 @@ export const findEnabledEmailTemplate = async (
     template_key: row.template_key,
     subject_template: row.subject_template,
     html_template: row.html_template ?? definition.defaultTemplate.html,
-    text_template: row.text_template,
+    text_template: resolveTextTemplate(definition, {
+      html: row.html_template,
+      text: row.text_template,
+    }),
   };
 };
 
@@ -260,24 +285,29 @@ export const buildSampleData = (
 /**
  * The template to render for a preview or test: the draft when the editor
  * sends unsaved edits, otherwise the saved row, otherwise the default.
+ *
+ * A draft's text is taken as given when it is present at all, `null`
+ * included: an explicit null means "derive the text from the HTML", and
+ * falling through to the stored or default text ignored that.
  */
 export const resolveEmailTemplateSource = (
   definition: EmailEventDefinition<never>,
   row: EmailTemplateRecord | null,
   draft?: EmailTemplateDraft,
-): EmailTemplateSource => ({
-  template_key: definition.templateKey,
-  subject_template:
-    draft?.subject_template ??
-    row?.subject_template ??
-    definition.defaultTemplate.subject,
-  html_template:
-    draft?.html_template ??
-    row?.html_template ??
-    definition.defaultTemplate.html,
-  text_template:
-    draft?.text_template ??
-    row?.text_template ??
-    definition.defaultTemplate.text ??
-    null,
-});
+): EmailTemplateSource => {
+  const html = draft?.html_template ?? row?.html_template ?? null;
+  const text =
+    draft?.text_template !== undefined
+      ? draft.text_template
+      : (row?.text_template ?? null);
+
+  return {
+    template_key: definition.templateKey,
+    subject_template:
+      draft?.subject_template ??
+      row?.subject_template ??
+      definition.defaultTemplate.subject,
+    html_template: html ?? definition.defaultTemplate.html,
+    text_template: resolveTextTemplate(definition, { html, text }),
+  };
+};
