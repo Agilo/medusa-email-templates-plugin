@@ -213,6 +213,58 @@ describe('EmailTemplatePage', () => {
   });
 
   /*
+   * An edit made while a save is in flight is not in that request. Clearing
+   * the flag regardless disabled Save and silenced the leave prompt, and the
+   * edit was lost without a word.
+   */
+  it('keeps an edit made during a save as unsaved', async () => {
+    let finishSave: (value: unknown) => void = () => undefined;
+    fetchMock.mockImplementation(async (_path, init) =>
+      (init as { method?: string } | undefined)?.method === 'POST'
+        ? new Promise((resolve) => {
+            finishSave = resolve;
+          })
+        : { template: template() },
+    );
+
+    renderPage();
+    await screen.findByText('Order placed');
+
+    await editSubject();
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/admin/email/templates/order-placed',
+        expect.objectContaining({ method: 'POST' }),
+      ),
+    );
+
+    // Typed while the request is still out.
+    await editSubject();
+    finishSave({ template: template() });
+
+    await waitFor(() =>
+      expect(vi.mocked(toast.success)).toHaveBeenCalledWith('Template saved.'),
+    );
+    expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
+  });
+
+  it('clears the unsaved state when nothing changed during the save', async () => {
+    fetchMock.mockResolvedValue({ template: template() });
+
+    renderPage();
+    await screen.findByText('Order placed');
+
+    await editSubject();
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() =>
+      expect(vi.mocked(toast.success)).toHaveBeenCalledWith('Template saved.'),
+    );
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+  });
+
+  /*
    * Insertion and filter generation moved to the subject editor's own spec:
    * they are its behaviour, and testing them through a page render meant
    * driving ProseMirror at arm's length.

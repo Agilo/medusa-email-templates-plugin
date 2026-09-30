@@ -99,6 +99,30 @@ const EmailTemplatePage = () => {
     setBodyDirtyState(dirty);
   }, []);
 
+  /*
+   * How many edits each field has had, so a save can tell whether anything
+   * changed while its request was in flight.
+   *
+   * A save captures the field's content when it starts and clears the dirty
+   * flag when it finishes. Clearing it unconditionally discarded whatever was
+   * typed in between: those keystrokes were not in the request, yet Save
+   * disabled itself and leaving asked no questions, so they were lost without
+   * a word. Comparing counts clears a flag only if its field is still exactly
+   * what was sent.
+   */
+  const subjectEdits = useRef(0);
+  const bodyEdits = useRef(0);
+
+  const markSubjectEdited = useCallback(() => {
+    subjectEdits.current += 1;
+    setSubjectDirty(true);
+  }, []);
+
+  const markBodyEdited = useCallback(() => {
+    bodyEdits.current += 1;
+    setBodyDirty(true);
+  }, [setBodyDirty]);
+
   const isDirty = subjectDirty || bodyDirty;
 
   const groups = useMemo(
@@ -120,7 +144,7 @@ const EmailTemplatePage = () => {
     const variable = template?.variables.find((entry) => entry.key === key);
 
     subjectRef.current?.insertVariable(attributesFor(variable, format));
-    setSubjectDirty(true);
+    markSubjectEdited();
   };
 
   /**
@@ -157,6 +181,11 @@ const EmailTemplatePage = () => {
   }, []);
 
   const save = async () => {
+    // Taken first, before the export awaits: an edit landing during it may or
+    // may not be in what is sent, so it counts as unsaved.
+    const sentSubjectEdits = subjectEdits.current;
+    const sentBodyEdits = bodyEdits.current;
+
     // Partial update: an untouched body is left out entirely rather than
     // resent, so the stored HTML cannot be clobbered by an export.
     let body;
@@ -182,8 +211,13 @@ const EmailTemplatePage = () => {
       },
       {
         onSuccess: () => {
-          setSubjectDirty(false);
-          setBodyDirty(false);
+          // Only a field nobody touched since the request left is now saved.
+          if (subjectEdits.current === sentSubjectEdits) {
+            setSubjectDirty(false);
+          }
+          if (bodyEdits.current === sentBodyEdits) {
+            setBodyDirty(false);
+          }
           toast.success('Template saved.');
         },
         onError: (saveError) => toast.error(getApiErrorMessage(saveError)),
@@ -342,7 +376,7 @@ const EmailTemplatePage = () => {
                   ref={subjectRef}
                   subject={template.subject_template}
                   variables={template.variables}
-                  onDirty={() => setSubjectDirty(true)}
+                  onDirty={markSubjectEdited}
                 />
               </Suspense>
             </div>
@@ -451,7 +485,7 @@ const EmailTemplatePage = () => {
             <EmailTemplateEditor
               ref={editorRef}
               template={template}
-              onDirty={() => setBodyDirty(true)}
+              onDirty={markBodyEdited}
             />
           </Suspense>
         </div>
