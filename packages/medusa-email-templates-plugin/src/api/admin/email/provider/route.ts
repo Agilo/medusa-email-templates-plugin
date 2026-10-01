@@ -42,8 +42,6 @@ export const POST = async (
       input: req.validatedBody,
     });
   } catch (error) {
-    // Selecting a transport that isn't available in this environment
-    // (for example Medusa Cloud locally) answers 409.
     if (!sendEmailErrorResponse(res, error)) {
       throw error;
     }

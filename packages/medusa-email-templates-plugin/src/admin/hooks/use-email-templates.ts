@@ -10,11 +10,6 @@ type EmailTemplatesResponse = {
   count: number;
 };
 
-/**
- * Every registered event, whether or not its template has been saved.
- * Templates that were never saved come back with `id: null`,
- * `is_customized: false` and `enabled: false`.
- */
 export const useEmailTemplates = () =>
   useQuery({
     queryKey: emailTemplatesQueryKey,

@@ -5,15 +5,6 @@ import {
   listEmailEventDefinitions,
 } from 'medusa-email-templates-plugin/lib/events/index';
 
-/**
- * Creates and enables a managed email template in the example app (handy
- * after a database reset; Settings → Email does the same).
- *
- * Bodies stay null, meaning "use the event's default", so the template
- * follows default changes instead of freezing a copy.
- *
- * Usage: yarn --cwd apps/dev-app email:template:enable order-placed
- */
 export default async function enableEmailTemplate({
   container,
   args,
@@ -59,7 +50,6 @@ export default async function enableEmailTemplate({
     event: definition.event,
     template_key: definition.templateKey,
     enabled: true,
-    // Required by the model.
     subject_template: definition.defaultTemplate.subject,
     html_template: null,
     text_template: null,

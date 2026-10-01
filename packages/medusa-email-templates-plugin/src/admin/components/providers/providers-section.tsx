@@ -28,7 +28,6 @@ type RowStatus = {
   label: string;
 };
 
-/** A transport counts as set up once it has a credential, or manages its own. */
 const isConfigured = (transport: EmailProviderTransportState): boolean =>
   transport.credential !== null ||
   transport.credential_sources.includes('managed');
@@ -130,8 +129,6 @@ const ProvidersSection = () => {
           return <StatusBadge color={status.color}>{status.label}</StatusBadge>;
         },
       }),
-      // Accessor columns render the value through the table itself, which is
-      // what truncates a long sender and shows the full text on hover.
       columnHelper.accessor((row) => fromAddress(row), {
         id: 'from',
         header: 'Sends from',
@@ -145,8 +142,6 @@ const ProvidersSection = () => {
           const transport = ctx.row.original;
           const actions = [];
 
-          // Switching is pointless for the active one, impossible for the
-          // ones this environment cannot use.
           if (!transport.selected && transport.available) {
             actions.push({
               label: 'Use',
@@ -173,8 +168,6 @@ const ProvidersSection = () => {
             onClick: () => setEditingId(transport.id),
           });
 
-          // Tests name their transport, so any configured one can be verified
-          // before switching to it.
           if (isConfigured(transport) && transport.available) {
             actions.push({
               label: 'Send test',
@@ -197,7 +190,6 @@ const ProvidersSection = () => {
     isLoading: isPending,
   });
 
-  // A failed query has no table to head, so the error replaces it entirely.
   if (isError) {
     return (
       <Container className="divide-y p-0">
@@ -214,7 +206,6 @@ const ProvidersSection = () => {
   return (
     <Container className="divide-y overflow-hidden p-0">
       <DataTable instance={table}>
-        {/* Toolbar supplies its own px-6 py-4 and the divider beneath it. */}
         <DataTable.Toolbar className="flex-col items-start gap-y-1">
           <SectionHeading />
         </DataTable.Toolbar>

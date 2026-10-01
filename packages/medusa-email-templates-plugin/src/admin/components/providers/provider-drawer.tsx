@@ -21,7 +21,6 @@ import type {
 const asString = (value: unknown): string =>
   typeof value === 'string' ? value : '';
 
-/** Only these two can be entered here; `managed` needs no input. */
 const ENTERABLE_SOURCES: CredentialSource[] = [
   'environment',
   'encrypted_database',
@@ -87,7 +86,6 @@ const TransportDrawer = ({
       return { source: 'environment', env_var_name: envVarName };
     }
 
-    // An empty field keeps whatever key is already stored.
     return {
       source: 'encrypted_database',
       ...(apiKey ? { api_key: apiKey } : {}),

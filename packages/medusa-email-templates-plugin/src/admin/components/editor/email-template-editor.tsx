@@ -36,7 +36,6 @@ export type EmailTemplateBody = {
 };
 
 export type EmailTemplateEditorHandle = {
-  /** Exports the body for saving. Throws if the editor has not mounted yet. */
   getBody: () => Promise<EmailTemplateBody>;
 };
 
@@ -51,11 +50,6 @@ type EmailTemplateEditorProps = {
  */
 const InspectorBreadcrumb = Inspector.Breadcrumb as unknown as FC;
 
-/**
- * Canvas and export theme, built from the same `design.ts` values as the
- * default templates. With plain `basic` (white, square, unpadded), opening and
- * saving a template would silently restyle it.
- */
 export const EMAIL_THEME = extendTheme('basic', {
   body: { backgroundColor: EMAIL_DESIGN.pageBackground },
   container: {
@@ -137,8 +131,6 @@ const EmailTemplateEditor = forwardRef<
   EmailTemplateEditorHandle,
   EmailTemplateEditorProps
 >(({ template, onDirty }, ref) => {
-  // Shared with `deriveEditorContent`: a document generated against a
-  // different schema throws on `nodeFromJSON`.
   const extensions = useMemo(
     () => [
       /*
@@ -154,7 +146,6 @@ const EmailTemplateEditor = forwardRef<
       }),
       EmailTheming.configure({ theme: EMAIL_THEME }),
       VariableNode.configure({ variables: template.variables }),
-      // Reads the lists for its label; pills inside read their fields.
       RepeatNode.configure({ variables: template.variables }),
     ],
     [template.variables],
@@ -179,8 +170,6 @@ const EmailTemplateEditor = forwardRef<
     try {
       return deriveEditorContent(sourceHtml, extensions);
     } catch {
-      // Defensive and untested: no known input makes the parser throw, but a
-      // blank body beats crashing the page on a host's arbitrary HTML.
       return '';
     }
   }, [template.editor_content, sourceHtml, extensions]);
@@ -188,9 +177,7 @@ const EmailTemplateEditor = forwardRef<
   const editor = useEditor({
     extensions,
     content,
-    // Client-only SPA: no hydration to guard against, so create immediately.
     immediatelyRender: true,
-    // Cmd/Ctrl-K makes a link instead of opening the dashboard search.
     editorProps: { handleDOMEvents: { keydown: claimLinkShortcut } },
     /*
      * Seeding fires its own updates, so only changes after initialisation
@@ -250,35 +237,22 @@ const EmailTemplateEditor = forwardRef<
     <EditorContext.Provider value={{ editor }}>
       <div className="flex min-h-[32rem]">
         <div className="min-w-0 flex-1">
-          {/* The theme's `align: "center"` only affects the export, not the
-              canvas — hence `mx-auto` in `CANVAS_CLASS`. */}
           <EditorContent editor={editor} className={CANVAS_CLASS} />
         </div>
 
-        {/* `border-ui-border-base` makes the border follow dark mode instead
-            of preflight's fixed #e5e7eb. */}
         <Inspector.Root className={INSPECTOR_CLASS}>
           <InspectorBreadcrumb />
           <Inspector.Document />
-          {/* Stands in for `Inspector.Node`: variables get their own panel,
-              every other node type keeps the library's default sections. */}
           <VariableInspector variables={template.variables} />
-          {/* Stands in for `Inspector.Text`, whose link URL field is
-              read-only. */}
           <LinkTextInspector variables={template.variables} />
         </Inspector.Root>
       </div>
 
-      {/* Hidden for variables, which get `VariableBubbleMenu` instead. */}
       <BubbleMenu
         hideWhenActiveNodes={['button', 'variable']}
         hideWhenActiveMarks={['link']}
       />
       <VariableBubbleMenu />
-      {/* Stock menus for editing, opening or removing an existing link.
-          Picking a variable URL happens in the Inspector (see
-          `link-inspector.tsx`). `validateUrl` lets these accept Liquid rather
-          than clearing `{{ invite_url }}`. */}
       <BubbleMenu.LinkDefault validateUrl={validateUrl} />
       <BubbleMenu.ButtonDefault validateUrl={validateUrl} />
       <SlashCommand items={slashCommands} />

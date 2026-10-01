@@ -3,10 +3,6 @@ import type { EmailEventDefinition, EmailTemplateVariable } from './types';
 
 const definitions: EmailEventDefinition<never>[] = [];
 
-/**
- * Every key the editor would write into Liquid: each variable's key and
- * currency key, including list fields.
- */
 const declaredKeys = (
   variables: EmailTemplateVariable[],
   prefix = '',
@@ -86,7 +82,6 @@ export const getEmailEventDefinitionByTemplateKey = (
 ): EmailEventDefinition<never> | undefined =>
   definitions.find((definition) => definition.templateKey === templateKey);
 
-/** Finds the definition handling a payload, honouring `matches`. */
 export const getEmailEventDefinitionForPayload = <TData>(
   event: string,
   data: TData,

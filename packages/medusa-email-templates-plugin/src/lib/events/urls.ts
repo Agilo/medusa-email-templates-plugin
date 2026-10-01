@@ -13,7 +13,6 @@ export const DEFAULT_STOREFRONT_RESET_PATH = '/reset-password';
  */
 export const DEFAULT_STOREFRONT_ORDER_PATH = '/orders';
 
-/** Missing storefront configuration, reported instead of a broken link. */
 export class StorefrontUrlNotConfiguredError extends Error {
   constructor() {
     super(
@@ -39,7 +38,6 @@ const trimTrailingSlash = (value: string): string =>
 const withLeadingSlash = (value: string): string =>
   value.startsWith('/') ? value : `/${value}`;
 
-/** Base URL of the Medusa admin; defaults to the backend URL + admin path. */
 export const getAdminUrl = (container: MedusaContainer): string => {
   const { admin_url: adminUrl } = readOptions(container);
 

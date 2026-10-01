@@ -41,7 +41,6 @@ afterEach(() => {
   editors.splice(0).forEach((editor) => editor.destroy());
 });
 
-/** Every node of a type, anywhere in the document. */
 const collect = (node: JSONContent, type: string): JSONContent[] => {
   const found: JSONContent[] = [];
   const walk = (current: JSONContent) => {
@@ -85,7 +84,6 @@ describe('withVariableNodes', () => {
       paragraphWith('{{ order.total | money: order.currency_code }}'),
     );
 
-    // No empty text nodes either side: ProseMirror rejects those outright.
     expect(doc.content?.[0].content).toEqual([
       {
         type: 'variable',
@@ -118,7 +116,6 @@ describe('withVariableNodes', () => {
     const [before, pill, after] =
       withVariableNodes(doc).content?.[0].content ?? [];
 
-    // The pill is part of the bold run too.
     expect(pill.marks).toEqual([{ type: 'bold' }]);
     expect(before).toEqual({
       type: 'text',
@@ -185,7 +182,6 @@ describe('columnsFromTables', () => {
 
     expect(body.querySelector('table')).toBeNull();
     expect(cells).toHaveLength(3);
-    // The cell's style moves to its column, where the Inspector reaches it.
     expect(cells?.[0].getAttribute('style')).toBe('padding:8px 0');
     expect(cells?.[2].innerHTML).toBe('<p>C</p>');
   });
@@ -217,12 +213,6 @@ describe('the page around the card', () => {
     ['email verification', emailVerificationDefaultTemplate],
   ] as const;
 
-  /*
-   * What a template nobody has saved actually sends. Gmail turns `<body>`
-   * into an unpadded `<div>`, and a card sitting straight inside it lets its
-   * margins collapse out through the top and bottom — the grey band vanished
-   * above and below. Inside a table cell they cannot.
-   */
   it.each(templates)(
     'holds the %s card in a cell that paints the page colour',
     (_, template) => {
@@ -245,7 +235,6 @@ describe('the page around the card', () => {
     const doc = new DOMParser().parseFromString(html, 'text/html');
 
     expect(doc.querySelector('table[data-page]')).toBeNull();
-    // The card is the body's own child again, and the body kept its styling.
     expect(
       [...doc.body.children].some(
         (child) =>
@@ -300,11 +289,6 @@ describe('deriveEditorContent', () => {
     });
   });
 
-  /*
-   * A call to action must parse as a `button` node, not link text — the
-   * button's Inspector and bubble menu depend on it. Only
-   * `a[data-id="react-email-button"]` parses as a button.
-   */
   it('derives the account templates call to action as a button', () => {
     const doc = deriveEditorContent(
       inviteCreatedDefaultTemplate.html,
@@ -315,10 +299,7 @@ describe('deriveEditorContent', () => {
 
     expect(buttons).toHaveLength(1);
     expect(buttons[0].attrs?.href).toBe('{{ invite_url }}');
-    // The label is the button's own content, not a sibling paragraph's.
     expect(buttons[0].content?.[0].text).toBe('Accept the invitation');
-    // The `<p>` that used to wrap it would be lifted off and left behind
-    // empty, because a button is a block node.
     expect(collect(doc, 'paragraph').every((node) => node.content)).toBe(true);
   });
 
@@ -329,32 +310,22 @@ describe('deriveEditorContent', () => {
     );
 
     expect(collect(doc, 'heading')).toHaveLength(1);
-    // Every row opens as an editable layout rather than a fixed table: the
-    // item row, then the five totals, each with its two cells.
     expect(collect(doc, 'table')).toHaveLength(0);
     expect(collect(doc, 'twoColumns')).toHaveLength(6);
     expect(collect(doc, 'columnsColumn')).toHaveLength(12);
   });
 
-  /*
-   * Row height comes only from column padding, which the Inspector can show
-   * and edit: no theme paragraph padding stacked on top, and longhand values
-   * (the Spacing field ignores shorthand).
-   */
   it('spaces each row by its column padding alone', async () => {
     const doc = deriveEditorContent(
       orderPlacedDefaultTemplate.html,
       extensions,
     );
 
-    // Longhand on every column, which is what the Spacing field reads.
     collect(doc, 'columnsColumn').forEach((column) => {
       expect(column.attrs?.style).toMatch(/padding-top:\d+px/);
       expect(column.attrs?.style).toMatch(/padding-bottom:\d+px/);
     });
 
-    // Both cells of a row share their spacing, or the value drops out of
-    // line with its label.
     collect(doc, 'twoColumns').forEach((row) => {
       const [label, value] = row.content ?? [];
 
@@ -376,12 +347,6 @@ describe('deriveEditorContent', () => {
     });
   });
 
-  /*
-   * The gaps above and below the greeting are the margins the template writes
-   * and nothing more. The theme's own padding on paragraphs and headings used
-   * to stack on top of them once a template was saved, tripling the space
-   * between two lines of prose.
-   */
   it('spaces the title and greeting by their own margins alone', async () => {
     const editor = new Editor({
       extensions,
@@ -402,11 +367,6 @@ describe('deriveEditorContent', () => {
     });
   });
 
-  /*
-   * The same, for every built-in email. Any paragraph or heading that leaves
-   * the theme's padding in place shows up here as a gap that grows once the
-   * template is saved.
-   */
   it.each([
     ['order placed', orderPlacedDefaultTemplate],
     ['invite created', inviteCreatedDefaultTemplate],
@@ -435,7 +395,6 @@ describe('deriveEditorContent', () => {
       orderPlacedDefaultTemplate.html,
       extensions,
     );
-    // The item row comes first; the five after it are the totals.
     const totals = collect(doc, 'twoColumns')
       .slice(1)
       .map((row) => row.content?.[0].attrs?.style as string);
@@ -448,11 +407,6 @@ describe('deriveEditorContent', () => {
     expect(totals[4]).toContain('border-top:1px solid #e5e7eb');
   });
 
-  /*
-   * What converting to Columns was for. A table cell cannot be removed at
-   * all; an emptied column goes with one Backspace, and the last one left
-   * unwraps into plain content.
-   */
   it('lets a column of the item row be removed', () => {
     const editor = new Editor({
       extensions,
@@ -460,7 +414,6 @@ describe('deriveEditorContent', () => {
     });
     editors.push(editor);
 
-    // The item row is the first layout; its second column holds the total.
     let row = -1;
     editor.state.doc.descendants((node, pos) => {
       if (row < 0 && node.type.name === 'twoColumns') {
@@ -490,11 +443,6 @@ describe('deriveEditorContent', () => {
     ]);
   });
 
-  /*
-   * The loop tags sit outside the element the block reads its content from,
-   * so they must never surface as text — that is what the parse rule's
-   * `contentElement` is for.
-   */
   it('derives the item list as a Repeat block over order.items', () => {
     const doc = deriveEditorContent(
       orderPlacedDefaultTemplate.html,
@@ -510,7 +458,6 @@ describe('deriveEditorContent', () => {
       'item.variant_title',
       'item.total',
     ]);
-    // `<strong>{{ item.title }}</strong>` arrives as a bold pill.
     expect(collect(block, 'variable')[0].marks).toEqual([{ type: 'bold' }]);
   });
 
@@ -541,11 +488,6 @@ describe('deriveEditorContent', () => {
     expect(rendered).toContain('€15.00');
   });
 
-  /*
-   * The property the whole feature rests on. Deriving a document and exporting
-   * it must reproduce the same expressions the HTML started with — otherwise
-   * opening a template and saving it would silently rewrite the email.
-   */
   it('exports back to the expressions it was derived from', async () => {
     const editor = new Editor({
       extensions,
@@ -572,12 +514,6 @@ describe('deriveEditorContent', () => {
     });
   });
 
-  /*
-   * A template opened and saved must keep its design (grey page, white
-   * rounded padded card), since the default HTML and the editor theme share
-   * `design.ts`. Asserted against `EMAIL_DESIGN`, so design changes pass but
-   * drift between the two fails.
-   */
   it('exports the design the default template describes', async () => {
     const editor = new Editor({
       extensions,
@@ -601,11 +537,6 @@ describe('deriveEditorContent', () => {
     expect(cell).toContain(`padding-left:${EMAIL_DESIGN.cardPadding}px`);
   });
 
-  /*
-   * The button keeps its size through a save. The theme's longhand button
-   * padding overrides any shorthand on export, so the template must use
-   * longhand too.
-   */
   it('exports the button at the size the template asked for', async () => {
     const editor = new Editor({
       extensions,

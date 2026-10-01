@@ -20,7 +20,6 @@ export type RenderedEmailContent = {
 const plainLiquid = createEmailLiquid();
 const htmlLiquid = createEmailLiquid({ escapeOutput: true });
 
-// Tables carry the item rows, so they become one text line per row.
 const TEXT_OPTIONS = {
   wordwrap: 80,
   selectors: [
@@ -46,10 +45,6 @@ const render = async (
   }
 };
 
-/**
- * Renders a managed template. HTML output is escaped; the subject and text
- * are not. The text body falls back to the rendered HTML.
- */
 export const renderEmailTemplate = async (
   template: EmailTemplateSource,
   data: Record<string, unknown> | null | undefined,

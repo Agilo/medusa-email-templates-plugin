@@ -33,10 +33,6 @@ type CredentialData = {
   key_fingerprint: string | null;
 };
 
-/**
- * Builds the row to store, encrypting any new API key. Without one, the
- * existing ciphertext is kept (a blank field means "unchanged").
- */
 const buildCredentialData = (
   credential: NormalizedEmailProviderCredential,
   transportId: string,

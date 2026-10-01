@@ -15,7 +15,6 @@ import type EmailTemplatesModuleService from '../../modules/email-templates/serv
 
 export type SendTransportTestEmailStepInput = {
   to: string;
-  /** Defaults to the selected transport. */
   transport_id?: string;
 };
 

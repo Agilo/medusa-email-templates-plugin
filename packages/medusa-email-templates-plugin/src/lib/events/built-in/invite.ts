@@ -86,7 +86,6 @@ const buildInviteContext = async (
   };
 };
 
-/** Invites that have already been accepted are not emailed again. */
 const inviteRecipient = async (
   data: InviteEventData,
   container: MedusaContainer,

@@ -14,7 +14,6 @@ export type CredentialUnavailableReason =
   | 'missing'
   | 'not_supported';
 
-/** Never contains the secret — only whether one is usable. */
 export interface MaskedCredential {
   source: CredentialSource;
   env_var_name?: string;
@@ -35,12 +34,10 @@ export interface EmailProviderTransportState {
 
 export interface EmailProviderState {
   selected_transport_id: string | null;
-  /** Whether MEDUSA_EMAIL_ENCRYPTION_KEY is set, enabling stored API keys. */
   encryption_available: boolean;
   transports: EmailProviderTransportState[];
 }
 
-/** Write-only: `api_key` replaces the stored secret, omitting it keeps it. */
 export type CredentialInput =
   | { source: 'environment'; env_var_name: string }
   | { source: 'encrypted_database'; api_key?: string };
@@ -57,7 +54,6 @@ export interface EmailSendResult {
   transport_id: string;
 }
 
-/** A provider test bypasses notifications, so only the provider's reply. */
 export interface ProviderTestResult {
   external_id: string | null;
   transport_id: string;
@@ -69,16 +65,9 @@ export interface EmailTemplateVariable {
   description?: string;
   example: unknown;
   group?: string;
-  /**
-   * Omitted means plain text. Sets the formats offered; `url` variables fill
-   * the link picker; `list` is a Repeat block source, not a pill.
-   */
   type?: 'text' | 'number' | 'money' | 'date' | 'url' | 'list';
-  /** For `money` values, the key holding the currency code. */
   currencyKey?: string;
-  /** For a `list`, one entry's values, keyed relative to the entry. */
   fields?: EmailTemplateVariable[];
-  /** For a `list`, one entry's HTML, used as a new block's content. */
   itemTemplate?: string;
 }
 
@@ -90,14 +79,11 @@ export interface EmailTemplateListItem {
   description?: string;
   enabled: boolean;
   subject_template: string;
-  /** True once saved, rather than only defined in code. */
   is_customized: boolean;
   updated_at: string | null;
-  /** Configuration problem codes; see `describeWarning`. */
   warnings: string[];
 }
 
-/** Ready-made content the editor offers to insert, as a slash command. */
 export interface EmailTemplateSnippet {
   key: string;
   label: string;
@@ -118,7 +104,6 @@ export interface EmailTemplateDetail extends EmailTemplateListItem {
   };
 }
 
-/** Partial update: omitted fields are kept; `null` clears a field. */
 export interface SaveEmailTemplatePayload {
   enabled?: boolean;
   subject_template?: string;
@@ -127,7 +112,6 @@ export interface SaveEmailTemplatePayload {
   text_template?: string | null;
 }
 
-/** Unsaved editor changes, so a preview or test can run before saving. */
 export interface EmailTemplateDraft {
   subject_template?: string;
   html_template?: string | null;

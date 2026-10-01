@@ -59,17 +59,10 @@ describe('subject editor', () => {
       expect(document.querySelector('[data-variable-node]')).not.toBeNull();
     });
 
-    // The pill shows the example value, so the field reads as the subject
-    // line a recipient receives rather than as a row of variable names.
     expect(screen.getByText('Shop')).toBeInTheDocument();
-    // The whole point: no Liquid on the field.
     expect(field().textContent).not.toContain('{{');
   });
 
-  /*
-   * The property the feature rests on. A subject that did not survive this
-   * round trip would be silently rewritten the first time anyone saved.
-   */
   it('serialises back to exactly the Liquid it was given', async () => {
     const subject = 'Your {{ store.name }} order #{{ order.display_id }}';
     const ref = await mount(subject);
@@ -84,11 +77,6 @@ describe('subject editor', () => {
     expect(ref.current?.getText()).toBe(subject);
   });
 
-  /*
-   * A key the event no longer publishes still has to survive untouched. The
-   * warning in `lib/templates.ts` reports it; the editor must not quietly drop
-   * it and change what sends.
-   */
   it('keeps a variable the template does not declare', async () => {
     const subject = 'Hi {{ store.nme }}';
     const ref = await mount(subject);
@@ -121,8 +109,6 @@ describe('subject editor', () => {
   it('appends when the field has never been focused', async () => {
     const ref = await mount('Order');
 
-    // A fresh editor reports its selection at the document start, so without
-    // the guard this would prepend.
     ref.current?.insertVariable({ key: 'store.name', format: 'text' });
 
     await waitFor(() => {
@@ -147,15 +133,9 @@ describe('subject editor', () => {
 
     await waitFor(() => expect(screen.getByLabelText('Subject')).toBeVisible());
 
-    // Seeding the document fires update events of its own; none is an edit.
     expect(dirty).toBe(false);
   });
 
-  /*
-   * The schema allows exactly one paragraph, so Enter has nowhere to split to
-   * — but an unhandled Enter would still let ProseMirror hunt for somewhere
-   * legal. Swallowing it keeps the caret put.
-   */
   it('stays on one line when Enter is pressed', async () => {
     const ref = await mount('Order update');
 

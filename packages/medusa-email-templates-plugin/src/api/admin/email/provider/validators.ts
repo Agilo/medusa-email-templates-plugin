@@ -21,7 +21,6 @@ export const PostEmailProviderCredentialSchema = z.discriminatedUnion(
   ],
 );
 
-// Transport-specific config is validated by the transport in the workflow.
 export const PostEmailProviderSchema = z.strictObject({
   transport_id: z.string().min(1),
   config: z.record(z.string(), z.unknown()).optional(),
@@ -32,7 +31,6 @@ export type PostEmailProviderBody = z.infer<typeof PostEmailProviderSchema>;
 
 export const PostEmailProviderTestSchema = z.strictObject({
   to: z.email(),
-  /** Defaults to the selected transport. */
   transport_id: z.string().min(1).optional(),
 });
 

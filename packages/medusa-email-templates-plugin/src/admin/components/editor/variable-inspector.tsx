@@ -130,17 +130,6 @@ type VariableSectionProps = InspectorNodeContext & {
   variables: EmailTemplateVariable[];
 };
 
-/**
- * Which variable a pill shows, and its format.
- *
- * Styling is limited to typography (`VariableTypography`): background, border
- * and padding on an inline value would clash with the pill and render
- * unreliably in mail clients.
- *
- * Reproduces the library's internal section markup so the
- * `data-re-inspector-*` attributes pick up the panel's styling. Will drift if
- * the library changes them.
- */
 const VariableSection = ({
   getAttr,
   setAttr,
@@ -148,11 +137,9 @@ const VariableSection = ({
   variables: declared,
 }: VariableSectionProps) => {
   const { editor } = useCurrentEditor();
-  // Variables valid here: `item.*` only inside a Repeat block.
   const variables = editor
     ? variablesAt(editor.state.doc, nodePos.pos, declared)
     : scalarVariables(declared);
-  // Matching the library's sections, which are collapsible by their title.
   const [collapsed, setCollapsed] = useState(false);
   const rawKey = getAttr('key');
   const key = typeof rawKey === 'string' ? rawKey : '';
@@ -165,7 +152,6 @@ const VariableSection = ({
     const next = variables.find((entry) => entry.key === nextKey);
     const attrs = attributesFor(next);
 
-    // One attribute per `setAttr`; each re-reads the node, so they compose.
     setAttr('key', attrs.key);
     setAttr('format', attrs.format);
     setAttr('currencySource', attrs.currencySource);
@@ -174,8 +160,6 @@ const VariableSection = ({
   return (
     <div data-re-inspector-section="" data-has-title="">
       <div data-re-inspector-section-header="">
-        {/* The library's name for a node's own settings; the row below is
-            labelled Variable. */}
         <button
           type="button"
           data-re-inspector-section-toggle=""
@@ -234,16 +218,8 @@ const VariableSection = ({
   );
 };
 
-/** The marks the Typography section's Format row toggles. */
 const FORMAT_MARKS = ['bold', 'italic', 'underline', 'strike', 'code'];
 
-/**
- * The library's Typography section, pointed at the pill.
- *
- * Colour, size and line height write the pill's own `style`, styling only the
- * value. Format toggles marks on the pill; Align sets the paragraph's
- * alignment, as the bubble menu does.
- */
 const VariableTypography = ({ context }: { context: InspectorNodeContext }) => {
   const { editor } = useCurrentEditor();
   const marks =
@@ -278,11 +254,6 @@ const VariableTypography = ({ context }: { context: InspectorNodeContext }) => {
   );
 };
 
-/**
- * Which list a Repeat block repeats over. No styling controls: the block is a
- * loop, not a box, so style its content instead. Same markup as
- * `VariableSection`.
- */
 const RepeatSection = ({
   getAttr,
   setAttr,
@@ -318,8 +289,6 @@ const RepeatSection = ({
               onChange={(event) => setAttr('source', event.target.value)}
             >
               <option value="">Choose a list</option>
-              {/* Kept selectable when the event no longer declares it, so the
-                  select shows what the block actually holds. */}
               {source && !lists.some((list) => list.key === source) && (
                 <option value={source}>{source}</option>
               )}
@@ -336,7 +305,6 @@ const RepeatSection = ({
   );
 };
 
-/** Drop-in replacement for `Inspector.Node` that knows about variables. */
 export const VariableInspector = ({
   variables,
 }: {

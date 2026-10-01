@@ -16,12 +16,6 @@ export type ResolvedContent = {
   text?: string;
 };
 
-/**
- * Returns the content to send (spec §5):
- * 1. Already-rendered content is used as-is.
- * 2. Otherwise a managed template is rendered with the notification data.
- * 3. Otherwise the notification fails with an unsupported-template error.
- */
 export const resolveEmailContent = async (
   notification: Pick<
     ProviderSendNotificationDTO,

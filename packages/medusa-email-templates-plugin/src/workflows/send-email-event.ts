@@ -11,10 +11,6 @@ import { sendEmailEventNotificationStep } from './steps/send-email-event-notific
 
 export const sendEmailEventWorkflowId = 'send-email-event';
 
-/**
- * Sends the managed email for a Medusa event. Skips silently when no
- * definition matches, the template is disabled, or there is no recipient.
- */
 export const sendEmailEventWorkflow = createWorkflow(
   sendEmailEventWorkflowId,
   function (input: ResolveEmailEventInput) {

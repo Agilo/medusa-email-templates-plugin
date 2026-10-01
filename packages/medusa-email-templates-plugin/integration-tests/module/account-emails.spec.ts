@@ -21,7 +21,6 @@ jest.setTimeout(60000);
 const API_KEY_ENV = 'EMAIL_TEMPLATES_ACCOUNT_RESEND_KEY';
 const API_KEY = 're_account_secret_value_123';
 
-/** Invites, password resets and email verification, end to end. */
 pluginIntegrationSuite(({ getContainer }) => {
   let capture: CaptureServer;
 

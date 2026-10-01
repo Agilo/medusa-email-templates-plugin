@@ -12,7 +12,6 @@ export type CapturedRequest = {
 export type CaptureServer = {
   url: string;
   requests: CapturedRequest[];
-  /** Sets the response for every following request. */
   respondWith: (status: number, body: unknown) => void;
   reset: () => void;
   close: () => Promise<void>;
@@ -28,10 +27,6 @@ export type StartCaptureServerOptions = {
 
 const DEFAULT_RESPONSE = { status: 200, body: { id: 'captured_email_id' } };
 
-/**
- * Local HTTP server that records requests, used in place of external email
- * APIs (for example via RESEND_BASE_URL).
- */
 export const startCaptureServer = async ({
   port = 0,
 }: StartCaptureServerOptions = {}): Promise<CaptureServer> => {

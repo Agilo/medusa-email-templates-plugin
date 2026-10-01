@@ -9,7 +9,6 @@ export type CredentialUnavailableReason =
   | 'missing'
   | 'not_supported';
 
-/** The only credential shape admin APIs may return: never the secret. */
 export interface MaskedCredential {
   source: CredentialSource;
   env_var_name?: string;

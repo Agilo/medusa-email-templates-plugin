@@ -10,7 +10,6 @@ import {
 
 export const previewEmailTemplateWorkflowId = 'preview-email-template';
 
-/** Renders a template without sending anything. */
 export const previewEmailTemplateWorkflow = createWorkflow(
   previewEmailTemplateWorkflowId,
   function (input: RenderEmailTemplateInput) {

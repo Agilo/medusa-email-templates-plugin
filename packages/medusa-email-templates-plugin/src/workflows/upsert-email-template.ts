@@ -10,7 +10,6 @@ import {
 
 export const upsertEmailTemplateWorkflowId = 'upsert-email-template';
 
-/** Saves a managed template after checking that its Liquid parses. */
 export const upsertEmailTemplateWorkflow = createWorkflow(
   upsertEmailTemplateWorkflowId,
   function (input: UpsertEmailTemplateInput) {

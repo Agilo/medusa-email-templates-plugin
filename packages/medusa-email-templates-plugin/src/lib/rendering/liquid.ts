@@ -35,15 +35,9 @@ const deniedFileSystem = {
 };
 
 export type CreateEmailLiquidOptions = {
-  /** HTML-escape output values. Use for HTML bodies, not for subject/text. */
   escapeOutput?: boolean;
 };
 
-/**
- * Liquid instance hardened for admin-authored templates: no file access, no
- * unknown filters, prototype properties hidden, and parse/render/memory
- * limits. liquidjs has no eval, so templates cannot execute JavaScript.
- */
 export const createEmailLiquid = ({
   escapeOutput = false,
 }: CreateEmailLiquidOptions = {}): Liquid => {

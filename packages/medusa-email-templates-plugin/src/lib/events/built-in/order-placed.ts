@@ -130,8 +130,6 @@ export const orderPlacedEmailEvent = defineEmailEvent<OrderPlacedEventData>({
         })),
         shipping_address: order.shipping_address ?? null,
       },
-      // Built from `storefront_url` so it follows the deployment; a URL typed
-      // into the template would be wrong in other environments.
       order_url: getOrderUrl(container, order.id),
       store: { name: await retrieveStoreName(container) },
     };
@@ -169,8 +167,6 @@ export const orderPlacedEmailEvent = defineEmailEvent<OrderPlacedEventData>({
       type: 'date',
       group: 'Order',
     },
-    // A list: a Repeat block source, never a pill (it would print
-    // "[object Object]"). Fields match what `getContext` maps each item to.
     {
       key: 'order.items',
       label: 'Order items',
@@ -270,14 +266,6 @@ export const orderPlacedEmailEvent = defineEmailEvent<OrderPlacedEventData>({
     },
   ],
 
-  /*
-   * Reported, not enforced: without `storefront_url` the email still sends,
-   * just without `order_url`.
-   *
-   * Its own code, distinct from the password reset's
-   * `storefront_url_not_configured` (which does stop the email), so admins
-   * aren't told confirmations aren't sending.
-   */
   getWarnings: (container) => {
     try {
       getStorefrontUrl(container);

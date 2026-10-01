@@ -8,21 +8,13 @@
  * (the admin tsconfig has no Node types).
  */
 export const EMAIL_DESIGN = {
-  /** Behind the card. */
   pageBackground: '#f6f6f6',
   cardBackground: '#ffffff',
-  /** Body text, and everything that does not set its own colour. */
   textColor: '#111827',
-  /** Quieter text: the footer, and dates beneath a call to action. */
   mutedColor: '#6b7280',
   cardWidth: 600,
   cardRadius: 8,
   cardPadding: 24,
-  /**
-   * Page showing above and below the card. Kept small: the side space depends
-   * on the viewport (the card is centred with `auto` margins), and a tall
-   * gutter would read as a gap rather than a frame.
-   */
   pageGutter: 8,
   fontFamily:
     "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif",
@@ -56,16 +48,8 @@ export const PAGE_ATTRIBUTE = 'data-page';
  */
 export const COLUMNS_ATTRIBUTE = 'data-columns';
 
-/** One cell of a `columns` row: its content, and optional inline style. */
 export type ColumnCell = { html: string; style?: string };
 
-/**
- * Two to four side-by-side cells: a table for mail clients, an editable
- * Columns layout in the editor.
- *
- * Put alignment on the content (`<p style="text-align:right">`); a column
- * has no `align` of its own.
- */
 export const columns = (cells: ColumnCell[]): string =>
   `<table ${COLUMNS_ATTRIBUTE}="" role="presentation" width="100%" cellpadding="0" cellspacing="0"><tbody><tr>${cells
     .map(

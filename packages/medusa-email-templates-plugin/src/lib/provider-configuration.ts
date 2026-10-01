@@ -36,7 +36,6 @@ export interface EmailProviderTransportState {
 
 export interface EmailProviderState {
   selected_transport_id: string | null;
-  /** Whether MEDUSA_EMAIL_ENCRYPTION_KEY is set, enabling stored API keys. */
   encryption_available: boolean;
   transports: EmailProviderTransportState[];
 }
@@ -44,7 +43,6 @@ export interface EmailProviderState {
 export type TransportContextOptions = {
   logger?: Logger;
   idempotencyKey?: string | null;
-  /** Medusa Cloud settings, when the app runs on Cloud. */
   cloud?: CloudEmailConfig | null;
 };
 
@@ -74,10 +72,6 @@ export const buildTransportContext = (
   logger: options.logger,
 });
 
-/**
- * Loads the selected transport and its context, failing with a
- * "provider not ready" error when email can't be sent.
- */
 export const resolveSelectedTransport = async (
   service: ModuleServiceLike,
   options: TransportContextOptions = {},
@@ -115,11 +109,6 @@ export const resolveSelectedTransport = async (
   return { configuration, transport, context };
 };
 
-/**
- * Loads one transport by id, whether or not it is the selected one. Used by
- * test sends, so a configured transport can be verified before switching to
- * it. Real email always goes through `resolveSelectedTransport`.
- */
 export const resolveTransportById = async (
   service: ModuleServiceLike,
   transportId: string,
@@ -141,7 +130,6 @@ export const resolveTransportById = async (
     transport_id: transportId,
   });
 
-  // A managed transport (Medusa Cloud) needs no stored configuration.
   if (!configuration && !transport.credentialSources.includes('managed')) {
     throw providerNotReadyError(`${transport.label} is not configured yet.`);
   }
@@ -170,8 +158,6 @@ const getAvailability = async (
   configuration: EmailProviderConfigurationRecord | undefined,
   options: TransportContextOptions,
 ): Promise<{ available: boolean; unavailable_reason?: string }> => {
-  // Managed transports (Medusa Cloud) need no stored configuration: their
-  // availability depends only on the environment.
   const isManaged = transport.credentialSources.includes('managed');
 
   if (!configuration && !isManaged) {
@@ -198,7 +184,6 @@ const getAvailability = async (
   }
 };
 
-/** Admin-facing provider state. Credentials are always masked. */
 export const getEmailProviderState = async (
   service: ModuleServiceLike,
   options: TransportContextOptions = {},

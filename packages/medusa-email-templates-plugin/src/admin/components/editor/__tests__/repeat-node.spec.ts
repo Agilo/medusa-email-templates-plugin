@@ -47,7 +47,6 @@ const createEditor = (content: JSONContent[]) => {
   return editor;
 };
 
-/** Position of the first node of a type, found rather than counted. */
 const positionOf = (editor: Editor, type: string): number => {
   let position = -1;
   editor.state.doc.descendants((node, pos) => {
@@ -107,7 +106,6 @@ describe('variablesAt', () => {
     ]);
     const lineTotal = scoped[scoped.length - 1];
 
-    // The currency stays on the outer scope, which a loop can still read.
     expect(lineTotal.currencyKey).toBe('order.currency_code');
     expect(lineTotal.group).toBe('Order items');
   });

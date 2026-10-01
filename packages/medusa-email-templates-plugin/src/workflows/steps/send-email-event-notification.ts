@@ -10,10 +10,6 @@ import type { ResolvedEmailEvent } from './resolve-email-event';
 
 export type SendEmailEventNotificationResult = {
   sent: boolean;
-  /**
-   * Why nothing was sent: a reason from resolving the event, or, for a
-   * repeated delivery, `already_sent` or `previously_failed`.
-   */
   skipped: string | null;
   notification_id: string | null;
   external_id: string | null;
@@ -38,19 +34,6 @@ const findByIdempotencyKey = async (
   return existing;
 };
 
-/**
- * Creates the notification for a resolved event; the provider renders the
- * managed template from `template` and `data`.
- *
- * An event may be delivered more than once, so a key already seen is settled
- * here and never passed to `createNotifications` again:
- *
- *  - Earlier send succeeded or is in flight: skipped as `already_sent`.
- *    (Medusa returns an empty array here, not the existing row.)
- *  - Earlier send failed: skipped as `previously_failed`, not resent, because
- *    Medusa's resend of a failed key is broken (see below). The original
- *    failure is already logged on its notification.
- */
 export const sendEmailEventNotificationStep = createStep(
   sendEmailEventNotificationStepId,
   async (input: ResolvedEmailEvent, { container }) => {

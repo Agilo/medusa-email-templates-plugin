@@ -5,10 +5,6 @@ const MAX_SUBJECT = 998;
 const MAX_HTML = 512 * 1024;
 const MAX_TEXT = 256 * 1024;
 
-/**
- * A partial update: omitted fields keep their stored values, so the templates
- * list can toggle `enabled` alone without clearing the body.
- */
 export const PostEmailTemplateSchema = z.strictObject({
   enabled: z.boolean().optional(),
   subject_template: z.string().min(1).max(MAX_SUBJECT).optional(),

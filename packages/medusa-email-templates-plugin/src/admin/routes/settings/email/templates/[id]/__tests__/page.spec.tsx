@@ -110,9 +110,6 @@ describe('EmailTemplatePage', () => {
     expect(await screen.findByText('Order placed')).toBeInTheDocument();
     expect(screen.getByText('order.placed')).toBeInTheDocument();
 
-    // The stored subject arrives as a pill plus its surrounding text, and the
-    // pill shows the example value — so the field reads as the subject line
-    // that will be sent, not as the expression behind it.
     await waitFor(() => {
       expect(subjectField().textContent).toBe('Your order #1001');
     });
@@ -125,8 +122,6 @@ describe('EmailTemplatePage', () => {
     renderPage();
     await screen.findByText('Order placed');
 
-    // Seeding the editor fires update events of its own; none of them are an
-    // edit, so nothing here should count as unsaved.
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
   });
 
@@ -137,16 +132,9 @@ describe('EmailTemplatePage', () => {
 
     renderPage();
 
-    // Derived from `default_template.html` (no `editor_content`). A blank
-    // canvas could be saved over the designed email.
     expect(await screen.findByText('Default')).toBeInTheDocument();
   });
 
-  /*
-   * HTML saved without editor content — through the API, say — is what a real
-   * send uses, so it is what the editor opens. It used to open the default,
-   * and the next body save replaced the custom HTML with it.
-   */
   it('opens the stored HTML over the default when there is no editor content', async () => {
     fetchMock.mockResolvedValue({
       template: template({ html_template: '<p>Custom body</p>' }),
@@ -180,11 +168,6 @@ describe('EmailTemplatePage', () => {
     await editSubject();
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-    /*
-     * Two things at once. A full replace would blank html_template and
-     * editor_content — and the subject arrives as Liquid, proving the pills
-     * serialised back through the node's own `renderText` on the way out.
-     */
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
         '/admin/email/templates/order-placed',
@@ -202,11 +185,6 @@ describe('EmailTemplatePage', () => {
     );
   });
 
-  /*
-   * An edit made while a save is in flight is not in that request. Clearing
-   * the flag regardless disabled Save and silenced the leave prompt, and the
-   * edit was lost without a word.
-   */
   it('keeps an edit made during a save as unsaved', async () => {
     let finishSave: (value: unknown) => void = () => undefined;
     fetchMock.mockImplementation(async (_path, init) =>
@@ -229,7 +207,6 @@ describe('EmailTemplatePage', () => {
       ),
     );
 
-    // Typed while the request is still out.
     await editSubject();
     finishSave({ template: template() });
 
@@ -254,14 +231,6 @@ describe('EmailTemplatePage', () => {
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
   });
 
-  // Insertion and filter generation (including never-focused insertion) are
-  // tested in the subject editor's own spec.
-
-  /*
-   * The chosen format must reach storage, so this asserts the saved payload.
-   * A submenu trigger is also `role="menuitem"`, and clicking opens it
-   * synchronously (the delay only applies to hover).
-   */
   it('lets a format be chosen for a variable that has several', async () => {
     fetchMock.mockResolvedValue({ template: template() });
 
@@ -279,7 +248,6 @@ describe('EmailTemplatePage', () => {
     );
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-    // Text, not the money filter the default would have applied.
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
         '/admin/email/templates/order-placed',
@@ -380,11 +348,6 @@ describe('EmailTemplatePage', () => {
     expect(within(drawer).getByText('Order placed')).toBeInTheDocument();
   });
 
-  /*
-   * An untouched body renders on the server exactly as a real send would —
-   * the stored HTML — rather than as the editor's re-export of it, which is
-   * not the same email for HTML written outside the editor.
-   */
   it('previews an unedited body from the stored HTML, not the editor', async () => {
     fetchMock.mockImplementation(async (input) =>
       String(input).endsWith('/preview')

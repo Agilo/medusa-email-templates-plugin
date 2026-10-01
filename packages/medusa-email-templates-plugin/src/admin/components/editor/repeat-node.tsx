@@ -19,10 +19,6 @@ import { listVariables } from '../../lib/variables';
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     repeat: {
-      /**
-       * Inserts a Repeat block over `source` holding `content`. Refused inside
-       * another Repeat block, whose `item` alias it would shadow.
-       */
       setRepeat: (attrs: {
         source: string;
         content: JSONContent[];
@@ -32,15 +28,11 @@ declare module '@tiptap/core' {
 }
 
 type RepeatNodeOptions = {
-  /** Every variable the event declares; the block reads its lists. */
   variables: EmailTemplateVariable[];
 };
 
-/** Shown for a block whose list has not been chosen yet. */
 export const UNSET_REPEAT_LABEL = 'Choose what to repeat';
 
-// Neutral for a valid list; orange (the pill's warning tone) when the list is
-// unset or not declared by this event.
 const FRAME_BASE = 'my-2 rounded-md border border-dashed p-2';
 const FRAME_TONES = {
   chosen: 'border-ui-border-strong',
@@ -52,10 +44,6 @@ const LABEL_TONES = {
   attention: 'text-ui-tag-orange-text',
 } as const;
 
-/**
- * The block on the canvas: a labelled frame around one editable entry. Only
- * one entry is drawn; its pills show example values.
- */
 const RepeatFrame = ({
   node,
   extension,
@@ -88,11 +76,6 @@ const RepeatFrame = ({
       data-repeat-frame=""
       data-repeat-state={tone}
     >
-      {/*
-        Clicking the label selects the whole block (showing its "Repeat for
-        each" setting); clicking the content edits it. Selection works as in
-        `VariablePill`.
-      */}
       <div
         contentEditable={false}
         className={`${LABEL_BASE} ${LABEL_TONES[tone]}`}
@@ -114,17 +97,10 @@ const RepeatFrame = ({
   );
 };
 
-/**
- * Repeats its content once per list entry. The content is ordinary editor
- * content, styled like everything else; pills inside may use the list's
- * `item.*` values (see `variablesAt`).
- */
 export const RepeatNode = EmailNode.create<RepeatNodeOptions>({
   name: 'repeat',
   group: 'block',
   content: 'block+',
-  // As the library's `section`: edits don't merge across it, and pasting in
-  // keeps its type.
   isolating: true,
   defining: true,
 
@@ -187,18 +163,10 @@ export const RepeatNode = EmailNode.create<RepeatNodeOptions>({
     ];
   },
 
-  // The export's shape minus the loop, so copy-paste parses back the same.
   renderHTML({ HTMLAttributes }) {
     return ['div', HTMLAttributes, ['div', { [REPEAT_BODY_ATTRIBUTE]: '' }, 0]];
   },
 
-  /**
-   * The same HTML shape `repeat()` writes for default templates.
-   *
-   * No list chosen: content is written once, without a loop. A malformed
-   * source throws (only possible via hand-edited JSON) rather than send
-   * broken Liquid.
-   */
   renderToReactEmail({ node, children }) {
     const source =
       typeof node.attrs?.source === 'string' ? node.attrs.source.trim() : '';

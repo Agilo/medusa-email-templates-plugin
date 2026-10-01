@@ -182,11 +182,6 @@ pluginIntegrationSuite(({ api, getContainer }) => {
       });
     });
 
-    /*
-     * `editor_content` is the editor's source for the HTML. Kept after the
-     * HTML changed underneath it, the editor reopened the old email while the
-     * new one sent, and the next body save put the old one back.
-     */
     it('drops the editor content when HTML is saved without it', async () => {
       const headers = await createAdminHeaders(getContainer());
 
@@ -246,8 +241,6 @@ pluginIntegrationSuite(({ api, getContainer }) => {
       expect(String(res.data.message)).toContain('Liquid');
     });
 
-    // `enabled` is deliberately absent here: omitting a field is a partial
-    // update, covered by the toggle tests above.
     it.each([
       ['an empty subject', { subject_template: '' }],
       ['an unknown field', { nope: true }],
@@ -278,8 +271,6 @@ pluginIntegrationSuite(({ api, getContainer }) => {
     it('enabling a default template does not make it customised', async () => {
       const headers = await createAdminHeaders(getContainer());
 
-      // Turning a template on stores a row, but its content still matches the
-      // built-in default, so the list must not claim it was edited.
       const res = await api.post(
         '/admin/email/templates/order-placed',
         { enabled: true },
@@ -302,7 +293,6 @@ pluginIntegrationSuite(({ api, getContainer }) => {
         headers,
       });
 
-      // What the templates list sends when the switch is flipped.
       const res = await api.post(
         '/admin/email/templates/order-placed',
         { enabled: false },
@@ -334,7 +324,6 @@ pluginIntegrationSuite(({ api, getContainer }) => {
       expect(res.status).toEqual(200);
       expect(res.data.template).toMatchObject({
         html_template: null,
-        // Untouched fields survive.
         enabled: true,
         subject_template: 'Your order #{{ order.display_id }}',
       });
@@ -357,10 +346,8 @@ pluginIntegrationSuite(({ api, getContainer }) => {
         is_customized: false,
         html_template: null,
         editor_content: null,
-        // Resetting the content must not silently stop the email.
         enabled: true,
       });
-      // Back to what the event definition declares in code.
       expect(res.data.template.subject_template).toEqual(
         res.data.template.default_template.subject,
       );
@@ -403,8 +390,6 @@ pluginIntegrationSuite(({ api, getContainer }) => {
       );
       await api.delete('/admin/email/templates/order-placed', { headers });
 
-      // The unique index on template_key is partial, so the soft-deleted row
-      // does not block a new one.
       const res = await api.post(
         '/admin/email/templates/order-placed',
         savedTemplate({ subject_template: 'Second attempt' }),

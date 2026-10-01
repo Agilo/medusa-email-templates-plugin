@@ -11,10 +11,6 @@ import type {
 type TemplateTestEmailDrawerProps = {
   template: EmailTemplateListItem;
   onClose: () => void;
-  /**
-   * The unsaved subject and body, read on Send, so the test matches the
-   * editor. Omitted by the templates list, which sends the stored template.
-   */
   getDraft?: () => Promise<EmailTemplateDraft>;
 };
 
@@ -33,7 +29,6 @@ const TemplateTestEmailDrawer = ({
       try {
         draft = await getDraft();
       } catch (error) {
-        // Export failed: report it rather than quietly send the saved template.
         toast.error(getApiErrorMessage(error));
         return;
       }

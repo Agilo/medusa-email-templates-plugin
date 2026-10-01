@@ -5,13 +5,6 @@ import {
   sendEmailEventWorkflow,
 } from 'medusa-email-templates-plugin/registry';
 
-/**
- * Example of a host app adding its own email event. Subscriber files load at
- * startup, so it is registered before the admin lists templates.
- *
- * Enable it with:
- *   yarn --cwd apps/dev-app email:template:enable product-created
- */
 defineEmailEvent<{ id: string }>({
   event: 'product.created',
   templateKey: 'product-created',
@@ -23,7 +16,6 @@ defineEmailEvent<{ id: string }>({
   },
 
   async getRecipient() {
-    // A real integration would look up who should hear about this.
     return 'josip.vojkovic@agilo.com';
   },
 

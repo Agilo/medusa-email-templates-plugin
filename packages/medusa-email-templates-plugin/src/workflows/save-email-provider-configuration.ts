@@ -14,10 +14,6 @@ import {
 export const saveEmailProviderConfigurationWorkflowId =
   'save-email-provider-configuration';
 
-/**
- * Validates and saves a transport's configuration and credential, and selects
- * it as the active email transport.
- */
 export const saveEmailProviderConfigurationWorkflow = createWorkflow(
   saveEmailProviderConfigurationWorkflowId,
   function (input: SaveEmailProviderConfigurationInput) {

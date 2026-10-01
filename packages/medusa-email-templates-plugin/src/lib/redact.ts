@@ -1,6 +1,5 @@
 const MIN_SECRET_LENGTH = 4;
 
-/** Replaces every occurrence of the given secrets in a message. */
 export const redactSecrets = (
   message: string,
   secrets: ReadonlyArray<string | null | undefined>,

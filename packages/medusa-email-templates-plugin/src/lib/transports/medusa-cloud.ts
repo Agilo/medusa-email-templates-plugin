@@ -16,8 +16,6 @@ export const CLOUD_UNAVAILABLE_REASON =
   'Medusa Emails is only available when the application runs on Medusa Cloud with the MEDUSA_CLOUD_* settings injected. It is not available in local development.';
 
 export const medusaCloudConfigSchema = z.object({
-  // Optional: a custom sender needs a verified domain on a paid plan; by
-  // default Cloud uses its own address.
   from_address: emailAddressSchema.optional(),
 });
 
@@ -64,7 +62,6 @@ export const medusaCloudTransport: EmailTransport = {
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      // Medusa's provider passes the API key through as-is.
       Authorization: `Basic ${cloud!.apiKey}`,
     };
 
@@ -78,7 +75,6 @@ export const medusaCloudTransport: EmailTransport = {
 
     let response: Response;
 
-    // Only the request: failing here means Cloud was never reached.
     try {
       response = await fetch(`${cloud!.emailsEndpoint}/send`, {
         method: 'POST',
@@ -108,7 +104,6 @@ export const medusaCloudTransport: EmailTransport = {
     } | null;
 
     if (!response.ok) {
-      // Medusa core's wording, minus the message when there is none.
       throw transportFailedError(
         `Failed to send email: ${response.status} - ${response.statusText}${body?.message ? `: ${body.message}` : ''}`,
       );

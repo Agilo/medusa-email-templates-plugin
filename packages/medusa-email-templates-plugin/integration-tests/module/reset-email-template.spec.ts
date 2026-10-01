@@ -12,11 +12,6 @@ import { pluginIntegrationSuite } from '../helpers/run';
 
 jest.setTimeout(60000);
 
-/*
- * The reset step followed by one that fails, so the workflow engine rolls the
- * reset back. Nothing in the plugin composes it like this yet; the point is
- * that when something does, the compensation actually restores the row.
- */
 const failAfterReset = createStep('fail-after-reset', async () => {
   throw new Error('Something later in the workflow failed.');
 });
@@ -35,11 +30,6 @@ pluginIntegrationSuite(({ getContainer }) => {
   const service = () =>
     getContainer().resolve<EmailTemplatesModuleService>(EMAIL_TEMPLATES_MODULE);
 
-  /*
-   * A disabled template is removed rather than reverted. It used to be removed
-   * with a hard delete, which the compensation's `restore` cannot undo, so a
-   * rolled-back reset lost the admin's customised template for good.
-   */
   it('restores a removed template when the reset is rolled back', async () => {
     await service().createEmailTemplates({
       event: 'order.placed',

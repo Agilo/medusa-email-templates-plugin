@@ -69,7 +69,6 @@ const renderSection = () => {
   return render(<ProvidersSection />, { wrapper });
 };
 
-/** The action column renders one Radix menu trigger per row. */
 const openRowMenu = async (rowName: string) => {
   const row = screen.getByRole('row', { name: new RegExp(rowName) });
 
@@ -90,7 +89,6 @@ describe('ProvidersSection', () => {
     expect(screen.getByText('Medusa Cloud')).toBeInTheDocument();
     expect(screen.getByText('Mailgun')).toBeInTheDocument();
 
-    // Selected and sending, versus saved but not sending.
     expect(screen.getByText('Active')).toBeInTheDocument();
     expect(screen.getByText('Available')).toBeInTheDocument();
     expect(screen.getByText('Unavailable')).toBeInTheDocument();
@@ -136,7 +134,6 @@ describe('ProvidersSection', () => {
 
     await userEvent.keyboard('{Escape}');
 
-    // Already sending, so switching to it is not offered.
     await openRowMenu('Resend');
     await screen.findByRole('menuitem', { name: 'Edit' });
     expect(screen.queryByRole('menuitem', { name: 'Use' })).toBeNull();
@@ -164,8 +161,6 @@ describe('ProvidersSection', () => {
       }),
     );
 
-    // The request shape alone is not enough: assert the save succeeded, or a
-    // server-side rejection would leave this test green.
     await waitFor(() =>
       expect(vi.mocked(toast.success)).toHaveBeenCalledWith(
         'Mailgun now sends email.',
@@ -189,7 +184,6 @@ describe('ProvidersSection', () => {
     expect(within(drawer).getByLabelText('Sending domain')).toHaveValue(
       'mg.agilo.com',
     );
-    // Not the active transport, so saving also switches to it.
     expect(
       within(drawer).getByRole('button', { name: 'Save & activate' }),
     ).toBeInTheDocument();
@@ -201,7 +195,6 @@ describe('ProvidersSection', () => {
     renderSection();
     await screen.findByText('Mailgun');
 
-    // Configured but not sending: testing it is how you check before switching.
     await openRowMenu('Mailgun');
     expect(
       await screen.findByRole('menuitem', { name: 'Send test' }),
@@ -216,7 +209,6 @@ describe('ProvidersSection', () => {
 
     await userEvent.keyboard('{Escape}');
 
-    // Unavailable here, so there is nothing to test against.
     await openRowMenu('Medusa Cloud');
     await screen.findByRole('menuitem', { name: 'Edit' });
     expect(screen.queryByRole('menuitem', { name: 'Send test' })).toBeNull();
@@ -228,7 +220,6 @@ describe('ProvidersSection', () => {
     renderSection();
     await screen.findByText('Mailgun');
 
-    // The inactive one: the request must name it, or Resend would be tested.
     await openRowMenu('Mailgun');
     await userEvent.click(
       await screen.findByRole('menuitem', { name: 'Send test' }),

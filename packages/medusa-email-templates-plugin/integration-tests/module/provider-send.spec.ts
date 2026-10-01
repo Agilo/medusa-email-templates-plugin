@@ -12,10 +12,6 @@ jest.setTimeout(60000);
 const API_KEY_ENV = 'EMAIL_TEMPLATES_TEST_RESEND_KEY';
 const API_KEY = 're_test_secret_value_123456';
 
-/**
- * The email provider sends pre-rendered content through the selected
- * transport. The Resend transport is pointed at a local capture server.
- */
 pluginIntegrationSuite(({ getContainer }) => {
   let capture: CaptureServer;
 

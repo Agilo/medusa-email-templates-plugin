@@ -56,7 +56,6 @@ export const validateEmailProviderConfigurationStep = createStep(
         );
       }
 
-      // Storing an API key needs the encryption key up front.
       if (input.credential.source === 'encrypted_database') {
         if (input.credential.api_key && !readEncryptionKey()) {
           throw invalidDataError(
@@ -67,10 +66,6 @@ export const validateEmailProviderConfigurationStep = createStep(
 
       credential = input.credential;
     } else if (!isManaged) {
-      // Omitting the credential keeps whatever is already stored, so a
-      // transport configured earlier can be re-selected without resending its
-      // secret. `credential` stays null, which makes the upsert step leave the
-      // existing row untouched.
       const service = container.resolve<EmailTemplatesModuleService>(
         EMAIL_TEMPLATES_MODULE,
       );
@@ -83,8 +78,6 @@ export const validateEmailProviderConfigurationStep = createStep(
       }
     }
 
-    // A managed transport carries no credential, so it can only be selected
-    // when the environment provides it (Medusa Cloud).
     if (isManaged) {
       const configModule = container.resolve<ConfigModule>(
         ContainerRegistrationKeys.CONFIG_MODULE,

@@ -34,7 +34,6 @@ describe('renderEmailTemplate', () => {
     expect(rendered.html).toContain('<td>Medusa T-Shirt</td>');
     expect(rendered.html).toContain('€40.00');
 
-    // One line per item, from the rendered HTML table.
     expect(rendered.text).toContain('Medusa T-Shirt');
     expect(rendered.text).toContain('Sweatpants');
     expect(rendered.text.split('\n').length).toBeGreaterThan(1);
@@ -82,12 +81,6 @@ describe('renderEmailTemplate', () => {
   });
 });
 
-/**
- * The built-in defaults rendered as shipped, rather than a hand-written
- * template. Nothing covered these before, which is how they came to show a
- * raw ISO timestamp to recipients: every spec asserted on the context going
- * in, never on the email coming out.
- */
 describe('built-in default templates', () => {
   const expiresAt = '2026-10-01T10:00:00.000Z';
   const store = { name: 'Test Store' };

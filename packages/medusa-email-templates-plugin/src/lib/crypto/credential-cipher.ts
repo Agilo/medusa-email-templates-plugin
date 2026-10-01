@@ -103,7 +103,6 @@ export const decryptCredential = (
 
     return JSON.parse(plaintext) as Record<string, string>;
   } catch {
-    // Authentication failure: tampering, a wrong key, or another transport.
     throw providerNotReadyError(
       'The stored API key could not be decrypted. Re-enter the API key.',
     );

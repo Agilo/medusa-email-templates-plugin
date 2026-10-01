@@ -5,7 +5,6 @@ import type { EmailTransport } from './types';
 
 const transports = new Map<string, EmailTransport>();
 
-/** Registers a transport. Transport ids must be unique. */
 export const registerEmailTransport = (transport: EmailTransport): void => {
   if (transports.has(transport.id)) {
     throw new Error(

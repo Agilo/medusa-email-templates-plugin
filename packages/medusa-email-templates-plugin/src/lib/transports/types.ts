@@ -17,7 +17,6 @@ export type EmailAttachment = NonNullable<
   ProviderSendNotificationDTO['attachments']
 >[number];
 
-/** A notification whose content is guaranteed to be rendered. */
 export interface RenderedEmail {
   to: string;
   from?: string;
@@ -40,9 +39,7 @@ export interface CloudEmailConfig {
 }
 
 export interface EmailTransportContext {
-  /** Non-secret, stored configuration. */
   config: Record<string, unknown>;
-  /** Resolved secret, or null for managed or missing credentials. */
   credential: ResolvedCredential | null;
   cloud: CloudEmailConfig | null;
   idempotencyKey?: string | null;
@@ -53,17 +50,12 @@ export interface EmailTransportResult {
   id?: string;
 }
 
-/**
- * A transport sends already-rendered email. It knows nothing about the
- * editor, the event registry or template rendering (spec §6).
- */
 export interface EmailTransport {
   id: string;
   label: string;
   credentialSources: CredentialSource[];
   configSchema: z.ZodType;
   isAvailable(context: EmailTransportContext): Promise<boolean>;
-  /** Validates non-secret configuration and returns the normalized value. */
   validateConfiguration(config: unknown): Promise<Record<string, unknown>>;
   send(
     email: RenderedEmail,

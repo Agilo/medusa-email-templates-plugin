@@ -192,10 +192,6 @@ describe('medusaCloudTransport.send', () => {
     );
   });
 
-  /*
-   * A gateway in front of Cloud answers an outage with an HTML page. Parsing
-   * it used to throw "Unexpected token <", which hid the status.
-   */
   it('reports the status when the error response is not JSON', async () => {
     fetchMock.mockResolvedValue({
       ok: false,

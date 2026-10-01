@@ -38,8 +38,6 @@ const containerWith = (
 
   return {
     container: {
-      // Keyed, because the URL helpers resolve the module for its options
-      // while everything else here wants the query service.
       resolve: (key: string) =>
         key === EMAIL_TEMPLATES_MODULE
           ? { getOptions: () => options }
@@ -94,11 +92,6 @@ describe('order-placed email event', () => {
     });
   });
 
-  /*
-   * The editor offers exactly the declared fields inside the items block, so
-   * each one has to be something `getContext` actually puts on an item — a
-   * field it does not map would be a pill that always sends empty.
-   */
   it('declares the items as a list of fields each item carries', async () => {
     const { container } = containerWith([
       { ...order, items: [{ ...order.items[0], variant_title: 'M' }] },
@@ -118,10 +111,6 @@ describe('order-placed email event', () => {
     });
   });
 
-  /*
-   * A snippet is inserted as pills, and a pill whose key the event does not
-   * declare shows as stale the moment it lands.
-   */
   it('offers an order totals snippet built only from declared values', () => {
     const [totals] = orderPlacedEmailEvent.snippets ?? [];
     const declared = new Set(
@@ -136,11 +125,6 @@ describe('order-placed email event', () => {
     keys.forEach((key) => expect(declared).toContain(key));
   });
 
-  /*
-   * The link is composed here so the base follows the deployment. Written by
-   * hand in a template it would be frozen into the saved HTML and wrong
-   * everywhere but the environment it was typed in.
-   */
   describe('order link', () => {
     const urlOf = async (options: EmailTemplatesModuleOptions) => {
       const { container } = containerWith([order], options);
@@ -167,11 +151,6 @@ describe('order-placed email event', () => {
       ).resolves.toBe('https://shop.test/account/orders/order_1');
     });
 
-    /*
-     * The difference from the password reset, which throws here so the send is
-     * skipped. This email is mostly an order summary and is worth sending
-     * without a link, so the variable goes unresolved instead.
-     */
     it('is null without a storefront, and does not stop the context', async () => {
       const { container } = containerWith([order]);
       const context = (await orderPlacedEmailEvent.getContext(
@@ -189,16 +168,12 @@ describe('order-placed email event', () => {
         storefront_url: 'https://shop.test',
       });
 
-      // Not the password reset's code: this email still sends, it only
-      // loses the link, and the admin says so.
       expect(orderPlacedEmailEvent.getWarnings?.(unset)).toEqual([
         'order_link_unavailable',
       ]);
       expect(orderPlacedEmailEvent.getWarnings?.(set)).toEqual([]);
     });
 
-    // `url` is what puts it in the editor's link picker; without it the
-    // variable exists but no button or link can be pointed at it.
     it('is declared as a URL variable', () => {
       const declared = orderPlacedEmailEvent.variables.find(
         (variable) => variable.key === 'order_url',

@@ -16,7 +16,6 @@ export const emailTemplateQueryKey = (templateKey: string) =>
 const templatePath = (templateKey: string) =>
   `/admin/email/templates/${encodeURIComponent(templateKey)}`;
 
-/** One template with its variables and the built-in default to fall back on. */
 export const useEmailTemplate = (templateKey: string) =>
   useQuery({
     queryKey: emailTemplateQueryKey(templateKey),
@@ -28,10 +27,6 @@ export const useEmailTemplate = (templateKey: string) =>
     enabled: Boolean(templateKey),
   });
 
-/**
- * Saves the subject, bodies and enabled flag. Invalid Liquid is rejected with
- * 400 rather than breaking a real send.
- */
 export const useSaveEmailTemplate = (templateKey: string) => {
   const queryClient = useQueryClient();
 
@@ -46,16 +41,11 @@ export const useSaveEmailTemplate = (templateKey: string) => {
       queryClient.invalidateQueries({
         queryKey: emailTemplateQueryKey(templateKey),
       });
-      // The list shows enabled, is_customized and updated_at.
       queryClient.invalidateQueries({ queryKey: emailTemplatesQueryKey });
     },
   });
 };
 
-/**
- * Turns a template on or off from the list. A partial update, so the subject
- * and bodies are untouched.
- */
 export const useToggleEmailTemplate = () => {
   const queryClient = useQueryClient();
 
@@ -75,10 +65,6 @@ export const useToggleEmailTemplate = () => {
   });
 };
 
-/**
- * Discards the saved template so the event uses its built-in default.
- * Idempotent: resetting an untouched template is a no-op.
- */
 export const useResetEmailTemplate = () => {
   const queryClient = useQueryClient();
 
@@ -99,13 +85,10 @@ export const useResetEmailTemplate = () => {
 };
 
 type RenderVariables = {
-  /** Overrides for the variables' example values. */
   data?: Record<string, unknown>;
-  /** Unsaved editor changes to render instead of what is stored. */
   draft?: EmailTemplateDraft;
 };
 
-/** Renders subject, HTML and text with sample data. Sends nothing. */
 export const usePreviewEmailTemplate = (templateKey: string) =>
   useMutation({
     mutationFn: (variables: RenderVariables = {}) =>
@@ -115,10 +98,6 @@ export const usePreviewEmailTemplate = (templateKey: string) =>
       ),
   });
 
-/**
- * Sends the template, with sample data, to one address. Works while disabled,
- * so it can be checked before enabling.
- */
 export const useSendTemplateTestEmail = (templateKey: string) =>
   useMutation({
     mutationFn: (variables: RenderVariables & { to: string }) =>

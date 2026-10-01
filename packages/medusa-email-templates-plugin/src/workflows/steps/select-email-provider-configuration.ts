@@ -22,9 +22,6 @@ type Compensation = {
 export const selectEmailProviderConfigurationStepId =
   'select-email-provider-configuration';
 
-/**
- * Upserts the transport's configuration and makes it the only selected one.
- */
 export const selectEmailProviderConfigurationStep = createStep(
   selectEmailProviderConfigurationStepId,
   async (input: SelectEmailProviderConfigurationInput, { container }) => {
@@ -38,7 +35,6 @@ export const selectEmailProviderConfigurationStep = createStep(
       config: configuration.config as Record<string, unknown> | null,
     }));
 
-    // Deselect first: at most one row may be selected at any time.
     const toDeselect = existing.filter(
       (configuration) =>
         configuration.is_selected &&

@@ -15,10 +15,6 @@ const RESEND_KEY_ENV = 'EMAIL_TEMPLATES_SWITCH_RESEND_KEY';
 const RESEND_KEY = 're_switch_secret_value_123';
 const MAILGUN_KEY = 'key-switch-secret-value-456';
 
-/**
- * Switching the selected transport takes effect on the next send, without a
- * restart, because the provider reads the selection per send.
- */
 pluginIntegrationSuite(({ getContainer }) => {
   let capture: CaptureServer;
 
@@ -68,7 +64,6 @@ pluginIntegrationSuite(({ getContainer }) => {
       `Bearer ${RESEND_KEY}`,
     );
 
-    // Switch to Mailgun with a stored (encrypted) API key.
     capture.reset();
     await saveEmailProviderConfigurationWorkflow(getContainer()).run({
       input: {
@@ -111,7 +106,6 @@ pluginIntegrationSuite(({ getContainer }) => {
       },
     });
 
-    // Saving again with no api_key keeps the stored one.
     await saveEmailProviderConfigurationWorkflow(getContainer()).run({
       input: {
         transport_id: 'mailgun',
@@ -134,8 +128,6 @@ pluginIntegrationSuite(({ getContainer }) => {
   });
 
   it('rejects a stored credential when no API key was ever entered', async () => {
-    // Save an environment credential first, so this transport provably has a
-    // credential row but no stored API key, whatever ran before.
     await saveEmailProviderConfigurationWorkflow(getContainer()).run({
       input: {
         transport_id: 'resend',

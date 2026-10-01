@@ -4,11 +4,6 @@ import type { JSONContent } from '@tiptap/core';
 import type { EmailTemplateSnippet } from '../../lib/types';
 import { deriveEditorContent } from './derive-document';
 
-/**
- * One slash command per snippet (e.g. "Order totals"), inserting its HTML as
- * ordinary editable content. Converted via `deriveEditorContent`, so
- * expressions become pills and `columns()` rows become Columns layouts.
- */
 export const snippetSlashCommands = (
   snippets: EmailTemplateSnippet[],
 ): SlashCommandItem[] =>
@@ -31,7 +26,6 @@ export const snippetSlashCommands = (
           deriveEditorContent(snippet.html, editor.extensionManager.extensions)
             .content ?? [];
       } catch {
-        // An unparseable host snippet inserts nothing instead of crashing.
         content = [];
       }
 

@@ -7,10 +7,6 @@ import { findEmailTemplate } from '../../lib/templates';
 import { EMAIL_TEMPLATES_MODULE } from '../../modules/email-templates';
 import type EmailTemplatesModuleService from '../../modules/email-templates/service';
 
-/**
- * A partial update: omitted fields are kept, so toggling `enabled` doesn't
- * blank the body.
- */
 export type UpsertEmailTemplateInput = {
   template_key: string;
   enabled?: boolean;
@@ -36,7 +32,6 @@ type Compensation =
 
 const liquid = createEmailLiquid();
 
-/** Rejects templates that don't parse, so a broken one is never stored. */
 const assertParses = (
   template: string | null | undefined,
   field: string,
@@ -85,7 +80,6 @@ export const upsertEmailTemplateStep = createStep(
       throw invalidDataError('A subject is required to save a template.');
     }
 
-    // `undefined` means "leave as it is"; `null` explicitly clears a body.
     const keep = <T>(next: T | undefined, current: T, fallback: T): T =>
       next !== undefined ? next : existing ? current : fallback;
 

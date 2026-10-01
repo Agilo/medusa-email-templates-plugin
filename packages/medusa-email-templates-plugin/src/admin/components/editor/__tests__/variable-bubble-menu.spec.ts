@@ -63,7 +63,6 @@ describe('variable bubble menu', () => {
   it('stays hidden for a text selection that includes a pill', () => {
     const { editor, position } = createEditor();
 
-    // The stock text menu covers this one.
     editor.commands.setTextSelection({ from: position - 3, to: position + 4 });
 
     expect(isVariableSelected(editor)).toBe(false);
@@ -79,11 +78,6 @@ describe('variable bubble menu', () => {
     expect(isVariableSelected(editor)).toBe(false);
   });
 
-  /*
-   * The same helpers the stock align buttons call. Alignment belongs to the
-   * paragraph, so what matters is that a selected pill reaches the one it
-   * sits in, and that the menu stays up for the next click.
-   */
   it('aligns the paragraph around the pill and keeps it selected', () => {
     const { editor, position } = createEditor();
 
@@ -101,7 +95,6 @@ describe('variable bubble menu', () => {
     const { editor, position } = createEditor();
 
     editor.commands.setNodeSelection(position);
-    // The chain a bubble menu button runs.
     editor.chain().focus().toggleBold().run();
 
     expect(

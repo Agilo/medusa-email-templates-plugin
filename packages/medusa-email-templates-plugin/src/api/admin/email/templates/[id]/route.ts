@@ -60,11 +60,6 @@ export const POST = async (
   await respondWithTemplate(req, res);
 };
 
-/**
- * Discards the saved template so the built-in default applies again. The
- * template itself still exists — it is defined in code — so this answers with
- * the reverted template rather than a `deleted: true` envelope.
- */
 export const DELETE = async (
   req: AuthenticatedMedusaRequest,
   res: MedusaResponse,

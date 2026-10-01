@@ -27,7 +27,6 @@ vi.mock('@medusajs/ui', async () => {
   return {
     ...actual,
     toast: { success: vi.fn(), error: vi.fn() },
-    // The prompt renders its own dialog outside the component tree.
     usePrompt: () => confirm,
   };
 });
@@ -93,7 +92,6 @@ describe('TemplatesSection', () => {
     expect(await screen.findByText('Order placed')).toBeInTheDocument();
     expect(screen.getByText('order.placed')).toBeInTheDocument();
     expect(screen.getByText('Admin invite')).toBeInTheDocument();
-    // Both password-reset templates share an event, so it must be shown.
     expect(screen.getByText('auth.password_reset')).toBeInTheDocument();
   });
 
@@ -107,7 +105,6 @@ describe('TemplatesSection', () => {
     expect(
       within(row('Admin invite')).getByText('Default'),
     ).toBeInTheDocument();
-    // Never saved, so there is no edit date to show.
     expect(within(row('Admin invite')).getByText('Never')).toBeInTheDocument();
   });
 
@@ -117,13 +114,11 @@ describe('TemplatesSection', () => {
     renderSection();
     await screen.findByText('Order placed');
 
-    // The marker sits in the status cell, since it is about sending.
     const blocked = row('Password reset');
     expect(
       within(blocked).getByLabelText('Password reset (customer) cannot send'),
     ).toBeInTheDocument();
 
-    // Templates with nothing wrong carry no marker.
     expect(
       within(row('Order placed')).queryByLabelText(/cannot send/),
     ).toBeNull();
@@ -149,11 +144,6 @@ describe('TemplatesSection', () => {
     );
   });
 
-  /*
-   * Same cause as the password reset, different consequence. The order
-   * confirmation still sends without a storefront — only its link is lost —
-   * and the list used to say it "cannot send" all the same.
-   */
   it('does not call a warning that still sends a blocker', async () => {
     const withOrderLink = templates().map((template) =>
       template.template_key === 'order-placed'
@@ -196,8 +186,6 @@ describe('TemplatesSection', () => {
 
     await userEvent.click(within(row('Admin invite')).getByRole('switch'));
 
-    // Only `enabled` travels: anything else would blank the saved body,
-    // because the save endpoint replaces whatever it is given.
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
         '/admin/email/templates/invite-created',
@@ -217,7 +205,6 @@ describe('TemplatesSection', () => {
     renderSection();
     await screen.findByText('Order placed');
 
-    // Saved, so it can be reverted to the built-in default.
     await userEvent.click(within(row('Order placed')).getByRole('button'));
     expect(await screen.findByRole('menuitem', { name: 'Edit' })).toBeVisible();
     expect(screen.getByRole('menuitem', { name: 'Preview' })).toBeVisible();
@@ -228,7 +215,6 @@ describe('TemplatesSection', () => {
 
     await userEvent.keyboard('{Escape}');
 
-    // Never saved: there is nothing to reset to.
     await userEvent.click(within(row('Admin invite')).getByRole('button'));
     await screen.findByRole('menuitem', { name: 'Edit' });
     expect(
@@ -255,8 +241,6 @@ describe('TemplatesSection', () => {
     renderSection();
     await screen.findByText('Admin invite');
 
-    // The switch and the action menu live inside the clickable row, so both
-    // must act without also opening the editor.
     await userEvent.click(within(row('Admin invite')).getByRole('switch'));
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
@@ -288,7 +272,6 @@ describe('TemplatesSection', () => {
   });
 
   it('renders a preview without sending anything', async () => {
-    // `fetch` accepts string | URL | Request, so normalise before matching.
     fetchMock.mockImplementation((input) =>
       String(input) === '/admin/email/templates'
         ? Promise.resolve({ templates: templates(), count: 3 })

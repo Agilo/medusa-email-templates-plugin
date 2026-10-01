@@ -122,11 +122,6 @@ describe('variable slash command', () => {
 
   const TRIGGER = '/variable';
 
-  /**
-   * Runs the command as the suggestion plugin does: the trigger text is in the
-   * document and `range` spans it. (A collapsed range can't catch a stale
-   * position, since deleting nothing keeps the positions correct.)
-   */
   const runSlashCommand = (editor: Editor) => {
     editor.commands.focus('end');
     editor.commands.insertContent(TRIGGER);
@@ -157,8 +152,6 @@ describe('variable slash command', () => {
 
     runSlashCommand(editor);
 
-    // A leftover "/variable" would mean deleteRange and the insert disagreed
-    // about where they were operating.
     expect(editor.getText()).not.toContain(TRIGGER);
     expect(editor.getText()).toContain('Hi');
   });

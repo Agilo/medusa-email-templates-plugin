@@ -13,10 +13,6 @@ export interface StoredCredential {
   key_fingerprint?: string | null;
 }
 
-/**
- * Resolves a stored credential to its secret at send time. Returns null for
- * managed credentials and when no credential is stored.
- */
 export const resolveCredential = (
   credential: StoredCredential | null | undefined,
   env: NodeJS.ProcessEnv = process.env,

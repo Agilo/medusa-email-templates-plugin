@@ -65,7 +65,6 @@ export const formatDate = (value: unknown, format: DateFormat): string => {
 
   const date = new Date(value);
 
-  // Invalid input renders empty rather than throwing, matching `formatMoney`.
   if (Number.isNaN(date.getTime())) {
     return '';
   }

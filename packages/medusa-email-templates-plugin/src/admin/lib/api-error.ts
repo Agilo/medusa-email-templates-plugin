@@ -1,8 +1,3 @@
-/**
- * The email routes answer 409 when no transport can send and 502 when one
- * fails, both carrying a `code`. Components use these to show the right
- * message instead of a generic failure.
- */
 export const EMAIL_ERROR_CODES = {
   providerNotReady: 'email_provider_not_ready',
   transportFailed: 'email_transport_failed',

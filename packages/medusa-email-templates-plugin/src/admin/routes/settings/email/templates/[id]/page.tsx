@@ -49,10 +49,6 @@ const SubjectEditor = lazy(
 
 const SETTINGS_PATH = '/settings/email';
 
-/**
- * Inline code chip (the event name, the `/` hint). The border keeps it
- * readable mid-sentence.
- */
 const CodeChip = ({ children }: { children: string }) => (
   <code className="bg-ui-bg-component text-ui-fg-subtle rounded-md px-1 py-px font-mono text-xs">
     {children}
@@ -107,7 +103,6 @@ const EmailTemplatePage = () => {
   const isDirty = subjectDirty || bodyDirty;
 
   const groups = useMemo(
-    // A subject has no Repeat block, so lists have nowhere to go.
     () => groupVariables(scalarVariables(template?.variables ?? [])),
     [template?.variables],
   );
@@ -115,7 +110,6 @@ const EmailTemplatePage = () => {
   const [previewing, setPreviewing] = useState(false);
   const [testing, setTesting] = useState(false);
 
-  // Inserted at the editor's selection, already formatted for money/dates.
   const insertVariable = (key: string, format?: VariableFormat) => {
     const variable = template?.variables.find((entry) => entry.key === key);
 
@@ -166,7 +160,6 @@ const EmailTemplatePage = () => {
 
     saveTemplate.mutate(
       {
-        // `getText()` serialises pills back to the stored Liquid string.
         ...(subjectDirty
           ? { subject_template: subjectRef.current?.getText() ?? '' }
           : {}),
@@ -174,7 +167,6 @@ const EmailTemplatePage = () => {
       },
       {
         onSuccess: () => {
-          // Only fields untouched since the request left are now saved.
           if (subjectEdits.current === sentSubjectEdits) {
             setSubjectDirty(false);
           }
@@ -247,8 +239,6 @@ const EmailTemplatePage = () => {
             </IconButton>
             <div className="flex min-w-0 flex-col gap-y-0.5">
               <Heading level="h2">{template.label}</Heading>
-              {/* The event's own description: not every template goes to a
-                  customer (invites and admin resets go to admin users). */}
               <Text
                 size="small"
                 className="text-ui-fg-subtle flex flex-wrap items-center gap-x-1.5"
@@ -338,8 +328,6 @@ const EmailTemplatePage = () => {
               </Suspense>
             </div>
             <DropdownMenu>
-              {/* `aria-label` sets the accessible name (and what tests query
-                  by). `shrink-0` stops the growing field squeezing it. */}
               <DropdownMenu.Trigger asChild>
                 <Button
                   size="small"
@@ -353,18 +341,12 @@ const EmailTemplatePage = () => {
               </DropdownMenu.Trigger>
               <DropdownMenu.Content>
                 {groups.map(([group, variables], index) => (
-                  // `Group` adds `role="group"`, so the label names the items.
                   <DropdownMenu.Group key={group}>
                     {index > 0 && <DropdownMenu.Separator />}
                     <DropdownMenu.Label>{group}</DropdownMenu.Label>
                     {variables.map((variable) => {
                       const formats = formatsFor(variable);
 
-                      /*
-                       * One format: insert directly. Money and dates open a
-                       * submenu to choose (a subject may want a plain number;
-                       * dates have several shapes).
-                       */
                       if (formats.length === 1) {
                         return (
                           <DropdownMenu.Item
@@ -404,17 +386,11 @@ const EmailTemplatePage = () => {
         </div>
       </Container>
 
-      {/*
-        The body gets its own card. `border-t`, not `divide-y`, which would
-        also draw a rule above the editor's menus (siblings of the canvas).
-        `overflow-hidden` keeps the Inspector from squaring the corners.
-      */}
       <Container className="overflow-hidden p-0">
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-6 py-4">
           <Text size="small" weight="plus">
             Body
           </Text>
-          {/* The only hint that the slash menu exists. */}
           <Text
             size="small"
             className="text-ui-fg-subtle flex items-center gap-x-1.5"

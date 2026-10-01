@@ -9,7 +9,6 @@ const escapeHtml = (value: string): string =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
-/** Fixed content for the provider test email. */
 export const buildProviderTestEmail = (transportLabel: string) => {
   const label = escapeHtml(transportLabel);
 

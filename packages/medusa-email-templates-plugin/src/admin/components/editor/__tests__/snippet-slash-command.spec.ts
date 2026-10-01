@@ -19,7 +19,6 @@ const collect = (node: JSONContent, type: string): JSONContent[] => [
   ...(node.content ?? []).flatMap((child) => collect(child, type)),
 ];
 
-/** An editor holding a typed "/", and the range the slash menu would pass. */
 const withSlash = () => {
   const editor = new Editor({
     extensions: [
@@ -61,7 +60,6 @@ describe('snippetSlashCommands', () => {
 
     const doc = editor.getJSON();
 
-    // Columns, not a table, so each row can be reshaped or deleted.
     expect(collect(doc, 'twoColumns')).toHaveLength(5);
     expect(collect(doc, 'variable').map((node) => node.attrs?.key)).toEqual([
       'order.subtotal',
@@ -70,7 +68,6 @@ describe('snippetSlashCommands', () => {
       'order.tax_total',
       'order.total',
     ]);
-    // The typed "/" is gone.
     expect(collect(doc, 'text').map((node) => node.text)).not.toContain('/');
   });
 

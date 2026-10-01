@@ -16,7 +16,6 @@ jest.setTimeout(60000);
 const API_KEY_ENV = 'EMAIL_TEMPLATES_EVENTS_RESEND_KEY';
 const API_KEY = 're_events_secret_value_123';
 
-/** The order.placed email: rendered from the managed template and sent. */
 pluginIntegrationSuite(({ getContainer }) => {
   let capture: CaptureServer;
 
@@ -100,17 +99,11 @@ pluginIntegrationSuite(({ getContainer }) => {
     expect(payload.subject).toContain(`#${order.display_id}`);
     expect(payload.html).toContain('Medusa T-Shirt');
     expect(payload.html).toContain('Sweatpants');
-    // Liquid is fully rendered before sending.
     expect(payload.html).not.toContain('{{');
     expect(payload.html).not.toContain('{%');
     expect(payload.text).toContain('Medusa T-Shirt');
   });
 
-  /*
-   * Medusa answers a repeated idempotency key with no notification at all,
-   * which used to throw on reading its id and log a failure for an email
-   * that had gone out fine. A redelivered event must send nothing and say so.
-   */
   it('sends once when the same order event arrives twice', async () => {
     await selectResend();
     await enableOrderPlacedTemplate();
@@ -134,11 +127,6 @@ pluginIntegrationSuite(({ getContainer }) => {
     expect(capture.requests).toHaveLength(1);
   });
 
-  /*
-   * The other side of the same key. Medusa's own resend of a failed key is
-   * broken (see the step), so a redelivery after a failure sends nothing and
-   * says why, rather than sending a copy and throwing anyway.
-   */
   it('does not resend when the earlier send of the event failed', async () => {
     await selectResend();
     await enableOrderPlacedTemplate();
@@ -164,7 +152,6 @@ pluginIntegrationSuite(({ getContainer }) => {
       skipped: 'previously_failed',
     });
     expect(redelivered.notification_id).toEqual(expect.any(String));
-    // Only the failed attempt reached the transport.
     expect(capture.requests).toHaveLength(1);
   });
 

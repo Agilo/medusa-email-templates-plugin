@@ -14,18 +14,12 @@ import type EmailTemplatesModuleService from '../../modules/email-templates/serv
 
 export type RenderEmailTemplateInput = {
   template_key: string;
-  /** Overrides for the variables' example values. */
   data?: Record<string, unknown>;
-  /** Unsaved edits from the editor. */
   draft?: EmailTemplateDraft;
 };
 
 export const renderEmailTemplateStepId = 'render-email-template';
 
-/**
- * Renders a template with sample data, for previews and test sends. Uses the
- * same renderer as real sends, so a preview matches what gets delivered.
- */
 export const renderEmailTemplateStep = createStep(
   renderEmailTemplateStepId,
   async (input: RenderEmailTemplateInput, { container }) => {

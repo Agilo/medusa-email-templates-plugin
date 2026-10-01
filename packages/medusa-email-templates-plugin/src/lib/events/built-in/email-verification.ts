@@ -22,7 +22,6 @@ export const emailVerificationEmailEvent =
     label: 'Email verification',
     description: 'Sends the verification code for an email address.',
     defaultTemplate: emailVerificationDefaultTemplate,
-    // Other entity types (a phone number, for example) are not emails.
     matches: (data) => data.entity_type === 'email',
 
     async getRecipient(data) {

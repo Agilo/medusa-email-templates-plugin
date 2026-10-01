@@ -4,10 +4,6 @@ import { ContainerRegistrationKeys } from '@medusajs/framework/utils';
 import { getErrorMessage } from '../lib/errors';
 import { sendEmailEventWorkflow } from '../workflows/send-email-event';
 
-/**
- * Account-related emails: invites, password resets and email verification.
- * One handler, because they all go through the same workflow.
- */
 export default async function emailAccountEventsHandler({
   event,
   container,
@@ -25,7 +21,6 @@ export default async function emailAccountEventsHandler({
       );
     }
   } catch (error) {
-    // Never break sign-up, invites or password resets because an email failed.
     logger.error(
       `[email-templates] Failed to send the ${event.name} email: ${getErrorMessage(error)}`,
     );

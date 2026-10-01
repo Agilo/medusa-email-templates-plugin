@@ -7,10 +7,6 @@ export type NotificationContent = NonNullable<
 const hasText = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0;
 
-/**
- * Content counts as already rendered when it has an HTML or text body. Such
- * content is sent as-is, without a plugin-managed template (spec §5).
- */
 export const isRenderedContent = (
   content: NotificationContent | null | undefined,
 ): content is NotificationContent =>

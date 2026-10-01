@@ -14,8 +14,6 @@ import { pluginIntegrationSuite } from '../helpers/run';
 
 jest.setTimeout(60000);
 
-// The endpoint has to be known before the app boots, so the capture server
-// uses a fixed port.
 const CLOUD_PORT = 4311;
 const CLOUD_ENDPOINT = `http://127.0.0.1:${CLOUD_PORT}`;
 const CLOUD_API_KEY = 'cloud_test_api_key';

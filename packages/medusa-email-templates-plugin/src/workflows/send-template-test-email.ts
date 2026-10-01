@@ -17,11 +17,6 @@ export type SendTemplateTestEmailInput = RenderEmailTemplateInput & {
 
 export const sendTemplateTestEmailWorkflowId = 'send-email-template-test-email';
 
-/**
- * Renders a template with sample data and sends it to a chosen address. The
- * template does not have to be enabled: this is how an admin checks their
- * work before turning it on.
- */
 export const sendTemplateTestEmailWorkflow = createWorkflow(
   sendTemplateTestEmailWorkflowId,
   function (input: SendTemplateTestEmailInput) {

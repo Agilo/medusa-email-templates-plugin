@@ -48,10 +48,6 @@ describe('buildSampleData', () => {
     });
   });
 
-  /*
-   * What a preview or test send loops over. The example is taken whole, so a
-   * list arrives as the array it declares rather than as nested keys.
-   */
   it('keeps a list example as an array', () => {
     const items = [{ title: 'Shirt' }, { title: 'Hat' }];
     const withList = {
@@ -87,7 +83,6 @@ describe('buildEmailTemplateDetail', () => {
     );
 
   it('treats a row that still matches the default as uncustomised', () => {
-    // What enabling a template stores: default subject, no bodies.
     expect(
       detail({
         subject_template: definition.defaultTemplate.subject,
@@ -143,11 +138,6 @@ describe('subject variable warnings', () => {
     expect(warningsFor('Thanks for your order')).toEqual([]);
   });
 
-  /*
-   * The corruption the editor cannot prevent. `strictVariables` is off, so
-   * this renders as empty text rather than failing — the subject reaches a
-   * real inbox reading "Your  order".
-   */
   it('names a mistyped key', () => {
     const [warning] = warningsFor('Your {{ store.nme }} order');
 
@@ -162,20 +152,12 @@ describe('subject variable warnings', () => {
     expect(warning).toContain('order.totl');
   });
 
-  /*
-   * A filter argument is a variable reference too, so a typo there is just as
-   * silent as one in the output itself.
-   */
   it('checks filter arguments', () => {
     const [warning] = warningsFor('{{ order.total | money: order.currncy }}');
 
     expect(warning).toContain('order.currncy');
   });
 
-  /*
-   * The global form excludes loop aliases. Without it `item.title` would be
-   * reported as unknown, flagging a template that works.
-   */
   it('ignores a loop alias', () => {
     expect(
       warningsFor(
@@ -236,11 +218,6 @@ describe('resolveEmailTemplateSource', () => {
   });
 });
 
-/*
- * The default text was written for the default HTML. Once the HTML is
- * customised it describes an email that no longer exists, so the text is
- * derived from the real HTML (null). A send and a preview must agree.
- */
 describe('choosing the plain-text body', () => {
   const customised: EmailTemplateRecord = { ...row, text_template: null };
   const untouched: EmailTemplateRecord = {

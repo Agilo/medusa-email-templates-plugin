@@ -16,11 +16,6 @@ const NOTIFICATION_ERROR_PREFIX =
 
 export const sendTestEmailStepId = 'send-email-templates-test-email';
 
-/**
- * Sends a pre-rendered test email through the Notification module, so it
- * goes through the provider's pass-through path and is recorded. Failures
- * become transport errors (HTTP 502 in the admin routes).
- */
 export const sendTestEmailStep = createStep(
   sendTestEmailStepId,
   async (input: SendTestEmailStepInput, { container }) => {

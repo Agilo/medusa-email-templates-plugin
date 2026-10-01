@@ -21,7 +21,6 @@ export default async function emailOrderPlacedHandler({
       );
     }
   } catch (error) {
-    // Never break the originating flow because an email failed.
     logger.error(
       `[email-templates] Failed to send the ${event.name} email: ${getErrorMessage(error)}`,
     );

@@ -35,8 +35,6 @@ module.exports = {
     ],
   },
   testEnvironment: 'node',
-  // HTTP integration tests start a full Medusa app (migrations + Redis + HTTP server).
-  // That easily exceeds 60 s on a cold database; 300 s is the standard Medusa value.
   testTimeout: process.env.TEST_TYPE === 'integration:http' ? 300000 : 60000,
   moduleFileExtensions: ['js', 'jsx', 'ts', 'tsx', 'json'],
   modulePathIgnorePatterns: ['dist/', '.medusa/', '.yalc/'],

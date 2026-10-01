@@ -45,7 +45,6 @@ if (!existsSync(chunksDir)) {
 const CANDIDATE =
   /\[[&a-z0-9_[\]="'-]+\]:[a-z0-9[\]#%._/-]+|[a-z][a-z0-9]*(?:[:/-][a-z0-9[\]#%._-]+)+/g;
 
-/** Only the chunks, so our own output isn't re-read. */
 const tokens = new Set();
 
 for (const entry of readdirSync(chunksDir)) {

@@ -21,17 +21,14 @@ import {
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     variable: {
-      /** Inserts a pill and selects it, which is what the Inspector reads. */
       setVariable: (attrs?: Record<string, unknown>) => ReturnType;
     };
   }
 }
 
-/** Shown on the canvas for a pill whose variable has not been chosen yet. */
 export const UNSET_VARIABLE_LABEL = 'Choose a variable';
 
 type VariableNodeOptions = {
-  /** Supplies each pill with its variable's human label. */
   variables: EmailTemplateVariable[];
 };
 
@@ -109,11 +106,6 @@ const PILL_BASE = [
   'cursor-default select-none transition-fg',
 ].join(' ');
 
-/*
- * Blue: a configured variable. Orange: needs attention — dashed when nothing
- * is chosen yet, solid when the chosen key is no longer published.
- * `active` is the fill of a selected pill.
- */
 const PILL_TONES = {
   chosen: {
     idle: 'border-ui-tag-blue-border bg-ui-tag-blue-bg text-ui-tag-blue-text hover:bg-ui-tag-blue-bg-hover',
@@ -129,14 +121,6 @@ const PILL_TONES = {
   },
 } as const;
 
-/**
- * The variable's example, formatted exactly as a recipient would see it —
- * through the send path's own formatters (`format-value.ts` stays
- * dependency-free for this).
- *
- * Returns `''` when the example can't be shown (unreadable money/date, or an
- * object example); the caller then falls back to the label.
- */
 const exampleText = (
   variable: EmailTemplateVariable,
   format: VariableFormat,
@@ -144,8 +128,6 @@ const exampleText = (
   currencySource: string | undefined,
 ): string => {
   if (format === 'money') {
-    // The currency is another variable's example (`order.currency_code` →
-    // `eur`). Without one, `40.00` — which is also what would send.
     return formatMoney(
       variable.example,
       variables.find((entry) => entry.key === currencySource)?.example,
@@ -156,21 +138,12 @@ const exampleText = (
     return formatDate(variable.example, format);
   }
 
-  // As-is, even an unformatted ISO date: that is what this pill sends.
   return typeof variable.example === 'string' ||
     typeof variable.example === 'number'
     ? String(variable.example)
     : '';
 };
 
-/**
- * The pill on the canvas. It shows the example value, not the variable's
- * name, so the canvas reads like the real email and format changes are
- * visible (e.g. `October 1, 2026` for Long date).
- *
- * The name is in the tooltip, the `aria-label` and the Inspector. Only the
- * unchosen and stale states show text instead of a value.
- */
 const VariablePill = ({
   node,
   extension,
@@ -196,8 +169,6 @@ const VariablePill = ({
     : 'text';
   const variable = variables?.find((entry) => entry.key === key);
 
-  // Stale: a key the event doesn't publish (here). It still exports, so it
-  // must be visible.
   const state = !key ? 'empty' : variable ? 'chosen' : 'stale';
   const tone = PILL_TONES[state];
   const showFormat = format !== 'text';
@@ -220,11 +191,6 @@ const VariablePill = ({
   const name =
     state === 'empty' ? UNSET_VARIABLE_LABEL : (variable?.label ?? key);
 
-  /*
-   * For screen readers, which can't see the colours. `aria-label` replaces the
-   * visible value, so it names the variable, its format and whether it is
-   * stale. Commas give a pause between each.
-   */
   const description = [
     name,
     showFormat ? FORMAT_LABELS[format] : null,
@@ -233,10 +199,6 @@ const VariablePill = ({
     .filter(Boolean)
     .join(', ');
 
-  /*
-   * Only what the pill can't show: the variable's name (the format is already
-   * visible in the value). None for an unchosen pill, whose text says it all.
-   */
   const tooltip =
     state === 'empty'
       ? null
@@ -273,13 +235,11 @@ const VariablePill = ({
       className={[
         PILL_BASE,
         tone.idle,
-        // A focus ring, not the interactive one: the pill isn't a control.
         selected ? `shadow-borders-focus ${tone.active}` : '',
       ]
         .filter(Boolean)
         .join(' ')}
       aria-label={`Variable: ${description}`}
-      /* Present even before a variable is chosen. */
       data-variable-node=""
       data-variable-key={key || undefined}
       data-variable-state={state}
@@ -306,10 +266,6 @@ const VariablePill = ({
   );
 };
 
-/**
- * Inline, non-editable variable pill. Stores the key and display format; the
- * Liquid is generated on export, so a keystroke can never corrupt a filter.
- */
 export const VariableNode = EmailNode.create<VariableNodeOptions>({
   name: 'variable',
   group: 'inline',
@@ -349,8 +305,6 @@ export const VariableNode = EmailNode.create<VariableNodeOptions>({
             ? { 'data-currency-source': attributes.currencySource }
             : {},
       },
-      // The pill's typography as inline CSS. Named `style` because that is the
-      // attribute the Inspector's style helpers read and write.
       style: {
         default: '',
         parseHTML: (element: HTMLElement) =>

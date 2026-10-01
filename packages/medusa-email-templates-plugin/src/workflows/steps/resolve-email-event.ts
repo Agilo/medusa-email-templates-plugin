@@ -31,10 +31,6 @@ export type ResolvedEmailEvent =
 
 export const resolveEmailEventStepId = 'resolve-email-event';
 
-/**
- * Decides whether an event results in an email, and builds its recipient and
- * context. Reads only.
- */
 export const resolveEmailEventStep = createStep(
   resolveEmailEventStepId,
   async (input: ResolveEmailEventInput, { container }) => {
@@ -55,7 +51,6 @@ export const resolveEmailEventStep = createStep(
     );
     const template = await findEmailTemplate(service, definition.templateKey);
 
-    // No saved template counts as disabled.
     if (!template?.enabled) {
       return new StepResponse<ResolvedEmailEvent>({
         send: false,
@@ -87,8 +82,6 @@ export const resolveEmailEventStep = createStep(
         resource_type: resource.resource_type ?? null,
       });
     } catch (error) {
-      // A link that needs the storefront URL cannot be built without it, so
-      // skip instead of sending a broken link.
       if (error instanceof StorefrontUrlNotConfiguredError) {
         return new StepResponse<ResolvedEmailEvent>({
           send: false,

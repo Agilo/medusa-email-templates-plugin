@@ -3,7 +3,6 @@ import { ContainerRegistrationKeys } from '@medusajs/framework/utils';
 
 export const DEFAULT_STORE_NAME = 'Medusa Store';
 
-/** Store name used in every built-in template. */
 export const retrieveStoreName = async (
   container: MedusaContainer,
 ): Promise<string> => {

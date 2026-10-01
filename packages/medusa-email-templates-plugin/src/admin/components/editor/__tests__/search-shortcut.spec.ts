@@ -2,12 +2,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { claimLinkShortcut } from '../search-shortcut';
 
-/**
- * Models the real arrangement rather than the predicate: the handler sits on a
- * deep element, as ProseMirror puts it on the editor, and the dashboard's
- * search palette listens on `document`. What matters is whether the second one
- * hears the key, so the assertion is about propagation, not about the branch.
- */
 const pressInEditor = (init: KeyboardEventInit) => {
   const editor = document.createElement('div');
   const onDocument = vi.fn();
@@ -47,11 +41,6 @@ describe('claimLinkShortcut', () => {
     expect(pressInEditor({ key: 'j', metaKey: true })).toHaveBeenCalled();
   });
 
-  /*
-   * Shift makes the key `K`, which the dashboard's own comparison does not
-   * match either — so there is nothing to stop, and swallowing it would take a
-   * combination away from whatever else might want it.
-   */
   it('lets Shift-Cmd-K through', () => {
     expect(
       pressInEditor({ key: 'K', metaKey: true, shiftKey: true }),

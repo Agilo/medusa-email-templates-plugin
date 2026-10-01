@@ -10,7 +10,6 @@ import type {
 import { createEmailLiquid } from './rendering/liquid';
 import type { EmailTemplateSource } from './rendering/render-template';
 
-/** Parse-only, for reading which variables a subject references. */
 const subjectLiquid = createEmailLiquid();
 
 export type EmailTemplateRecord = {
@@ -33,7 +32,6 @@ export type EmailTemplateListItem = {
   description?: string;
   enabled: boolean;
   subject_template: string;
-  /** True once the template has been saved, rather than only defined in code. */
   is_customized: boolean;
   updated_at: Date | string | null;
   warnings: string[];
@@ -97,10 +95,6 @@ const resolveTextTemplate = (
   return html === null ? (definition.defaultTemplate.text ?? null) : null;
 };
 
-/**
- * The template to send, or null if disabled or never saved. Missing HTML
- * falls back to the definition's default.
- */
 export const findEnabledEmailTemplate = async (
   service: EmailTemplatesModuleService,
   definition: EmailEventDefinition<never>,
@@ -199,7 +193,6 @@ const toListItem = (
   event: definition.event,
   label: definition.label,
   description: definition.description,
-  // A template that was never saved counts as disabled.
   enabled: Boolean(row?.enabled),
   subject_template: row?.subject_template ?? definition.defaultTemplate.subject,
   is_customized: isCustomized(definition, row),
@@ -213,7 +206,6 @@ const toListItem = (
   ],
 });
 
-/** Every registered template, whether or not it has been saved. */
 export const listEmailTemplates = async (
   service: EmailTemplatesModuleService,
   container: MedusaContainer,
@@ -239,10 +231,6 @@ export const buildEmailTemplateDetail = (
   default_template: definition.defaultTemplate,
 });
 
-/**
- * Sample data for previews and test sends, from each variable's example.
- * Dotted keys become nested objects; list examples are kept whole.
- */
 export const buildSampleData = (
   definition: EmailEventDefinition<never>,
   overrides: Record<string, unknown> = {},

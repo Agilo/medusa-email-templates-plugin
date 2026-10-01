@@ -8,12 +8,6 @@ import {
 } from '../variable-format';
 
 describe('fromLiquidExpression', () => {
-  /*
-   * The property that matters. Importing a template turns its text back into
-   * variable attributes, and saving turns those attributes back into text. If
-   * the two disagree for any format, opening a template and saving it would
-   * silently rewrite expressions that were already correct.
-   */
   it.each([
     ['plain text', 'order.display_id', 'text' as const, undefined],
     ['money without a currency', 'order.total', 'money' as const, undefined],
@@ -44,11 +38,6 @@ describe('fromLiquidExpression', () => {
     });
   });
 
-  /*
-   * Everything below is left as literal text instead. A pill that claimed to
-   * represent an expression it cannot regenerate would rewrite the template
-   * the moment someone saved.
-   */
   it.each([
     ['a quoted filter argument', '{{ order.created_at | date: "%b %d" }}'],
     ['a single-quoted argument', "{{ order.total | money: 'eur' }}"],
@@ -65,7 +54,6 @@ describe('fromLiquidExpression', () => {
 });
 
 describe('findLiquidExpressions', () => {
-  // The exact strings the default order-placed template produces.
   const PROSE =
     'We received your order #{{ order.display_id }} and are getting it ready.';
   const WHOLE = '{{ order.subtotal | money: order.currency_code }}';
@@ -78,8 +66,6 @@ describe('findLiquidExpressions', () => {
       format: 'text',
       source: '{{ order.display_id }}',
     });
-    // The offsets are what a document import slices on, so they have to name
-    // exactly the tag and nothing around it.
     expect(PROSE.slice(match.start, match.end)).toBe('{{ order.display_id }}');
   });
 
@@ -104,11 +90,6 @@ describe('findLiquidExpressions', () => {
     ]);
   });
 
-  /*
-   * `exec` on a global regex advances `lastIndex`, so a shared pattern would
-   * return different results on a second call with the same input. This is the
-   * bug that only ever shows up on the second template someone opens.
-   */
   it('returns the same matches when called twice', () => {
     expect(findLiquidExpressions(PROSE)).toEqual(findLiquidExpressions(PROSE));
   });

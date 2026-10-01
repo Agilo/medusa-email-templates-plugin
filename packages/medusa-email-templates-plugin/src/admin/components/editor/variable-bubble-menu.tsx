@@ -16,16 +16,6 @@ export const isVariableSelected = ({ state }: { state: EditorState }) =>
   state.selection.node.type.name === 'variable' &&
   !state.selection.node.marks.some((mark) => mark.type.name === 'link');
 
-/**
- * Formatting for a selected variable.
- *
- * - Marks: the export wraps them around the pill's Liquid
- *   (`<strong>{{ order.total | money: … }}</strong>`).
- * - Alignment: applies to the paragraph containing the pill.
- *
- * No "Turn into" (it would convert the whole paragraph) and no link selector
- * (it would hand the pill to the link Inspector).
- */
 export const VariableBubbleMenu = () => (
   <BubbleMenu.Root
     trigger={isVariableSelected}

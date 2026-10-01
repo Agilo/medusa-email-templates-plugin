@@ -66,10 +66,6 @@ const toTags = (value: unknown): { name: string; value: string }[] => {
   );
 };
 
-/**
- * Maps a rendered email to the Resend payload. `cc`, `bcc`, `reply_to`,
- * `headers` and `tags` come from `provider_data`.
- */
 export const buildResendPayload = (
   email: RenderedEmail,
   config: ResendConfig,

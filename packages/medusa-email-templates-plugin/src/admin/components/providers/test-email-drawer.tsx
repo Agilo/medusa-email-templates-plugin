@@ -6,7 +6,6 @@ import { getApiErrorMessage } from '../../lib/api-error';
 import type { EmailProviderTransportState } from '../../lib/types';
 
 type TestEmailDrawerProps = {
-  /** Any configured transport, active or not. */
   transport: EmailProviderTransportState;
   onClose: () => void;
 };

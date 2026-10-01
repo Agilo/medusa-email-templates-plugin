@@ -94,8 +94,6 @@ export const passwordResetCustomerEmailEvent =
     getRecipient: recipientFromEntityId,
 
     async getContext(data, container: MedusaContainer) {
-      // Throws when storefront_url is missing, which the workflow reports as
-      // a skipped send rather than emailing a broken link.
       const storefrontUrl = getStorefrontUrl(container);
       const path = getStorefrontResetPasswordPath(container);
       const query = buildQuery({ token: data.token, email: data.entity_id });

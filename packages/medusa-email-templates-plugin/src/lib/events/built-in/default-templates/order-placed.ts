@@ -9,20 +9,8 @@ import { repeat } from './repeat';
 const ROW_PADDING = 'padding-top:8px;padding-bottom:8px';
 const ROW_RULE = `${ROW_PADDING};border-bottom:1px solid #e5e7eb`;
 
-/*
- * Paragraphs in a row get no spacing of their own, so the column padding is
- * the only (and editable) control over row height. Otherwise the theme's
- * 0.5em paragraph padding would stack on top, uneditably, once saved.
- */
 const CELL_TEXT = `margin:0;${NO_THEME_SPACING}`;
 
-/**
- * One order line: product and quantity on the left, line total on the right.
- *
- * Also the `order.items` `itemTemplate`, so a newly inserted Repeat block
- * matches the default email. Built with `columns`, so it opens as an editable
- * Columns layout.
- */
 export const ORDER_ITEM_ROW = columns([
   {
     style: ROW_RULE,
@@ -34,11 +22,6 @@ export const ORDER_ITEM_ROW = columns([
   },
 ]);
 
-/*
- * Totals as one compact block: a gap above, tight lines, and a rule above
- * the grand total. Applied to both cells of a row, or the value falls out of
- * line with its label.
- */
 const TOTALS_FIRST = 'padding-top:24px;padding-bottom:2px';
 const TOTALS_LINE = 'padding-top:2px;padding-bottom:2px';
 const TOTALS_GRAND =
@@ -71,12 +54,6 @@ const totalsRow = (
   ]);
 };
 
-/**
- * The order totals, one row each. Also the "Order totals" snippet.
- *
- * Discount always shows (€0.00 when none): hiding it needs a condition the
- * editor can't express yet, so admins who never discount can delete the row.
- */
 export const ORDER_TOTALS = [
   totalsRow('Subtotal', 'order.subtotal', { style: TOTALS_FIRST }),
   totalsRow('Discount', 'order.discount_total'),

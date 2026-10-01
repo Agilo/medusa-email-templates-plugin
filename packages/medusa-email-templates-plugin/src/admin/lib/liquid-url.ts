@@ -24,7 +24,6 @@ export const isLiquidUrl = (value: string): boolean => {
 
   const scheme = SCHEME.exec(value.trim());
 
-  // No scheme (the common case): `{{ invite_url }}` becomes a full URL at send.
   if (!scheme) {
     return true;
   }
@@ -45,22 +44,17 @@ const stockUrl = (value: string): string | null => {
     const url = new URL(value);
 
     return SAFE_PROTOCOLS.has(url.protocol) ? value : null;
-  } catch {
-    // Not an absolute URL; try it as a bare domain below.
-  }
+  } catch {}
 
   try {
     if (value.includes('.') && !value.includes(' ')) {
       return new URL(`https://${value}`).toString();
     }
-  } catch {
-    // Not salvageable as a domain either.
-  }
+  } catch {}
 
   return null;
 };
 
-/** Passed to both bubble menus as `validateUrl`. */
 export const validateUrl = (value: string): string | null => {
   const trimmed = value.trim();
 

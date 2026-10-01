@@ -5,10 +5,6 @@ import type { EmailTemplateVariable } from '../../lib/types';
 import { listVariables } from '../../lib/variables';
 import { deriveEditorContent } from './derive-document';
 
-/**
- * A new block's starting content: the list's `itemTemplate`, converted like a
- * default template. Without one, a single empty line.
- */
 const presetFor = (
   list: EmailTemplateVariable,
   extensions: Extensions,
@@ -20,15 +16,10 @@ const presetFor = (
   try {
     return deriveEditorContent(list.itemTemplate, extensions).content ?? [];
   } catch {
-    // A host's template that does not parse still leaves a usable block.
     return [];
   }
 };
 
-/**
- * One command per list the event declares, named after it ("Order items").
- * None for events without lists.
- */
 export const repeatSlashCommands = (
   variables: EmailTemplateVariable[],
 ): SlashCommandItem[] =>

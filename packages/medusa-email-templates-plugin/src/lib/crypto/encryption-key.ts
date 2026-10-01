@@ -10,7 +10,6 @@ const BASE64_KEY = /^[A-Za-z0-9+/]{43}=$/;
 
 export type EncryptionKey = {
   key: Buffer;
-  /** First 16 hex characters of sha256(key), to detect a rotated key. */
   fingerprint: string;
 };
 
@@ -35,7 +34,6 @@ const parseKey = (raw: string): Buffer | null => {
 export const fingerprintKey = (key: Buffer): string =>
   createHash('sha256').update(key).digest('hex').slice(0, 16);
 
-/** Returns null when no key is configured, and throws when it is malformed. */
 export const readEncryptionKey = (
   env: NodeJS.ProcessEnv = process.env,
 ): EncryptionKey | null => {

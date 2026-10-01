@@ -27,8 +27,6 @@ const variables: EmailTemplateVariable[] = [
     currencyKey: 'order.currency_code',
     group: 'Totals',
   },
-  // The currency is a variable of its own, and the money pill renders through
-  // its example rather than guessing a symbol.
   {
     key: 'order.currency_code',
     label: 'Currency',
@@ -42,12 +40,9 @@ const variables: EmailTemplateVariable[] = [
     type: 'date',
     group: 'Invite',
   },
-  // A host's custom event may declare anything as an example. Nothing stops
-  // this reaching the canvas, so the pill has to cope with it.
   { key: 'order.notes', label: 'Notes', example: { free: 'form' } },
 ];
 
-/** A money pill as `attributesFor` builds one, currency source included. */
 const MONEY = {
   key: 'order.total',
   format: 'money',
@@ -67,7 +62,6 @@ const docWith = (attrs: Record<string, unknown>): JSONContent => ({
   ],
 });
 
-/** Renders a real editor and hands the instance back for assertions. */
 const Harness = ({
   content,
   onReady,
@@ -122,23 +116,13 @@ const mountEditor = async (content: JSONContent) => {
 const pill = () => document.querySelector('[data-variable-node]') as Element;
 
 describe('variable pill', () => {
-  /*
-   * The canvas reads like the email, so the pill shows what a recipient will
-   * see. Through the send path's own `formatMoney`, which is why the currency
-   * arrives as another variable's example rather than as a guessed symbol.
-   */
   it('renders the value a recipient will see, not the Liquid', async () => {
     await mountEditor(docWith(MONEY));
 
     expect(screen.getByText('€55.00')).toBeInTheDocument();
-    // The whole point of the structured model: no Liquid on the canvas.
     expect(screen.queryByText(/\{\{/)).toBeNull();
   });
 
-  /*
-   * What the format control is for. "Long date" names a choice; `October 1,
-   * 2026` shows it, which is the difference between a label and a preview.
-   */
   it('renders a date in the format that was chosen', async () => {
     await mountEditor(
       docWith({ key: 'invite.expires_at', format: 'date_long' }),
@@ -148,32 +132,22 @@ describe('variable pill', () => {
   });
 
   it('renders an unformatted value as it stands', async () => {
-    // Plain text is a real choice, and an ISO string is what that pill sends.
     await mountEditor(docWith({ key: 'invite.expires_at', format: 'text' }));
 
     expect(screen.getByText('2026-10-01T10:00:00.000Z')).toBeInTheDocument();
   });
 
   it('falls back to the name when the example cannot be shown', async () => {
-    // `[object Object]` inline would be worse than saying nothing useful.
     await mountEditor(docWith({ key: 'order.notes', format: 'text' }));
 
     expect(screen.getByText('Notes')).toBeInTheDocument();
   });
 
-  /*
-   * The pill shows a value, so a tooltip must name the variable (`title`
-   * never appears in contenteditable). Opened by focus: it skips the hover
-   * delay and pointer events jsdom lacks.
-   */
   it('names the variable in a tooltip', async () => {
     await mountEditor(docWith(MONEY));
 
     fireEvent.focus(pill().firstElementChild as Element);
 
-    // The name and nothing else. The format is already legible in the €55.00
-    // on the pill, and repeating it would crowd out the one thing hovering is
-    // for.
     expect(await screen.findByRole('tooltip')).toHaveTextContent(/^Total$/);
   });
 
@@ -188,8 +162,6 @@ describe('variable pill', () => {
   });
 
   it('offers no tooltip until a variable is chosen', async () => {
-    // It would repeat the pill's own text, which already reads "Choose a
-    // variable".
     await mountEditor(docWith({ key: '' }));
 
     fireEvent.focus(pill());
@@ -198,7 +170,6 @@ describe('variable pill', () => {
   });
 
   it('prompts when no variable has been chosen', async () => {
-    // An empty-string key is not nullish, so `??` would render nothing here.
     await mountEditor(docWith({ key: '' }));
 
     expect(screen.getByText(UNSET_VARIABLE_LABEL)).toBeInTheDocument();
@@ -206,20 +177,13 @@ describe('variable pill', () => {
   });
 
   it('flags a key the event no longer publishes', async () => {
-    // Authored against another event, or the event stopped publishing it.
-    // Export still emits the key, so the canvas has to show that it is there
-    // and that it is broken — rendering it as an ordinary pill would hide a
-    // variable that resolves to nothing in the sent email.
     await mountEditor(docWith({ key: 'order.discontinued', format: 'text' }));
 
     expect(pill()).toHaveAttribute('data-variable-state', 'stale');
-    // No label to fall back on, so the raw key is what identifies it.
     expect(screen.getByText('order.discontinued')).toBeInTheDocument();
   });
 
   it('fills the pill while selected, alongside the focus ring', async () => {
-    // The ring alone reads as focus rather than "this is what the Inspector
-    // is editing"; the fill is what makes the selected pill obvious.
     await mountEditor(docWith(MONEY));
 
     expect(pill()).toHaveClass('hover:bg-ui-tag-blue-bg-hover');
@@ -233,10 +197,6 @@ describe('variable pill', () => {
     });
   });
 
-  /*
-   * Screen readers can't see the colours, and `aria-label` replaces the
-   * visible value, so it must name the variable, format and state.
-   */
   it('names the variable, its format and its state to assistive tech', async () => {
     await mountEditor(docWith(MONEY));
 
@@ -260,8 +220,6 @@ describe('variable pill', () => {
     fireEvent.mouseDown(pill());
     fireEvent.mouseDown(pill());
 
-    // The second click dispatches nothing through ProseMirror's own click
-    // handling, which is what kept the bubble menu from reopening.
     const { selection } = editor.state;
 
     expect(selection).toBeInstanceOf(NodeSelection);
@@ -269,11 +227,6 @@ describe('variable pill', () => {
   });
 });
 
-/**
- * The Inspector panel. It only receives the pill once the editor is focused
- * with a NodeSelection on it, so the Variable control appearing proves the
- * whole click-to-select chain.
- */
 const InspectorHarness = ({ content }: { content: JSONContent }) => {
   const editor = useEditor({
     extensions: [
@@ -346,8 +299,6 @@ describe('variable inspector', () => {
 
     fireEvent.change(format, { target: { value: 'text' } });
 
-    // Visible in the pill, not just stored: dropping the currency formatting
-    // leaves the bare number the template would then send.
     await waitFor(() => {
       expect(document.querySelector('[data-variable-node]')?.textContent).toBe(
         '55',

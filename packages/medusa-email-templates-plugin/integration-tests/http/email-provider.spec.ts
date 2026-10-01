@@ -97,7 +97,6 @@ pluginIntegrationSuite(({ api, getContainer }) => {
             credential: null,
           }),
           expect.objectContaining({ id: 'mailgun', selected: false }),
-          // No MEDUSA_CLOUD_* settings here, so Cloud is unavailable.
           expect.objectContaining({
             id: 'medusa-cloud',
             available: false,
@@ -202,7 +201,6 @@ pluginIntegrationSuite(({ api, getContainer }) => {
       await api.post('/admin/email/provider', resendBody(), { headers });
       await api.post('/admin/email/provider', mailgunBody(), { headers });
 
-      // What the admin table's "Use" action sends: no credential at all.
       const res = await api.post(
         '/admin/email/provider',
         {
@@ -223,7 +221,6 @@ pluginIntegrationSuite(({ api, getContainer }) => {
           configured: true,
         },
       });
-      // The transport it switched away from keeps its own credential.
       expect(findTransport(res.data, 'mailgun')).toMatchObject({
         selected: false,
         credential: { source: 'encrypted_database', configured: true },
@@ -409,7 +406,6 @@ pluginIntegrationSuite(({ api, getContainer }) => {
 
     it('sends through a named transport that is not the selected one', async () => {
       const headers = await createAdminHeaders(getContainer());
-      // Configure Mailgun first, then Resend, which leaves Resend selected.
       await api.post('/admin/email/provider', mailgunBody(), { headers });
       await api.post('/admin/email/provider', resendBody(), { headers });
       capture.respondWith(200, { id: '<mg-inactive>', message: 'Queued' });
@@ -425,11 +421,9 @@ pluginIntegrationSuite(({ api, getContainer }) => {
         external_id: '<mg-inactive>',
         transport_id: 'mailgun',
       });
-      // The request really went to Mailgun, not to the selected transport.
       expect(capture.requests).toHaveLength(1);
       expect(capture.requests[0].url).toEqual('/v3/mg.example.com/messages');
 
-      // Testing another transport never changes which one sends real email.
       const fetched = await api.get('/admin/email/provider', { headers });
       expect(fetched.data.provider.selected_transport_id).toEqual('resend');
     });

@@ -9,7 +9,6 @@ import type EmailTemplatesModuleService from '../../modules/email-templates/serv
 
 export const assertEmailProviderReadyStepId = 'assert-email-provider-ready';
 
-/** Fails with a "provider not ready" error when no email can be sent. */
 export const assertEmailProviderReadyStep = createStep(
   assertEmailProviderReadyStepId,
   async (_input: Record<string, never>, { container }) => {

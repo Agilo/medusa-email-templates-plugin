@@ -39,11 +39,6 @@ describe('email event registry', () => {
     ).toBeUndefined();
   });
 
-  /*
-   * The editor can only emit lowercase dotted identifiers. A key it cannot
-   * emit used to register fine, appear in every picker, and fail only on
-   * save — in the subject, silently.
-   */
   it.each([
     ['camel case', { key: 'order.displayId', label: 'Order', example: 1 }],
     ['a dash', { key: 'customer-name', label: 'Name', example: 'Jane' }],

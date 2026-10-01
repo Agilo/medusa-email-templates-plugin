@@ -12,10 +12,6 @@ export type ResetEmailTemplateInput = ResetEmailTemplateStepInput;
 
 export const resetEmailTemplateWorkflowId = 'reset-email-template';
 
-/**
- * Puts an event back on its built-in template, without changing whether it
- * sends.
- */
 export const resetEmailTemplateWorkflow = createWorkflow(
   resetEmailTemplateWorkflowId,
   function (input: ResetEmailTemplateInput) {

@@ -1,7 +1,6 @@
 import type { MedusaContainer } from '@medusajs/framework/types';
 
 export interface EmailTemplateVariable {
-  /** Dot-separated key used in templates, for example `order.display_id`. */
   key: string;
   label: string;
   description?: string;
@@ -38,14 +37,8 @@ export interface EmailTemplateVariable {
   itemTemplate?: string;
 }
 
-/**
- * Ready-made content the editor offers as a slash command (e.g. order
- * totals). Once inserted it is ordinary editable content.
- */
 export interface EmailTemplateSnippet {
-  /** Stable identifier, unique within the event. */
   key: string;
-  /** The slash command's title, for example "Order totals". */
   label: string;
   description?: string;
   /**
@@ -62,9 +55,7 @@ export interface EmailEventDefaultTemplate {
 }
 
 export interface EmailEventDefinition<TData = unknown> {
-  /** Medusa event name, for example `order.placed`. */
   event: string;
-  /** Stable key, also the admin route parameter. */
   templateKey: string;
   label: string;
   description?: string;
@@ -83,7 +74,6 @@ export interface EmailEventDefinition<TData = unknown> {
     container: MedusaContainer,
   ) => Promise<Record<string, unknown>>;
   variables: EmailTemplateVariable[];
-  /** Ready-made content the editor offers to insert. */
   snippets?: EmailTemplateSnippet[];
   defaultTemplate: EmailEventDefaultTemplate;
   getIdempotencyKey?: (data: TData) => string | undefined;

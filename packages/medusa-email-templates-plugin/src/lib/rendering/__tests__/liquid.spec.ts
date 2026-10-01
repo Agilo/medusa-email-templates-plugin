@@ -78,7 +78,6 @@ describe('date filters', () => {
 
   const iso = '2026-10-01T10:00:00.000Z';
 
-  // Exact output for the numeric format, which is stable across ICU versions.
   it('formats a short date', async () => {
     await expect(render('date_short', iso)).resolves.toBe('10/01/2026');
   });
@@ -101,7 +100,6 @@ describe('date filters', () => {
   });
 
   it('renders in UTC rather than the machine timezone', async () => {
-    // 23:30 UTC would be the following day in any positive offset.
     await expect(
       render('date_short', '2026-10-01T23:30:00.000Z'),
     ).resolves.toBe('10/01/2026');

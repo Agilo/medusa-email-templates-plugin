@@ -43,7 +43,6 @@ const parseMailgunConfig = (config: unknown): MailgunConfig => {
   return result.data;
 };
 
-// Overridden only by integration tests, which point at a local capture server.
 const baseUrl = (region: MailgunConfig['region']): string =>
   process.env.MEDUSA_EMAIL_MAILGUN_BASE_URL ?? REGION_BASE_URLS[region];
 

@@ -15,16 +15,11 @@ export const scalarVariables = (
 ): EmailTemplateVariable[] =>
   variables.filter((variable) => variable.type !== 'list');
 
-/** The lists a Repeat block may repeat over. */
 export const listVariables = (
   variables: EmailTemplateVariable[],
 ): EmailTemplateVariable[] =>
   variables.filter((variable) => variable.type === 'list');
 
-/**
- * A list's fields as variables inside its block (`title` → `item.title`),
- * grouped under the list's label.
- */
 export const itemVariables = (
   list: EmailTemplateVariable,
 ): EmailTemplateVariable[] =>
@@ -34,11 +29,6 @@ export const itemVariables = (
     group: list.label,
   }));
 
-/**
- * The variables a pill at `pos` may use: the event's scalars, plus `item.*`
- * inside a Repeat block. Read from the document, so an `item.*` pill dragged
- * out of its block becomes stale — exactly when it would send empty text.
- */
 export const variablesAt = (
   doc: ProseMirrorNode,
   pos: number | undefined,
@@ -67,7 +57,6 @@ export const variablesAt = (
   return scalars;
 };
 
-/** Variables arrive flat; every picker shows them under their group. */
 export const groupVariables = (
   variables: EmailTemplateVariable[],
 ): [string, EmailTemplateVariable[]][] => {
@@ -103,10 +92,6 @@ export const FORMAT_LABELS: Record<VariableFormat, string> = {
   date_time: 'Date and time',
 };
 
-/**
- * Formats an admin may choose for a variable. Plain text always; the rest
- * only for the matching type, since e.g. `money` on a name renders empty.
- */
 export const formatsFor = (
   variable: EmailTemplateVariable | undefined,
 ): VariableFormat[] => {
@@ -120,7 +105,6 @@ export const formatsFor = (
   }
 };
 
-/** What a variable should be formatted as the moment it is chosen. */
 export const defaultFormatFor = (
   variable: EmailTemplateVariable | undefined,
 ): VariableFormat => {
@@ -134,10 +118,8 @@ export const defaultFormatFor = (
   }
 };
 
-/** Attributes for a variable pill, derived from the chosen variable. */
 export const attributesFor = (
   variable: EmailTemplateVariable | undefined,
-  /** Overrides the type's default, for picking a format at insertion time. */
   format?: VariableFormat,
 ): { key: string; format: VariableFormat; currencySource: string | null } => ({
   key: variable?.key ?? '',

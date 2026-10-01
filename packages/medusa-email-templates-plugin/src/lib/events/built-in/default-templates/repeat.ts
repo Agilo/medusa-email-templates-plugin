@@ -12,13 +12,10 @@ import { toLiquidLoop } from '../../../rendering/variable-format';
  * may be imported.
  */
 
-/** On the outer element; its value is the list being repeated. */
 export const REPEAT_ATTRIBUTE = 'data-repeat';
 
-/** On the element that repeats, once per entry. */
 export const REPEAT_BODY_ATTRIBUTE = 'data-repeat-body';
 
-/** Wraps one entry's HTML so it renders once per entry of `source`. */
 export const repeat = (source: string, body: string): string => {
   const { open, close } = toLiquidLoop(source);
 

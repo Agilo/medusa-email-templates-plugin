@@ -2,11 +2,6 @@ import jwt from 'jsonwebtoken';
 import { Modules } from '@medusajs/framework/utils';
 import type { MedusaContainer } from '@medusajs/framework/types';
 
-/**
- * Creates an admin user + auth identity and returns an Authorization header
- * carrying a signed JWT, so tests can call protected /admin routes.
- * Follows the pattern from Medusa's integration-testing docs.
- */
 export async function createAdminHeaders(
   container: MedusaContainer,
 ): Promise<Record<string, string>> {

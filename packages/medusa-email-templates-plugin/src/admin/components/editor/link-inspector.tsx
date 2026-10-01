@@ -20,26 +20,11 @@ import { groupVariables, urlVariables } from '../../lib/variables';
  * caret.
  */
 
-/**
- * The key when an href is exactly one expression, else null.
- *
- * `https://shop.test/orders/{{ order.id }}` is a fine address, so embedded
- * expressions are ignored. A filter is allowed (`{{ total | money }}`).
- */
 const WHOLE_EXPRESSION = /^\{\{\s*([^{}|\s]+)\s*(?:\|[^{}]*)?\}\}$/;
 
 const wholeValueKey = (href: string): string | null =>
   WHOLE_EXPRESSION.exec(href.trim())?.[1] ?? null;
 
-/**
- * A warning for an address that is a single expression, or null.
- *
- * Advisory only: rejecting in `validateUrl` would unset the link in the bubble
- * menus rather than refuse the input.
- *
- * An undeclared key matters most: without `strictVariables`,
- * `{{ invte_url }}` renders empty and the email ships `<a href="">` silently.
- */
 export const addressWarning = (
   href: string,
   variables: EmailTemplateVariable[],
@@ -52,7 +37,6 @@ export const addressWarning = (
 
   const declared = variables.find((variable) => variable.key === key);
 
-  // By key: an undeclared variable has no label, and the key is the typo.
   if (!declared) {
     return `${key} is not a variable in this template.`;
   }
@@ -62,14 +46,8 @@ export const addressWarning = (
     : `${declared.label} is not marked as a link address.`;
 };
 
-/** The select's value for "type an address of your own". */
 const CUSTOM_ADDRESS = '';
 
-/**
- * The `url` variable an address is set to, or null. Mistyped or non-link
- * expressions stay as raw text, so a typo like `{{ invte_url }}` stays
- * noticeable instead of looking like a chosen variable.
- */
 export const chosenVariableKey = (
   href: string,
   variables: EmailTemplateVariable[],
@@ -86,29 +64,18 @@ export const chosenVariableKey = (
 };
 
 type LinkFieldsProps = {
-  /** The href as the document currently has it. */
   href: string;
-  /** Receives a validated href, or null to clear the link. */
   onCommit: (href: string | null) => void;
   variables: EmailTemplateVariable[];
-  /** Extra rows, for properties only one kind of link has. */
   children?: ReactNode;
 };
 
-/**
- * The link section, shared by buttons and text links.
- *
- * Reproduces the markup of the library's internal section primitives (as
- * `VariableSection` does) so the same `data-re-inspector-*` attributes pick up
- * the panel's styling. Will drift if the library changes them.
- */
 const LinkFields = ({
   href,
   onCommit,
   variables,
   children,
 }: LinkFieldsProps) => {
-  // Matching the library's sections, which are collapsible by their title.
   const [collapsed, setCollapsed] = useState(false);
   const [draft, setDraft] = useState(href);
   const [committed, setCommitted] = useState(href);
@@ -133,9 +100,6 @@ const LinkFields = ({
   const linkable = urlVariables(variables);
   const isCustom = choice === CUSTOM_ADDRESS;
 
-  // Only for typed addresses (a chosen variable is always a link). Read from
-  // the draft so it updates while typing; an incomplete `{{ inv` matches
-  // nothing.
   const warning = isCustom ? addressWarning(draft, variables) : null;
 
   const commit = (value: string) => {
@@ -148,22 +112,15 @@ const LinkFields = ({
 
     const validated = validateUrl(trimmed);
 
-    // Invalid: keep the old href and the draft, so a half-typed URL can be
-    // finished (the bubble menus clear it instead).
     if (validated) {
       onCommit(validated);
     }
   };
 
-  // A `url` variable is already a complete URL (built in the event's
-  // `getContext`), so the two modes are exclusive and a variable needs no
-  // extra input.
   const chooseAddress = (next: string) => {
     setChoice(next);
 
     if (next === CUSTOM_ADDRESS) {
-      // Cleared but not committed: committing null would remove the link
-      // before a replacement is typed.
       setDraft('');
       return;
     }
@@ -203,7 +160,6 @@ const LinkFields = ({
             >
               <option value={CUSTOM_ADDRESS}>Custom URL…</option>
               {linkable.length === 0 ? (
-                /* Explains an empty list; disabled as it isn't a choice. */
                 <option disabled>No link variables</option>
               ) : (
                 groupVariables(linkable).map(([group, grouped]) => (
@@ -219,16 +175,8 @@ const LinkFields = ({
             </select>
           </div>
 
-          {/*
-           * Stacked, not in a prop row: a label beside it would leave ~9rem
-           * for a URL (as `PaddingSection` also stacks). The row above already
-           * says Address, so no second label.
-           */}
           {isCustom && (
             <>
-              {/* `data-re-inspector-number` is the library's generic bordered
-                  shell (border, radius, height, focus ring). `INSPECTOR_CLASS`
-                  strips the input's own border, expecting such a shell. */}
               <span data-re-inspector-number="" data-link-url-control="">
                 <input
                   data-re-inspector-input=""
@@ -250,7 +198,6 @@ const LinkFields = ({
                 />
               </span>
 
-              {/* `text-xs`: outside a prop row, nothing else sets the size. */}
               {warning && (
                 <span
                   data-re-inspector-text=""
@@ -270,17 +217,12 @@ const LinkFields = ({
   );
 };
 
-/**
- * The button's URL. Its href is an unvalidated node attribute, so `setAttr`
- * accepts Liquid directly.
- */
 export const ButtonLinkSection = ({
   getAttr,
   setAttr,
   variables,
 }: InspectorNodeContext & { variables: EmailTemplateVariable[] }) => {
   const raw = getAttr('href');
-  // `#` is the node's "no link" default; don't show it as a value.
   const href = typeof raw === 'string' && raw !== '#' ? raw : '';
 
   return (
@@ -358,8 +300,6 @@ const TextLinkSection = ({
         <label data-re-inspector-label="" htmlFor="link-color">
           Color
         </label>
-        {/* Mirrors the library's internal `ColorInput`, keeping the colour
-            row `Inspector.Link` had. */}
         <span data-re-inspector-color-control="">
           <input
             type="color"
@@ -381,13 +321,6 @@ const TextLinkSection = ({
   );
 };
 
-/**
- * Drop-in replacement for `Inspector.Text`: typography, then an editable link
- * section (the library's is read-only).
- *
- * Shown only when link text is selected; a bare caret in a link targets the
- * paragraph and is handled by `BubbleMenu.LinkDefault`.
- */
 export const LinkTextInspector = ({
   variables,
 }: {

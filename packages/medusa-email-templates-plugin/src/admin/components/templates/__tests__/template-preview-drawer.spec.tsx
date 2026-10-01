@@ -54,11 +54,6 @@ describe('TemplatePreviewDrawer', () => {
     });
   });
 
-  /*
-   * The templates list renders this drawer too, with no editor behind it. That
-   * path has to keep sending a bare `{}`: `draft: undefined` would still put
-   * the key on the wire, and the preview schema is a strict object.
-   */
   it('previews the stored template when there is no editor behind it', async () => {
     renderDrawer();
 
@@ -71,11 +66,6 @@ describe('TemplatePreviewDrawer', () => {
     );
   });
 
-  /*
-   * The point of the feature: what the editor holds right now, not the last
-   * save. Read once on open, which is sound because the drawer is modal — the
-   * content cannot change while it is up.
-   */
   it('previews the unsaved subject and body', async () => {
     const getDraft = vi.fn(async () => ({
       subject_template: 'Draft subject',
@@ -97,11 +87,6 @@ describe('TemplatePreviewDrawer', () => {
     );
   });
 
-  /*
-   * `getBody` rejects when the editor has not mounted, and composing can fail
-   * on its own. Falling back to the stored template would show something that
-   * is not what the editor holds, while claiming to preview it.
-   */
   it('reports a body that will not export, and sends nothing', async () => {
     const getDraft = vi.fn(async (): Promise<EmailTemplateDraft> => {
       throw new Error('The editor is still loading.');

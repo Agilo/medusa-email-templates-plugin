@@ -4,9 +4,6 @@ import { EmailTheming } from '@react-email/editor/plugins';
 import { Editor, type JSONContent } from '@tiptap/core';
 import { afterEach, describe, expect, it } from 'vitest';
 
-// The real renderer, so this test sees the same registered filters a send
-// does. A bare `new Liquid()` has none, and `strictFilters` would reject any
-// generated filter the nodes emit.
 import { createEmailLiquid } from '../../../../lib/rendering/liquid';
 import { toLiquidExpression } from '../../../../lib/rendering/variable-format';
 
@@ -47,7 +44,6 @@ const exportEmail = async (doc: JSONContent = content) => {
   return composeReactEmail({ editor });
 };
 
-/** A document holding one variable pill, for exercising formats. */
 const variableDoc = (attrs: Record<string, unknown>): JSONContent => ({
   type: 'doc',
   content: [{ type: 'paragraph', content: [{ type: 'variable', attrs }] }],
@@ -102,7 +98,6 @@ describe('variable formats', () => {
       }),
     );
 
-    // An identifier argument survives export; a quoted one would not.
     expect(html).toContain('{{ order.total | money: order.currency_code }}');
   });
 
@@ -169,8 +164,6 @@ describe('variable typography', () => {
   });
 
   it('wraps only the expression in a styled span', async () => {
-    // Unformatted, as `getBody` stores it: the formatted variant breaks the
-    // line before `</span>`.
     const { unformattedHtml: html } = await exportEmail({
       type: 'doc',
       content: [
@@ -231,7 +224,6 @@ describe('variable formatting', () => {
       ],
     });
 
-    // Nested in schema rank order, whatever order the marks were stored in.
     expect(html).toContain('<em><strong>{{ order.display_id }}</strong></em>');
     await expect(
       createEmailLiquid({ escapeOutput: true }).parseAndRender(html, {

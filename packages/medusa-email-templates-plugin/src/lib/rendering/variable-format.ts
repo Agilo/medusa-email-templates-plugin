@@ -41,10 +41,6 @@ const assertIdentifier = (value: string, label: string): void => {
   }
 };
 
-/**
- * Builds the Liquid output tag for a variable. The admin stores
- * `{ key, format }` and calls this; nobody types expressions.
- */
 export const toLiquidExpression = (
   key: string,
   format: VariableFormat = 'text',
@@ -59,7 +55,6 @@ export const toLiquidExpression = (
   if (format === 'money') {
     const { currencySource } = options;
 
-    // Valid without a currency: `formatMoney` falls back to two decimals.
     if (currencySource === undefined) {
       return `{{ ${key} | money }}`;
     }
@@ -75,10 +70,6 @@ export const toLiquidExpression = (
 /** The loop alias for each entry. Fixed, since Repeat blocks don't nest. */
 export const LOOP_ITEM = 'item';
 
-/**
- * The loop tags a Repeat block wraps its content in. Quote-free: the source
- * must pass the identifier check.
- */
 export const toLiquidLoop = (
   source: string,
 ): { open: string; close: string } => {
@@ -90,16 +81,13 @@ export const toLiquidLoop = (
   };
 };
 
-/** What one output tag in a template resolves to. */
 export type ParsedLiquidExpression = {
   key: string;
   format: VariableFormat;
   currencySource?: string;
 };
 
-/** A parsed expression together with where it sat in the surrounding text. */
 export type LiquidExpressionMatch = ParsedLiquidExpression & {
-  /** The whole `{{ … }}` tag, exactly as it appeared. */
   source: string;
   start: number;
   end: number;
@@ -113,11 +101,6 @@ export type LiquidExpressionMatch = ParsedLiquidExpression & {
 const EXPRESSION_PATTERN =
   /\{\{\s*([a-z0-9_]+(?:\.[a-z0-9_]+)*)\s*(?:\|\s*([a-z0-9_]+)\s*(?::\s*([a-z0-9_]+(?:\.[a-z0-9_]+)*)\s*)?)?\}\}/g;
 
-/**
- * Parses one output tag back into pill attributes, or null for anything this
- * module couldn't have generated (unknown filter, quoted or non-identifier
- * argument).
- */
 export const fromLiquidExpression = (
   expression: string,
 ): ParsedLiquidExpression | null => {
@@ -146,14 +129,9 @@ export const fromLiquidExpression = (
       : { key, format: filter };
   }
 
-  // Remaining formats take no argument; one means it isn't ours.
   return argument ? null : { key, format: filter };
 };
 
-/**
- * Every expression in a run of text, with its position, so the run can be
- * split around it (`Hi {{ order.customer_name }},`).
- */
 export const findLiquidExpressions = (
   text: string,
 ): LiquidExpressionMatch[] => {
@@ -164,7 +142,6 @@ export const findLiquidExpressions = (
   while ((match = pattern.exec(text)) !== null) {
     const parsed = fromLiquidExpression(match[0]);
 
-    // Skip what cannot be regenerated, leaving it as literal text.
     if (parsed) {
       matches.push({
         ...parsed,

@@ -1,7 +1,3 @@
-/**
- * Reduces template data to plain JSON, dropping functions, class instances
- * and prototypes before it reaches Liquid.
- */
 export const sanitizeTemplateContext = (
   data: Record<string, unknown> | null | undefined,
 ): Record<string, unknown> => {

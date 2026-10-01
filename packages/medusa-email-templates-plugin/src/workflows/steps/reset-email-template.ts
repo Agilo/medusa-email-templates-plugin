@@ -49,7 +49,6 @@ export const resetEmailTemplateStep = createStep(
     );
     const existing = await findEmailTemplate(service, input.template_key);
 
-    // Never customised, so it is already on the default.
     if (!existing) {
       return new StepResponse({ reset: false }, null);
     }

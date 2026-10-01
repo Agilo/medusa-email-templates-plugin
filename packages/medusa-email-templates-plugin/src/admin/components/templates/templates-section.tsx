@@ -32,7 +32,6 @@ import { describeWarning, type TemplateWarning } from '../../lib/warnings';
 import TemplatePreviewDrawer from './template-preview-drawer';
 import TemplateTestEmailDrawer from './template-test-email-drawer';
 
-/** The first warning a template reports, if any, in words. */
 const firstWarning = (
   template: EmailTemplateListItem,
 ): TemplateWarning | null => {
@@ -71,7 +70,6 @@ const SectionHeading = () => (
   </>
 );
 
-/** The editor lives at a nested route, keyed by template key rather than id. */
 const editorPath = (templateKey: string) =>
   `/settings/email/templates/${encodeURIComponent(templateKey)}`;
 
@@ -194,10 +192,6 @@ const TemplatesSection = () => {
                   )
                 }
               />
-              {/* Next to the switch it affects. Says "cannot send" only for
-                  warnings that really block the email.
-
-                  Orange tag colour: Medusa has no `text-ui-fg-warning`. */}
               {warning && (
                 <Tooltip content={warning.text}>
                   <span
@@ -216,7 +210,6 @@ const TemplatesSection = () => {
           );
         },
       }),
-      // Accessor columns truncate long values and show them on hover.
       columnHelper.accessor(
         (row) => (row.is_customized ? 'Custom' : 'Default'),
         { id: 'source', header: 'Source' },
@@ -247,7 +240,6 @@ const TemplatesSection = () => {
             },
           ];
 
-          // Resetting a template nobody has saved would do nothing.
           return template.is_customized
             ? [
                 edit,
@@ -274,7 +266,6 @@ const TemplatesSection = () => {
     onRowClick: openTemplate,
   });
 
-  // With no data, the error replaces the table.
   if (isError) {
     return (
       <Container className="divide-y p-0">
@@ -291,7 +282,6 @@ const TemplatesSection = () => {
   return (
     <Container className="divide-y overflow-hidden p-0">
       <DataTable instance={table}>
-        {/* Toolbar supplies its own px-6 py-4 and the divider beneath it. */}
         <DataTable.Toolbar className="flex-col items-start gap-y-1">
           <SectionHeading />
         </DataTable.Toolbar>

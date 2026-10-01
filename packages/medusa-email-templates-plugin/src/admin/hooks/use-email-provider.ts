@@ -23,10 +23,6 @@ export const useEmailProvider = () =>
     select: (data) => data.provider,
   });
 
-/**
- * Saves a transport's configuration and credential. Saving a different
- * transport also makes it active (hence "Save & activate").
- */
 export const useSaveEmailProvider = () => {
   const queryClient = useQueryClient();
 
@@ -37,20 +33,12 @@ export const useSaveEmailProvider = () => {
         { method: 'POST', body: payload },
       ),
     onSuccess: (data) => {
-      // The route returns the new state, so seed the cache and refetch.
       queryClient.setQueryData(emailProviderQueryKey, data);
       queryClient.invalidateQueries({ queryKey: emailProviderQueryKey });
     },
   });
 };
 
-/**
- * Sends a fixed test email through a transport (default: the selected one;
- * pass `transport_id` to test before switching).
- *
- * Rejects with `email_provider_not_ready` (409) if it can't send, or
- * `email_transport_failed` (502) if the provider refuses.
- */
 export const useSendProviderTestEmail = () =>
   useMutation({
     mutationFn: (variables: { to: string; transport_id?: string }) =>

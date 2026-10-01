@@ -11,10 +11,6 @@ import type {
 type TemplatePreviewDrawerProps = {
   template: EmailTemplateListItem;
   onClose: () => void;
-  /**
-   * The unsaved subject and body, read once when the drawer opens (it is
-   * modal). Omitted by the templates list, which previews the stored template.
-   */
   getDraft?: () => Promise<EmailTemplateDraft>;
 };
 
@@ -26,10 +22,8 @@ const TemplatePreviewDrawer = ({
   const preview = usePreviewEmailTemplate(template.template_key);
   const { mutate } = preview;
 
-  /** Exporting the body can throw, which is not an API error. */
   const [draftError, setDraftError] = useState<string | null>(null);
 
-  // A POST, so a mutation; fired once when the drawer opens.
   useEffect(() => {
     if (!getDraft) {
       // A bare `{}`: `draft: undefined` would still send the key, and the
@@ -38,7 +32,6 @@ const TemplatePreviewDrawer = ({
       return;
     }
 
-    // Exporting is async, so the drawer can be closed before it resolves.
     let active = true;
 
     getDraft()
@@ -71,8 +64,6 @@ const TemplatePreviewDrawer = ({
           </Drawer.Description>
         </Drawer.Header>
 
-        {/* `min-h-0` at every level so the preview fills the drawer instead
-            of keeping its natural height. */}
         <Drawer.Body className="flex min-h-0 flex-1 flex-col gap-y-4 overflow-hidden">
           {/* Not `preview.isPending`, which is false while the draft is still
               exporting and would leave the drawer blank. */}
@@ -121,8 +112,6 @@ const TemplatePreviewDrawer = ({
                 </Tabs.Content>
 
                 <Tabs.Content value="text" className="min-h-0 flex-1 pt-4">
-                  {/* Neutral on purpose: only the HTML tab shows the email's
-                      own styling. */}
                   <div className="bg-ui-bg-base border-ui-border-base h-full w-full overflow-auto rounded-lg border p-4">
                     <pre className="txt-compact-small text-ui-fg-base whitespace-pre-wrap">
                       {rendered.text}

@@ -6,14 +6,6 @@ import type { EmailTemplateVariable } from '../../lib/types';
 import { withVariableNodes } from './derive-document';
 import { VariableNode } from './variable-node';
 
-/**
- * The subject line as a single-line editor with variable pills, like the
- * body, so a keystroke can't corrupt a filter or mistype a key.
- *
- * Stored as a plain Liquid string: `getText()` serialises pills back to Liquid
- * and `withVariableNodes` turns it into pills on load.
- */
-
 /*
  * A minimal schema: the body's would allow headings and tables. TipTap's own
  * Paragraph/Text aren't available — `@tiptap/react` exports only the base
@@ -22,7 +14,6 @@ import { VariableNode } from './variable-node';
 const SubjectDocument = Node.create({
   name: 'doc',
   topNode: true,
-  // Exactly one paragraph, so Enter has nothing to split into.
   content: 'paragraph',
 });
 
@@ -58,7 +49,6 @@ const SingleLine = Extension.create({
   },
 });
 
-/** Reads a stored subject into a document, turning its Liquid into pills. */
 const documentFor = (subject: string): JSONContent => {
   const paragraph: JSONContent = { type: 'paragraph' };
 
@@ -71,13 +61,11 @@ const documentFor = (subject: string): JSONContent => {
 };
 
 export type SubjectEditorHandle = {
-  /** The subject as Liquid, with every pill serialised back to its expression. */
   getText: () => string;
   insertVariable: (attrs: Record<string, unknown>) => void;
 };
 
 type SubjectEditorProps = {
-  /** Only read when the editor mounts; typing is not controlled from outside. */
   subject: string;
   variables: EmailTemplateVariable[];
   onDirty: () => void;
@@ -122,11 +110,9 @@ const SubjectEditor = forwardRef<SubjectEditorHandle, SubjectEditorProps>(
       onFocus: () => {
         touched.current = true;
       },
-      // Client-only SPA: no hydration to guard against.
       immediatelyRender: true,
       editorProps: {
         attributes: {
-          // For `<Label htmlFor="subject">` and `getByLabelText('Subject')`.
           id: 'subject',
           role: 'textbox',
           'aria-label': 'Subject',
