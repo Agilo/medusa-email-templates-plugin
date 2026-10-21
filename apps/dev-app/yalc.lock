@@ -1,8 +1,8 @@
 {
   "version": "v1",
   "packages": {
-    "medusa-email-templates-plugin": {
-      "signature": "e24aa37ffa68cf669a64d6427336dd56",
+    "@agilo/medusa-email-templates-plugin": {
+      "signature": "0d50fa5990ebfd5ca1eef90f02b708a9",
       "file": true
     }
   }

@@ -1,12 +1,25 @@
 {
-  "name": "medusa-email-templates-plugin",
-  "version": "0.0.1",
-  "description": "Email templates plugin for Medusa v2.",
-  "author": "Medusa (https://medusajs.com)",
+  "name": "@agilo/medusa-email-templates-plugin",
+  "version": "1.0.0-beta.0",
+  "description": "Manage transactional email templates from Medusa Admin and send them through Medusa Cloud, Resend or Mailgun.",
+  "author": "Agilo (https://agilo.com)",
   "license": "MIT",
+  "homepage": "https://github.com/Agilo/medusa-email-templates-plugin#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Agilo/medusa-email-templates-plugin.git",
+    "directory": "packages/medusa-email-templates-plugin"
+  },
+  "bugs": {
+    "url": "https://github.com/Agilo/medusa-email-templates-plugin/issues"
+  },
   "files": [
     ".medusa/server"
   ],
+  "publishConfig": {
+    "access": "public",
+    "tag": "next"
+  },
   "exports": {
     ".": "./.medusa/server/src/registry.js",
     "./package.json": "./package.json",
@@ -26,7 +39,13 @@
     "plugin",
     "medusa-plugin-other",
     "medusa-plugin",
-    "medusa-v2"
+    "medusa-v2",
+    "medusa-plugin-notification",
+    "email",
+    "email-templates",
+    "notification",
+    "resend",
+    "mailgun"
   ],
   "scripts": {
     "build": "yarn plugin:build",
@@ -48,13 +67,11 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json && tsc --noEmit -p src/admin/tsconfig.json"
   },
   "peerDependencies": {
-    "@medusajs/admin-sdk": "2.21.0",
-    "@medusajs/cli": "2.21.0",
-    "@medusajs/framework": "2.21.0",
-    "@medusajs/icons": "2.21.0",
-    "@medusajs/medusa": "2.21.0",
-    "@medusajs/test-utils": "2.21.0",
-    "@medusajs/ui": "4.2.4"
+    "@medusajs/admin-sdk": "^2.21.0",
+    "@medusajs/framework": "^2.21.0",
+    "@medusajs/icons": "^2.21.0",
+    "@medusajs/medusa": "^2.21.0",
+    "@medusajs/ui": "^4.2.4"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
@@ -70,5 +87,5 @@
     "resend": "6.28.0",
     "zod": "4.2.0"
   },
-  "yalcSig": "e24aa37ffa68cf669a64d6427336dd56"
+  "yalcSig": "0d50fa5990ebfd5ca1eef90f02b708a9"
 }

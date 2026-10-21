@@ -3,7 +3,7 @@ import { ContainerRegistrationKeys } from '@medusajs/framework/utils';
 import {
   getEmailEventDefinitionByTemplateKey,
   listEmailEventDefinitions,
-} from 'medusa-email-templates-plugin/lib/events/index';
+} from '@agilo/medusa-email-templates-plugin/lib/events/index';
 
 export default async function enableEmailTemplate({
   container,

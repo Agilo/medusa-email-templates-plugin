@@ -16,7 +16,7 @@ export const DEFAULT_STOREFRONT_ORDER_PATH = '/orders';
 export class StorefrontUrlNotConfiguredError extends Error {
   constructor() {
     super(
-      'No storefront_url is configured for medusa-email-templates-plugin, so customer links cannot be built.',
+      'No storefront_url is configured for @agilo/medusa-email-templates-plugin, so customer links cannot be built.',
     );
     this.name = 'StorefrontUrlNotConfiguredError';
   }

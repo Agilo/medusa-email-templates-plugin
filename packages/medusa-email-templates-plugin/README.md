@@ -13,7 +13,7 @@ Full documentation — transports, credentials, templates, plugin options and cu
 ## Installation
 
 ```bash
-npm install medusa-email-templates-plugin
+npm install @agilo/medusa-email-templates-plugin@next
 ```
 
 Register the plugin **and** its notification provider in your application's `medusa-config.ts`. Plugin modules are registered automatically, but module providers are not — without the provider, no email is sent:
@@ -39,7 +39,7 @@ module.exports = defineConfig({
             },
           },
           {
-            resolve: 'medusa-email-templates-plugin/providers/email',
+            resolve: '@agilo/medusa-email-templates-plugin/providers/email',
             id: 'email-templates',
             options: {
               channels: ['email'],
@@ -51,7 +51,7 @@ module.exports = defineConfig({
   ],
   plugins: [
     {
-      resolve: 'medusa-email-templates-plugin',
+      resolve: '@agilo/medusa-email-templates-plugin',
       options: {},
     },
   ],

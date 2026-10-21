@@ -16,7 +16,7 @@ export const resolveFromAppContainer = <T>(key: string): T => {
   if (!resolved) {
     throw new MedusaError(
       MedusaError.Types.UNEXPECTED_STATE,
-      `"${key}" is not registered in the Medusa container. Make sure medusa-email-templates-plugin is added to "plugins" in medusa-config.ts.`,
+      `"${key}" is not registered in the Medusa container. Make sure @agilo/medusa-email-templates-plugin is added to "plugins" in medusa-config.ts.`,
     );
   }
 

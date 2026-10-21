@@ -9,7 +9,7 @@
  * import {
  *   defineEmailEvent,
  *   sendEmailEventWorkflow,
- * } from 'medusa-email-templates-plugin/registry';
+ * } from '@agilo/medusa-email-templates-plugin/registry';
  *
  * defineEmailEvent({ event: 'review.approved', templateKey: 'review-approved', ... });
  *

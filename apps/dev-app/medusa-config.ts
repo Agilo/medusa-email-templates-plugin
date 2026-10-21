@@ -8,7 +8,7 @@ loadEnv(process.env.NODE_ENV || 'development', process.cwd());
 
 const pluginAdminEntryPath = resolve(
   process.cwd(),
-  'node_modules/medusa-email-templates-plugin/.medusa/server/src/admin/index.mjs',
+  'node_modules/@agilo/medusa-email-templates-plugin/.medusa/server/src/admin/index.mjs',
 );
 
 const getPluginAdminVersion = () => {
@@ -91,7 +91,7 @@ module.exports = defineConfig({
           ],
           exclude: [
             ...(config.optimizeDeps?.exclude ?? []),
-            'medusa-email-templates-plugin/admin',
+            '@agilo/medusa-email-templates-plugin/admin',
           ],
         },
         plugins: [
@@ -100,7 +100,7 @@ module.exports = defineConfig({
             name: 'medusa-email-templates-plugin-admin-version',
             enforce: 'pre',
             resolveId(id) {
-              if (id !== 'medusa-email-templates-plugin/admin') {
+              if (id !== '@agilo/medusa-email-templates-plugin/admin') {
                 return null;
               }
 
@@ -125,7 +125,7 @@ module.exports = defineConfig({
             },
           },
           {
-            resolve: 'medusa-email-templates-plugin/providers/email',
+            resolve: '@agilo/medusa-email-templates-plugin/providers/email',
             id: 'email-templates',
             options: {
               channels: ['email'],
@@ -137,7 +137,7 @@ module.exports = defineConfig({
   ],
   plugins: [
     {
-      resolve: 'medusa-email-templates-plugin',
+      resolve: '@agilo/medusa-email-templates-plugin',
       options: {},
     },
   ],

@@ -1,6 +1,6 @@
 {
-  "name": "medusa-email-templates-plugin",
-  "version": "0.0.1",
+  "name": "@agilo/medusa-email-templates-plugin",
+  "version": "1.0.0-beta.0",
   "description": "Manage transactional email templates from Medusa Admin and send them through Medusa Cloud, Resend or Mailgun.",
   "author": "Agilo (https://agilo.com)",
   "license": "MIT",
@@ -16,6 +16,10 @@
   "files": [
     ".medusa/server"
   ],
+  "publishConfig": {
+    "access": "public",
+    "tag": "next"
+  },
   "exports": {
     ".": "./.medusa/server/src/registry.js",
     "./package.json": "./package.json",

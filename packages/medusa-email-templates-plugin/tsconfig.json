@@ -9,7 +9,7 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     // Emitted so host applications get types for the public API exported
-    // from `medusa-email-templates-plugin/registry`.
+    // from `@agilo/medusa-email-templates-plugin/registry`.
     "declaration": true,
     "sourceMap": false,
     "inlineSourceMap": true,

@@ -37,8 +37,8 @@ const log = (message) => {
 const normalizePath = (value) => value.split('\\').join('/');
 const pluginPackageSignalFiles = new Set([
   projectDevSignalFile,
-  '.yalc/medusa-email-templates-plugin/yalc.sig',
-  'node_modules/medusa-email-templates-plugin/yalc.sig',
+  '.yalc/@agilo/medusa-email-templates-plugin/yalc.sig',
+  'node_modules/@agilo/medusa-email-templates-plugin/yalc.sig',
 ]);
 
 const isPluginPackageSignalFile = (filePath) =>

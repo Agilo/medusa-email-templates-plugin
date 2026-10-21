@@ -3,7 +3,7 @@ import type { SubscriberArgs, SubscriberConfig } from '@medusajs/framework';
 import {
   defineEmailEvent,
   sendEmailEventWorkflow,
-} from 'medusa-email-templates-plugin/registry';
+} from '@agilo/medusa-email-templates-plugin/registry';
 
 defineEmailEvent<{ id: string }>({
   event: 'product.created',
