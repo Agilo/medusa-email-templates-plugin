@@ -138,7 +138,9 @@ module.exports = defineConfig({
   plugins: [
     {
       resolve: '@agilo/medusa-email-templates-plugin',
-      options: {},
+      options: {
+        storefront_url: process.env.STOREFRONT_URL || 'http://localhost:8000',
+      },
     },
   ],
 } satisfies InputConfigWithArrayModules);

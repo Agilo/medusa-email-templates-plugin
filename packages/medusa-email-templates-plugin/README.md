@@ -2,6 +2,8 @@
 
 Manage transactional email templates for your Medusa store from Medusa Admin, and send them through Medusa Cloud, Resend or Mailgun.
 
+![Order confirmation template in the editor](https://raw.githubusercontent.com/Agilo/medusa-email-templates-plugin/master/assets/screenshots/template-editor.png)
+
 - **Settings → Email** in Medusa Admin, with a visual editor for each email, preview and test send.
 - **Built-in emails** for order confirmation, admin invites, password resets and email verification, each disabled until an admin turns it on.
 - **Transports** switchable at runtime, with credentials from an environment variable or stored encrypted.

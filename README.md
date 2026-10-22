@@ -31,6 +31,22 @@ This repository is a Yarn workspace monorepo: the plugin lives in `packages/medu
 - **Pass-through**: notifications that already carry rendered content are sent unchanged.
 - **Extensible**: host applications can register their own email events and transports.
 
+## Screenshots
+
+The editor, with variables as pills and the order items as a repeating block:
+
+![Order confirmation template in the editor](assets/screenshots/template-editor.png)
+
+**Settings → Email**, with the provider and the built-in templates:
+
+![Email settings with providers and templates](assets/screenshots/email-settings.png)
+
+The preview renders the email with each variable's example value:
+
+<p align="center">
+  <img alt="Preview of the order confirmation email" src="assets/screenshots/template-preview.png" width="400">
+</p>
+
 ## Getting Started
 
 The dev container is the primary development environment for this repository.
