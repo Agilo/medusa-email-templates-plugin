@@ -122,8 +122,8 @@
   "dependencies": {
     "@medusajs/dashboard": "^2.21.0",
     "@react-email/editor": "1.7.7",
-    "@tiptap/pm": "3.31.3",
-    "@tiptap/react": "3.31.3",
+    "@tiptap/pm": "^3.17.1",
+    "@tiptap/react": "^3.17.1",
     "html-to-text": "^9.0.5",
     "liquidjs": "^10.29.0",
     "resend": "6.28.0",

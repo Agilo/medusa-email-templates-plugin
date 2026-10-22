@@ -32,8 +32,8 @@ __metadata:
     "@testing-library/react": "npm:^16.3.3"
     "@testing-library/user-event": "npm:^14.6.7"
     "@tiptap/core": "npm:3.31.3"
-    "@tiptap/pm": "npm:3.31.3"
-    "@tiptap/react": "npm:3.31.3"
+    "@tiptap/pm": "npm:^3.17.1"
+    "@tiptap/react": "npm:^3.17.1"
     "@types/html-to-text": "npm:^9.0.4"
     "@types/jest": "npm:^30.0.0"
     "@types/jsonwebtoken": "npm:^9.0.10"
@@ -7458,7 +7458,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tiptap/react@npm:3.31.3, @tiptap/react@npm:^3.17.1":
+"@tiptap/react@npm:^3.17.1":
   version: 3.31.3
   resolution: "@tiptap/react@npm:3.31.3"
   dependencies:
