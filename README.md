@@ -41,11 +41,9 @@ The editor, with variables as pills and the order items as a repeating block:
 
 ![Email settings with providers and templates](assets/screenshots/email-settings.png)
 
-The preview renders the email with each variable's example value:
+The same template as it arrives in Gmail:
 
-<p align="center">
-  <img alt="Preview of the order confirmation email" src="assets/screenshots/template-preview.png" width="400">
-</p>
+![Order confirmation email received in Gmail](assets/screenshots/email-in-gmail.png)
 
 ## Getting Started
 
@@ -189,6 +187,10 @@ Two credential sources are supported:
   Pass the key as `credential.api_key`; omit it when saving again to keep the stored one. Without `MEDUSA_EMAIL_ENCRYPTION_KEY`, storing a key returns 400 and `encryption_available` is `false`, while environment credentials keep working. If the encryption key is later changed, stored keys report `key_mismatch` and have to be re-entered.
 
 The admin API never returns API keys or ciphertext, only the source, the variable name, and whether the credential is usable.
+
+<p align="center">
+  <img alt="Resend settings with the credential source" src="assets/screenshots/provider-credentials.png" width="400">
+</p>
 
 #### Managed templates
 
