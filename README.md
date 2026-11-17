@@ -1,381 +1,170 @@
-<p align="center">
-  <a href="https://www.medusajs.com">
-    <img alt="Medusa logo" src="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg">
-  </a>
-</p>
-<h1 align="center">
-  Medusa Email Templates Plugin
-</h1>
+# Medusa Email Templates Plugin
 
-<p align="center">
-  Manage email templates for your Medusa store from Medusa Admin.
-</p>
+[![npm version](https://img.shields.io/npm/v/@agilo/medusa-email-templates-plugin/latest?label=npm%20latest)](https://www.npmjs.com/package/@agilo/medusa-email-templates-plugin)
+[![npm license](https://img.shields.io/npm/l/@agilo/medusa-email-templates-plugin)](LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-26%2B-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 
-## Overview
+Edit transactional emails and manage delivery from Medusa Admin. The plugin includes a visual editor, ready-to-edit emails, and three built-in providers: Medusa Cloud, Resend, and Mailgun. Switch providers in Admin without redeploying your store.
 
-The Medusa Email Templates Plugin adds email template management to the Medusa Admin dashboard.
+![Order confirmation email delivered to Gmail](assets/screenshots/email-in-gmail-padded.png)
 
-This repository is a Yarn workspace monorepo: the plugin lives in `packages/medusa-email-templates-plugin`, and an example Medusa app used for manual validation lives in `apps/dev-app`. It is not a full Medusa application and does not include a storefront.
+[Providers](#choose-a-provider) · [Template editor](#visual-editing) · [Built-in emails](#built-in-emails) · [Install](#install) · [Credentials](#security-and-credentials) · [Plugin options](#plugin-options) · [Custom extensions](#custom-extensions)
 
-✅ Targets Medusa v2, currently aligned with `@medusajs/medusa` `2.21.0`
+## Choose a provider
 
-## Features
+Medusa Cloud, Resend, and Mailgun are included in the plugin. One provider sends each email; the others keep their settings. Switch the active provider from Admin without changing your deployment or templates.
 
-- **Settings → Email** in Medusa Admin, with a Templates list and a Provider section.
-- **A visual editor** (React Email Editor) for each email, with variables as pills, per-variable formatting, repeating blocks for lists such as order items, and ready-made snippets such as the order totals.
-- **Built-in emails** for order confirmation, admin invites, password resets (admin and customer) and email verification — each disabled until an admin turns it on.
-- **Preview and test send** from the editor, rendered through the same code path as a real send.
-- **Transports**: Medusa Cloud, Resend and Mailgun, switchable at runtime without a redeploy.
-- **Credentials** from an environment variable or stored encrypted (AES-256-GCM); the admin API never returns them.
-- **Safe templates**: Liquid, with no file access or JavaScript, and parse, render and memory limits.
-- **Pass-through**: notifications that already carry rendered content are sent unchanged.
-- **Extensible**: host applications can register their own email events and transports.
+| Provider | Setup in Admin | Availability |
+| --- | --- | --- |
+| Medusa Cloud | Choose **Use**. Credentials are managed by your Medusa Cloud project. | Requires an application running on Medusa Cloud with its email configuration injected. Unavailable in local development. |
+| Resend | Enter a sender address, an optional reply-to address, and an API credential. | Requires a Resend account and a key with sending access. |
+| Mailgun | Enter a sending domain, its US or EU region, a sender address, an optional reply-to address, and an API credential. | Requires a Mailgun account. A Domain Sending Key is sufficient; the plugin only calls the send endpoint. |
 
-## Screenshots
+![Provider and template settings in Medusa Admin](assets/screenshots/email-settings-padded.png)
 
-The editor, with variables as pills and the order items as a repeating block:
+To start sending:
 
-![Order confirmation template in the editor](assets/screenshots/template-editor.png)
+1. Open the provider's row menu and choose **Configure**. For Resend or Mailgun, fill in the sender and credential fields, then choose **Save & activate**.
+2. Use **Send test** from the row menu to check delivery to your own inbox.
+3. To switch to an available provider later, choose **Use** from its row menu.
 
-**Settings → Email**, with the provider and the built-in templates:
+Medusa Cloud needs no API key entered in Admin. Because the plugin owns the email channel, its built-in Cloud integration handles delivery in place of Medusa's automatically registered Cloud provider.
 
-![Email settings with providers and templates](assets/screenshots/email-settings.png)
+Switching providers uses credentials already available to the application. Adding server environment variables still requires updating your deployment environment; the [stored API key option](#security-and-credentials) lets you manage provider keys in Admin once encryption is configured.
 
-The same template as it arrives in Gmail:
+## Visual editing
 
-![Order confirmation email received in Gmail](assets/screenshots/email-in-gmail.png)
+![Editing an order confirmation email](assets/screenshots/template-editor-padded.png)
 
-## Getting Started
+Open a template from **Settings → Email** to edit its subject and body. The editor uses [React Email Editor](https://react.email/editor) and provides:
 
-The dev container is the primary development environment for this repository.
+- Rich text and email layouts, including columns and repeating blocks for lists such as order items.
+- Template variables in the subject and body, with display formatting for money and dates.
+- A link picker for URL variables, including configured storefront links.
+- Preview and test send with example data, including unsaved edits.
 
-### Requirements
+Save your changes, check a test email in your inbox, then enable the template. Test sends work while a template is disabled, so you can review it before it handles live events.
 
-- VS Code with the Dev Containers extension
-- Docker
+Templates use [Liquid](https://liquidjs.com) for dynamic content. The plugin validates syntax when saving and generates a plain-text body from the rendered HTML when no separate text template is set.
 
-### Quick Start
+## Built-in emails
 
-1. Open the repository in VS Code and run **Dev Containers: Reopen in Container**.
-2. Wait for the post-create step to finish.
-3. From the repository root, bootstrap the example app and install the plugin locally:
+Each email has its own editable template and enable switch.
 
-   ```bash
-   yarn project:bootstrap
-   ```
+| Email | Trigger | Template key |
+| --- | --- | --- |
+| Order confirmation, with items and totals | `order.placed` | `order-placed` |
+| Admin invitation | `invite.created` | `invite-created` |
+| Resent admin invitation | `invite.resent` | `invite-resent` |
+| Admin password reset | `auth.password_reset` for an admin user | `password-reset-user` |
+| Customer password reset | `auth.password_reset` for a customer | `password-reset-customer` |
+| Email verification code | `auth.verification_requested` when the entity is an email address | `email-verification` |
 
-4. Use two terminals:
+The verification template handles an existing verification request event; your application still owns the flow that requests and checks verification codes.
 
-   Terminal 1 — rebuild and republish the plugin on change:
+If your application already has subscribers sending the same emails, adjust them before enabling these templates to avoid duplicate messages. Notifications that already include rendered content pass through the plugin's provider unchanged.
 
-   ```bash
-   yarn plugin:dev
-   ```
+## Install
 
-   Terminal 2 — run the example backend and Admin app, restarting on plugin changes:
+Install the package in your Medusa application:
 
-   ```bash
-   yarn project:dev
-   ```
+```bash
+npm install @agilo/medusa-email-templates-plugin@latest
+```
 
-   After a plugin admin change, wait for the restart to finish, then refresh the browser tab once.
-
-5. Open the Admin dashboard:
-
-   ```text
-   http://localhost:9000/app
-   ```
-
-### Adding the plugin to your own Medusa app
-
-Register the plugin **and** its notification provider in the consuming application's `medusa-config.ts`. Plugin modules are registered automatically, but module providers are not:
+Add the plugin and its notification provider to your existing `medusa-config.ts`:
 
 ```typescript
-import { defineConfig } from '@medusajs/framework/utils';
-
-module.exports = defineConfig({
-  // ...projectConfig
-  modules: [
-    {
-      resolve: '@medusajs/medusa/notification',
-      options: {
-        providers: [
-          // Overriding the notification module replaces Medusa's default
-          // providers, so re-add the local feed provider.
-          {
-            resolve: '@medusajs/medusa/notification-local',
-            id: 'local',
-            options: {
-              name: 'Local Notification Provider',
-              channels: ['feed'],
-            },
-          },
-          {
-            resolve: '@agilo/medusa-email-templates-plugin/providers/email',
-            id: 'email-templates',
-            options: {
-              channels: ['email'],
-            },
-          },
-        ],
-      },
+modules: [
+  {
+    resolve: '@medusajs/medusa/notification',
+    options: {
+      providers: [
+        {
+          resolve: '@agilo/medusa-email-templates-plugin/providers/email',
+          id: 'email-templates',
+          options: { channels: ['email'] },
+        },
+      ],
     },
-  ],
-  plugins: [
-    {
-      resolve: '@agilo/medusa-email-templates-plugin',
-      options: {},
-    },
-  ],
-});
-```
-
-Then run `npx medusa db:migrate` to create the plugin's tables.
-
-- The Notification Module allows **one provider per channel**. Remove any other `email` provider (for example SendGrid), or Medusa fails at startup with `Multiple providers are configured for the same channel: email`.
-- Because the plugin owns the `email` channel, Medusa Cloud's automatic email provider is not registered.
-- Notifications created with rendered `content` (`subject` plus `html` or `text`) are sent unchanged through the selected transport.
-
-#### Configure a transport
-
-Choose the transport in Medusa Admin under **Settings → Email**, or through the admin API:
-
-```bash
-# Resend, with the API key read from an environment variable at send time
-curl -X POST http://localhost:9000/admin/email/provider \
-  -H "Authorization: Bearer <admin token>" -H "Content-Type: application/json" \
-  -d '{"transport_id":"resend","config":{"from_address":"Shop <orders@example.com>"},"credential":{"source":"environment","env_var_name":"RESEND_API_KEY"}}'
-
-# Send a test email through the selected transport
-curl -X POST http://localhost:9000/admin/email/provider/send-test \
-  -H "Authorization: Bearer <admin token>" -H "Content-Type: application/json" \
-  -d '{"to":"you@example.com"}'
-```
-
-Mailgun works the same way, with a domain and region:
-
-```bash
-curl -X POST http://localhost:9000/admin/email/provider \
-  -H "Authorization: Bearer <admin token>" -H "Content-Type: application/json" \
-  -d '{"transport_id":"mailgun","config":{"domain":"mg.example.com","region":"eu","from_address":"Shop <orders@mg.example.com>"},"credential":{"source":"environment","env_var_name":"MAILGUN_API_KEY"}}'
-```
-
-Use a Resend API key with **sending access**, ideally restricted to your sending domain, and a Mailgun **Domain Sending Key** rather than your account key. The plugin only ever calls the send endpoint.
-
-Medusa Cloud needs no credential at all, because Cloud manages it:
-
-```bash
-curl -X POST http://localhost:9000/admin/email/provider \
-  -H "Authorization: Bearer <admin token>" -H "Content-Type: application/json" \
-  -d '{"transport_id":"medusa-cloud","config":{}}'
-```
-
-It can only be selected when the application runs on Medusa Cloud, which injects the `MEDUSA_CLOUD_*` settings; elsewhere the API answers 409 and the transport reports itself unavailable. A `from_address` is optional and best left unset, since a custom sender needs a verified domain on a paid plan. Because this plugin owns the `email` channel, Medusa's built-in Cloud email provider is not registered, and this transport takes its place by calling the same endpoint.
-
-#### Credentials
-
-Two credential sources are supported:
-
-- **`environment`** — only the variable's **name** is stored, and the key is read from the environment when an email is sent.
-- **`encrypted_database`** — the key is encrypted with AES-256-GCM and stored in the database. This needs an encryption key:
-
-  ```bash
-  # 32 random bytes, as base64 (44 characters) or hex (64 characters)
-  MEDUSA_EMAIL_ENCRYPTION_KEY=$(openssl rand -base64 32)
-  ```
-
-  Pass the key as `credential.api_key`; omit it when saving again to keep the stored one. Without `MEDUSA_EMAIL_ENCRYPTION_KEY`, storing a key returns 400 and `encryption_available` is `false`, while environment credentials keep working. If the encryption key is later changed, stored keys report `key_mismatch` and have to be re-entered.
-
-The admin API never returns API keys or ciphertext, only the source, the variable name, and whether the credential is usable.
-
-<p align="center">
-  <img alt="Resend settings with the credential source" src="assets/screenshots/provider-credentials.png" width="400">
-</p>
-
-#### Managed templates
-
-Registered events have one editable template each, written in [Liquid](https://liquidjs.com). Templates are **disabled until an admin enables them**, so the plugin never sends email a host application already sends itself.
-
-- `order-placed` — sent to the customer on `order.placed`, with the order number, line items and totals.
-- `invite-created` and `invite-resent` — sent on `invite.created` and `invite.resent`, with a link that accepts the invitation in Medusa Admin.
-- `password-reset-user` and `password-reset-customer` — both handle Medusa's single `auth.password_reset` event, chosen by who asked: admins get an Admin link, customers get a storefront link.
-- `email-verification` — sent on `auth.verification_requested` when the entity is an email address, containing the verification code.
-
-Templates are edited in Medusa Admin under **Settings → Email**, where each one opens in the visual editor. The same operations are available through the admin API, addressed by template key:
-
-```bash
-# Every registered template, whether or not it has been saved
-curl http://localhost:9000/admin/email/templates \
-  -H "Authorization: Bearer <admin token>"
-
-# One template, with its variables and the built-in default
-curl http://localhost:9000/admin/email/templates/order-placed \
-  -H "Authorization: Bearer <admin token>"
-
-# Save and enable it
-curl -X POST http://localhost:9000/admin/email/templates/order-placed \
-  -H "Authorization: Bearer <admin token>" -H "Content-Type: application/json" \
-  -d '{"enabled":true,"subject_template":"Your order #{{ order.display_id }}","html_template":"<p>Hi {{ order.customer_name }}</p>"}'
-
-# Render it with sample data, without sending
-curl -X POST http://localhost:9000/admin/email/templates/order-placed/preview \
-  -H "Authorization: Bearer <admin token>" -H "Content-Type: application/json" -d '{}'
-
-# Send it to yourself, even while it is disabled
-curl -X POST http://localhost:9000/admin/email/templates/order-placed/send-test \
-  -H "Authorization: Bearer <admin token>" -H "Content-Type: application/json" \
-  -d '{"to":"you@example.com"}'
-```
-
-Saving parses the subject and both bodies, so a template with broken Liquid is rejected with 400 rather than failing when an order is placed. Preview and test sends fill the variables from their documented examples; `data` overrides those values and `draft` renders unsaved edits, so the editor can preview before saving. Both render through the same code path as a real send.
-
-#### Plugin options
-
-```typescript
+  },
+],
 plugins: [
   {
     resolve: '@agilo/medusa-email-templates-plugin',
     options: {
-      // Defaults to the app's admin URL (backendUrl + admin path)
-      admin_url: 'https://admin.example.com/app',
-      // Required for customer password resets
       storefront_url: 'https://shop.example.com',
-      // Defaults to /reset-password
-      storefront_reset_password_path: '/account/new-password',
-      // Defaults to /orders, with the order id appended
-      storefront_order_path: '/account/orders',
     },
   },
 ],
 ```
 
-Without `storefront_url`, the customer password reset is skipped rather than sending a link that goes nowhere. The order confirmation still sends — it is a complete email without a link — but its `order_url` variable goes unresolved, and both templates report the missing configuration in the admin list.
+Keep your other modules, plugins, and notification providers. Medusa allows one notification provider per channel, so replace any existing `email` provider with this one. If your application uses Medusa's local `feed` provider, retain it in the `providers` array too. The plugin registers its own modules automatically.
 
-#### Custom events
+Run migrations, then restart your application:
 
-Host applications can add their own emails. Register the event from a subscriber file, which Medusa loads at startup:
+```bash
+npx medusa db:migrate
+```
+
+Open **Settings → Email** in Medusa Admin to configure delivery. Templates start disabled; enable each email when it is ready to send.
+
+## Security and credentials
+
+Resend and Mailgun support two credential sources. Choose one in the provider configuration drawer:
+
+| Source | How it works |
+| --- | --- |
+| Environment variable | Enter the variable name, such as `RESEND_API_KEY`. The plugin stores that name and reads the key from the server environment when sending. |
+| Stored API key | Enter the key in Admin. The plugin encrypts it with AES-256-GCM before storing it in the database. |
+
+![Configuring provider credentials](assets/screenshots/provider-credentials-padded.png)
+
+Stored keys require `MEDUSA_EMAIL_ENCRYPTION_KEY` on the server: 32 random bytes encoded as base64 or hex. For example, generate a base64 value with `openssl rand -base64 32`, then set it through your deployment's secret configuration. Without this encryption key, environment credentials remain available and stored API keys are disabled.
+
+Keep the encryption key stable. If it changes, existing stored credentials become unusable and must be entered again. The Admin API returns credential status and the environment variable name where applicable; it never returns API keys or ciphertext.
+
+Template rendering escapes values in HTML output. Liquid templates cannot read files or execute JavaScript, and parsing and rendering have resource limits.
+
+## Plugin options
+
+Set these options in the plugin entry in `medusa-config.ts` to match your storefront and Admin routes:
+
+| Option | Purpose | Default |
+| --- | --- | --- |
+| `storefront_url` | Base URL for customer links, such as `https://shop.example.com`. | Unset |
+| `storefront_reset_password_path` | Customer password reset page. | `/reset-password` |
+| `storefront_order_path` | Order details path; the order ID is appended. | `/orders` |
+| `admin_url` | Base Admin URL for invitations and admin password resets. | The application's backend URL and Admin path |
+
+For example, a storefront with account pages can use:
 
 ```typescript
-// src/subscribers/email-review-approved.ts
-import {
-  defineEmailEvent,
-  sendEmailEventWorkflow,
-} from '@agilo/medusa-email-templates-plugin/registry';
-
-defineEmailEvent<{ id: string }>({
-  event: 'review.approved',
-  templateKey: 'review-approved',
-  label: 'Review approved',
-  defaultTemplate: {
-    subject: 'Thanks for your review',
-    html: '<p>Hi {{ name }}</p>',
-  },
-  getRecipient: async (data, container) => 'customer@example.com',
-  getContext: async (data, container) => ({ name: 'Jane' }),
-  variables: [{ key: 'name', label: 'Name', example: 'Jane' }],
-});
-
-export default async function handler({ event, container }) {
-  await sendEmailEventWorkflow(container).run({
-    input: { event: event.name, data: event.data },
-  });
-}
-
-export const config = { event: 'review.approved' };
+options: {
+  storefront_url: 'https://shop.example.com',
+  storefront_reset_password_path: '/account/new-password',
+  storefront_order_path: '/account/orders',
+  admin_url: 'https://admin.example.com/app',
+},
 ```
 
-Each variable may declare a `type`, which decides what the editor offers for it: `money` and `date` unlock display formats, and `url` is what puts a variable in the link picker used for button and link addresses. A variable holding a URL has to say so — the editor will not guess from a key name like `invite_url`, so an unmarked one can still be typed into an address by hand but is not offered as a choice.
+Without `storefront_url`, customer password reset emails are skipped. Order confirmations still send, but their order link is unavailable. Admin shows a warning when the storefront URL is missing.
 
-An array is declared as `type: 'list'`, with `fields` describing one entry. The editor offers it as a block that repeats its content once per entry, and inside that block the fields are available as `item.*` pills. An optional `itemTemplate` gives new blocks their starting content:
+## Custom extensions
 
-```typescript
-{
-  key: 'review.photos',
-  label: 'Photos',
-  type: 'list',
-  example: [{ caption: 'Front' }],
-  fields: [{ key: 'caption', label: 'Caption', example: 'Front' }],
-  itemTemplate: '<p>{{ item.caption }}</p>',
-}
-```
+Developers can add application-specific email events and delivery providers through `@agilo/medusa-email-templates-plugin/registry`.
 
-An event can also offer `snippets`: ready-made content the editor inserts from its slash menu, such as the order confirmation's "Order totals". Each has a `key`, a `label` and the `html` to insert, written with the event's `{{ … }}` expressions. Once inserted, a snippet is ordinary editable content. Build side-by-side cells with `columns()` from `@agilo/medusa-email-templates-plugin/registry`, so they open as a Columns layout that can be reshaped.
+Use `defineEmailEvent` to register an event's template, recipient, context, and editor variables. Your Medusa subscriber calls `sendEmailEventWorkflow` when the event occurs. The registered template then appears alongside the built-in emails in Admin.
 
-A field's `currencyKey` stays an absolute path, such as `order.currency_code`, because the loop can still read the outer values. To use the same block in a default template, wrap the entry HTML with `repeat('review.photos', html)`, exported from `@agilo/medusa-email-templates-plugin/registry`. It writes the shape the editor reads back.
+Event definitions can include snippets for the editor's slash menu. Typed variables support money and date formatting, URL selection, and lists with repeating content. The registry also exports `repeat()` and `columns()` helpers for default template layouts.
 
-The same module exports `registerEmailTransport` for adding a transport of your own; it takes the `EmailTransport` interface, so templates and events stay untouched.
+Use `registerEmailTransport` with an implementation of `EmailTransport` to add another delivery provider while keeping existing templates and event definitions.
 
-Rendering happens when the email is sent: the subject and text body are rendered as-is, the HTML body is HTML-escaped, and the plain-text body is derived from the rendered HTML when no text template is set. Templates cannot read files or run JavaScript, and they run under parse, render and memory limits.
+## Compatibility
 
-In the example app, a template can also be enabled from the command line, which is handy after resetting the database:
+- Medusa `^2.21.0`.
+- Node.js `>=26.0.0`.
 
-```bash
-yarn --cwd apps/dev-app email:template:enable order-placed
-```
+## License
 
-## Development Model
-
-This repo follows Medusa's plugin workflow:
-
-- the plugin project lives in `packages/medusa-email-templates-plugin`
-- the consuming Medusa app lives in `apps/dev-app`
-- the plugin is published locally into the example app through Yalc-backed Medusa CLI commands
-- the example app runs the Medusa server and Admin dashboard used for manual testing
-
-For day-to-day local development, `yarn plugin:dev` keeps the example app's local plugin installation updated as plugin sources change, without re-running `yarn install`, `project:plugin:add`, or restarting `project:dev` manually. Manual browser testing happens in the consuming app, not in the plugin package itself.
-
-The dev container also provides Node.js 24, GitHub CLI, `cloudflared`, Yarn 4 via Corepack, and separate development/test Postgres and Redis services. Inside the container the app talks to `postgres:5432` and `redis:6379`; integration tests use the separate `postgres_test` and `redis_test` services.
-
-## Commands
-
-| Command                   | Description                                               |
-| ------------------------- | --------------------------------------------------------- |
-| `yarn project:bootstrap`  | Bootstrap the example app and install the plugin locally  |
-| `yarn project:seed`       | Seed the example app with store, region and product data  |
-| `yarn plugin:dev`         | Rebuild and republish the plugin on change                |
-| `yarn plugin:dev:medusa`  | Run Medusa's raw plugin watcher directly, for comparison  |
-| `yarn project:dev`        | Start the example backend and Admin app                   |
-| `yarn project:dev:medusa` | Run Medusa's raw backend watcher directly, for comparison |
-| `yarn test:backend`       | Run backend integration tests (module + HTTP)             |
-| `yarn typecheck`          | Run TypeScript validation                                 |
-| `yarn lint`               | Run ESLint                                                |
-| `yarn test:admin`         | Run Admin route and component tests                       |
-| `yarn test`               | Run the full validation suite (unit + backend + admin)    |
-
-`yarn test:backend` uses the dedicated `postgres_test` and `redis_test` services inside the dev container.
-
-## Environment
-
-Use [packages/medusa-email-templates-plugin/.env.example](packages/medusa-email-templates-plugin/.env.example) for the plugin's local database/Redis variables. The checked-in template targets host access, reaching the development services on `localhost:5433` and `localhost:6380` and the test services on `localhost:5434` and `localhost:6382`. Inside the dev container you do not need those values: the root `project:*` and `test:backend` scripts inject the container hostnames instead, so the app talks to `postgres:5432` and `redis:6379`, and integration tests talk to `postgres_test:5432` and `redis_test:6379`.
-
-## Testing
-
-For routine validation, run:
-
-```bash
-yarn typecheck
-yarn test
-```
-
-Outside the dev container, start the test services first with `yarn docker:test:up`, then run `yarn test:backend`. To run suites individually:
-
-```bash
-# Module/workflow-level tests
-yarn test:integration:module
-
-# HTTP-level tests (admin route auth, validation, status codes)
-yarn test:integration:http
-
-# Admin UI tests (Vitest + jsdom)
-yarn test:admin
-
-# Unit tests (pure logic, no DOM)
-yarn test:unit
-```
-
-The integration suites boot a full Medusa application against the `postgres_test` service (port `5434` on the host) and `redis_test` (port `6382`), both mapped in `docker-compose.yml`. The first run builds a migrated database template and is slower; subsequent runs are fast.
-
-## Contributing
-
-We welcome contributions and feedback.
-To get involved, [open an issue](https://github.com/Agilo/medusa-email-templates-plugin/issues) or [submit a pull request](https://github.com/Agilo/medusa-email-templates-plugin/pulls) on [GitHub →](https://github.com/Agilo/medusa-email-templates-plugin)
+MIT. See [LICENSE](LICENSE).
