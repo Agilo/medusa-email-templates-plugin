@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/@agilo/medusa-email-templates-plugin/latest?label=npm%20latest)](https://www.npmjs.com/package/@agilo/medusa-email-templates-plugin)
 [![npm license](https://img.shields.io/npm/l/@agilo/medusa-email-templates-plugin)](LICENSE)
-[![Node.js](https://img.shields.io/badge/Node.js-26%2B-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-24%2B-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 
 Edit transactional emails and manage delivery from Medusa Admin. The plugin includes a visual editor, ready-to-edit emails, and three built-in providers: Medusa Cloud, Resend, and Mailgun. Switch providers in Admin without redeploying your store.
 
@@ -163,7 +163,7 @@ Use `registerEmailTransport` with an implementation of `EmailTransport` to add a
 ## Compatibility
 
 - Medusa `^2.21.0`.
-- Node.js `>=26.0.0`.
+- Node.js `>=24.0.0`.
 
 ## License
 
