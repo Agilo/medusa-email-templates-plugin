@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { InputConfigWithArrayModules } from '@medusajs/types';
+import type { InputConfigWithArrayModules } from '@medusajs/framework/types';
 import { loadEnv, defineConfig } from '@medusajs/framework/utils';
 
 loadEnv(process.env.NODE_ENV || 'development', process.cwd());

@@ -1,5 +1,5 @@
 import { Resend, type CreateEmailOptions } from 'resend';
-import { z } from 'zod';
+import { z } from '@medusajs/framework/zod';
 
 import {
   formatIssues,

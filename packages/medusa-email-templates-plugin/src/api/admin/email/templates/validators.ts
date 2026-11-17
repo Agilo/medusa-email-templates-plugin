@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '@medusajs/framework/zod';
 
 // Email subject lines are limited to 998 bytes by RFC 5322.
 const MAX_SUBJECT = 998;

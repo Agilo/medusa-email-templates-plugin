@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '@medusajs/framework/zod';
 
 import { ENV_VAR_NAME_PATTERN } from '../../../../lib/credentials/resolve-credential';
 

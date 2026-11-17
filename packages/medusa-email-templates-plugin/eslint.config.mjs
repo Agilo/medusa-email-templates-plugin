@@ -1,21 +1,22 @@
+import { globalIgnores } from 'eslint/config';
 import globals from 'globals';
 import neostandard from 'neostandard';
 import reactHooks from 'eslint-plugin-react-hooks';
 
 export default [
+  globalIgnores([
+    '.agents/**',
+    '.cache/**',
+    '.medusa/**',
+    'build/**',
+    'coverage/**',
+    'dist/**',
+    'node_modules/**',
+    'patches/**',
+    '**/.turbo/**',
+    '**/.yalc/**',
+  ]),
   ...neostandard({
-    ignores: [
-      '.agents/**',
-      '.cache/**',
-      '.medusa/**',
-      'build/**',
-      'coverage/**',
-      'dist/**',
-      'node_modules/**',
-      'patches/**',
-      '**/.turbo/**',
-      '**/.yalc/**',
-    ],
     noStyle: true,
     ts: true,
   }),

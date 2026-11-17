@@ -2,7 +2,7 @@ import type {
   Logger,
   ProviderSendNotificationDTO,
 } from '@medusajs/framework/types';
-import type { z } from 'zod';
+import type { z } from '@medusajs/framework/zod';
 
 export const CREDENTIAL_SOURCES = [
   'managed',

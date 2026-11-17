@@ -1,4 +1,4 @@
-import type { InputConfigWithArrayModules } from '@medusajs/types';
+import type { InputConfigWithArrayModules } from '@medusajs/framework/types';
 import { defineConfig } from '@medusajs/framework/utils';
 
 export default defineConfig({

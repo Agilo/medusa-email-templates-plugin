@@ -67,13 +67,14 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json && tsc --noEmit -p src/admin/tsconfig.json"
   },
   "devDependencies": {
-    "@medusajs/admin-sdk": "2.21.0",
-    "@medusajs/cli": "2.21.0",
-    "@medusajs/framework": "2.21.0",
-    "@medusajs/icons": "2.21.0",
-    "@medusajs/medusa": "2.21.0",
-    "@medusajs/test-utils": "2.21.0",
-    "@medusajs/ui": "4.2.4",
+    "@medusajs/admin-sdk": "2.22.7",
+    "@medusajs/cli": "2.22.7",
+    "@medusajs/framework": "2.22.7",
+    "@medusajs/icons": "2.22.7",
+    "@medusajs/js-sdk": "2.22.7",
+    "@medusajs/medusa": "2.22.7",
+    "@medusajs/test-utils": "2.22.7",
+    "@medusajs/ui": "4.2.14",
     "@swc/core": "^1.16.2",
     "@swc/jest": "^0.2.39",
     "@testing-library/dom": "^10.4.2",
@@ -95,7 +96,7 @@
     "jest": "^30.5.1",
     "jsdom": "^30.0.1",
     "jsonwebtoken": "^9.0.3",
-    "neostandard": "^0.13.0",
+    "neostandard": "^0.14.1",
     "patch-package": "^8.0.1",
     "pg-god": "^1.0.12",
     "prettier": "^3.9.6",
@@ -109,24 +110,23 @@
     "yalc": "^1.0.0-pre.53"
   },
   "peerDependencies": {
-    "@medusajs/admin-sdk": "^2.21.0",
-    "@medusajs/framework": "^2.21.0",
-    "@medusajs/icons": "^2.21.0",
-    "@medusajs/medusa": "^2.21.0",
-    "@medusajs/ui": "^4.2.4"
+    "@medusajs/admin-sdk": "^2.22.7",
+    "@medusajs/framework": "^2.22.7",
+    "@medusajs/icons": "^2.22.7",
+    "@medusajs/js-sdk": "^2.22.7",
+    "@medusajs/medusa": "^2.22.7",
+    "@medusajs/ui": "^4.2.14"
   },
   "engines": {
     "node": ">=24.0.0"
   },
   "packageManager": "yarn@4.18.0+sha512.fcb8716fe7cd0eece141ffc18b92193a9df9204c1ba83189c288835223fc0bbe64af473bab0d5e9927a7daeb5caf2bb07eb2787cc9338ca040ea125f2a1f2f7e",
   "dependencies": {
-    "@medusajs/dashboard": "^2.21.0",
     "@react-email/editor": "1.7.7",
     "@tiptap/pm": "^3.17.1",
     "@tiptap/react": "^3.17.1",
     "html-to-text": "^9.0.5",
     "liquidjs": "^10.29.0",
-    "resend": "6.28.0",
-    "zod": "4.2.0"
+    "resend": "6.28.0"
   }
 }

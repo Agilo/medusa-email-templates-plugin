@@ -162,7 +162,7 @@ Use `registerEmailTransport` with an implementation of `EmailTransport` to add a
 
 ## Compatibility
 
-- Medusa `^2.21.0`.
+- Medusa `^2.22.7`.
 - Node.js `>=24.0.0`.
 
 ## License

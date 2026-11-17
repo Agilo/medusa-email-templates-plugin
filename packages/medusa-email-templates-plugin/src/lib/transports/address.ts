@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '@medusajs/framework/zod';
 
 const ADDRESS = '[^\\s@<>]+@[^\\s@<>]+\\.[^\\s@<>]+';
 const PLAIN_ADDRESS_PATTERN = new RegExp(`^${ADDRESS}$`);
