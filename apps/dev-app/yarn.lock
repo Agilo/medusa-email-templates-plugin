@@ -21,7 +21,7 @@ __metadata:
 
 "@agilo/medusa-email-templates-plugin@file:.yalc/@agilo/medusa-email-templates-plugin::locator=dev-app%40workspace%3A.":
   version: 1.0.0-beta.0
-  resolution: "@agilo/medusa-email-templates-plugin@file:.yalc/@agilo/medusa-email-templates-plugin#.yalc/@agilo/medusa-email-templates-plugin::hash=0d7453&locator=dev-app%40workspace%3A."
+  resolution: "@agilo/medusa-email-templates-plugin@file:.yalc/@agilo/medusa-email-templates-plugin#.yalc/@agilo/medusa-email-templates-plugin::hash=685bcd&locator=dev-app%40workspace%3A."
   dependencies:
     "@react-email/editor": "npm:1.7.7"
     "@tiptap/pm": "npm:^3.17.1"
@@ -36,7 +36,7 @@ __metadata:
     "@medusajs/js-sdk": ^2.22.7
     "@medusajs/medusa": ^2.22.7
     "@medusajs/ui": ^4.2.14
-  checksum: 10c0/15abae1cbe0d1d74e553693a285b1b7cae8e9ad22d0de62d8dc99252f3b5c4e90f679220d5d88c878cf7d15ad6fcaa9ea6a6cb8b2edd133a8b9672c2d3239029
+  checksum: 10c0/4cc99d7fb7850113e668408880eda31026478af1574c2a8bb36ddb5206ba75369766e83b18dcd26f2fe445334770a4191e759904e5977d087916b13ab2021b16
   languageName: node
   linkType: hard
 
@@ -10422,9 +10422,9 @@ __metadata:
   linkType: hard
 
 "fast-uri@npm:^3.0.1":
-  version: 3.1.7
-  resolution: "fast-uri@npm:3.1.7"
-  checksum: 10c0/ca2baa4bde48fc7322bdc692c6636975943ebe4f6dd97e07d70b14e0ab85af2ff30de90f550f5ec2956684fe208e150d85d6cb5f3c74438c8ac1bf86bd435c13
+  version: 3.1.9
+  resolution: "fast-uri@npm:3.1.9"
+  checksum: 10c0/052757540d8c0bbc16bb124a45b8f5cb5d0932f9b89f019221ee41cdb3cafc1db44b2e809d6b888b87922af3e5560a863124454e9d9193e1fc955887357b5add
   languageName: node
   linkType: hard
 
