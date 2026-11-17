@@ -4,7 +4,7 @@
   "service": "workspace",
   "features": {
     "ghcr.io/devcontainers/features/node:2": {
-      "version": "24",
+      "version": "26",
       "npmVersion": "none"
     },
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
