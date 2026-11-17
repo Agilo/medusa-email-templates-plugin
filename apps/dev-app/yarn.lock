@@ -21,7 +21,7 @@ __metadata:
 
 "@agilo/medusa-email-templates-plugin@file:.yalc/@agilo/medusa-email-templates-plugin::locator=dev-app%40workspace%3A.":
   version: 1.0.0-beta.0
-  resolution: "@agilo/medusa-email-templates-plugin@file:.yalc/@agilo/medusa-email-templates-plugin#.yalc/@agilo/medusa-email-templates-plugin::hash=0d7453&locator=dev-app%40workspace%3A."
+  resolution: "@agilo/medusa-email-templates-plugin@file:.yalc/@agilo/medusa-email-templates-plugin#.yalc/@agilo/medusa-email-templates-plugin::hash=685bcd&locator=dev-app%40workspace%3A."
   dependencies:
     "@react-email/editor": "npm:1.7.7"
     "@tiptap/pm": "npm:^3.17.1"
@@ -36,7 +36,7 @@ __metadata:
     "@medusajs/js-sdk": ^2.22.7
     "@medusajs/medusa": ^2.22.7
     "@medusajs/ui": ^4.2.14
-  checksum: 10c0/15abae1cbe0d1d74e553693a285b1b7cae8e9ad22d0de62d8dc99252f3b5c4e90f679220d5d88c878cf7d15ad6fcaa9ea6a6cb8b2edd133a8b9672c2d3239029
+  checksum: 10c0/4cc99d7fb7850113e668408880eda31026478af1574c2a8bb36ddb5206ba75369766e83b18dcd26f2fe445334770a4191e759904e5977d087916b13ab2021b16
   languageName: node
   linkType: hard
 
@@ -9761,7 +9761,7 @@ __metadata:
     react-router-dom: "npm:7.18.2"
     ts-node: "npm:^10.9.2"
     typescript: "npm:~5.9.3"
-    vite: "npm:^7.3.6"
+    vite: "npm:^7.3.7"
     yalc: "npm:^1.0.0-pre.53"
   languageName: unknown
   linkType: soft
@@ -16058,61 +16058,6 @@ __metadata:
     "@types/unist": "npm:^3.0.0"
     vfile-message: "npm:^4.0.0"
   checksum: 10c0/e5d9eb4810623f23758cfc2205323e33552fb5972e5c2e6587babe08fe4d24859866277404fb9e2a20afb71013860d96ec806cb257536ae463c87d70022ab9ef
-  languageName: node
-  linkType: hard
-
-"vite@npm:^7.3.6":
-  version: 7.3.6
-  resolution: "vite@npm:7.3.6"
-  dependencies:
-    esbuild: "npm:^0.27.0 || ^0.28.0"
-    fdir: "npm:^6.5.0"
-    fsevents: "npm:~2.3.3"
-    picomatch: "npm:^4.0.3"
-    postcss: "npm:^8.5.6"
-    rollup: "npm:^4.43.0"
-    tinyglobby: "npm:^0.2.15"
-  peerDependencies:
-    "@types/node": ^20.19.0 || >=22.12.0
-    jiti: ">=1.21.0"
-    less: ^4.0.0
-    lightningcss: ^1.21.0
-    sass: ^1.70.0
-    sass-embedded: ^1.70.0
-    stylus: ">=0.54.8"
-    sugarss: ^5.0.0
-    terser: ^5.16.0
-    tsx: ^4.8.1
-    yaml: ^2.4.2
-  dependenciesMeta:
-    fsevents:
-      optional: true
-  peerDependenciesMeta:
-    "@types/node":
-      optional: true
-    jiti:
-      optional: true
-    less:
-      optional: true
-    lightningcss:
-      optional: true
-    sass:
-      optional: true
-    sass-embedded:
-      optional: true
-    stylus:
-      optional: true
-    sugarss:
-      optional: true
-    terser:
-      optional: true
-    tsx:
-      optional: true
-    yaml:
-      optional: true
-  bin:
-    vite: bin/vite.js
-  checksum: 10c0/c6d359f84ad362f5c97ff7988b77c90add04162c60cdf6059375a7d9e3217848c53a8cb6b6c48517bef84b6bba4c9bc85319a889b5236acb7d5a2bc8cb7b9a8d
   languageName: node
   linkType: hard
 
