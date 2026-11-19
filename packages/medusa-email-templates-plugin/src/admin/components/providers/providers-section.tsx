@@ -28,6 +28,8 @@ type RowStatus = {
   label: string;
 };
 
+const LOCAL_PREVIEW_TRANSPORT_ID = 'local-preview';
+
 const isConfigured = (transport: EmailProviderTransportState): boolean =>
   transport.credential !== null ||
   transport.credential_sources.includes('managed');
@@ -78,8 +80,8 @@ const SectionHeading = () => (
   <>
     <Heading level="h2">Provider</Heading>
     <Text size="small" className="text-ui-fg-subtle">
-      One provider sends every email. The others keep their settings, so
-      switching back takes a single click.
+      Choose a delivery provider and configure its credentials. You can also
+      send a test email to verify that the provider is working correctly.
     </Text>
   </>
 );
@@ -162,11 +164,13 @@ const ProvidersSection = () => {
             });
           }
 
-          actions.push({
-            label: isConfigured(transport) ? 'Edit' : 'Configure',
-            icon: <PencilSquare />,
-            onClick: () => setEditingId(transport.id),
-          });
+          if (transport.id !== LOCAL_PREVIEW_TRANSPORT_ID) {
+            actions.push({
+              label: isConfigured(transport) ? 'Edit' : 'Configure',
+              icon: <PencilSquare />,
+              onClick: () => setEditingId(transport.id),
+            });
+          }
 
           if (isConfigured(transport) && transport.available) {
             actions.push({

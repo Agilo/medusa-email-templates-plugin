@@ -87,6 +87,7 @@
     "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.13.4",
+    "@types/preview-email": "^3",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "ajv": "^8.20.0",
@@ -128,6 +129,7 @@
     "@tiptap/react": "^3.17.1",
     "html-to-text": "^9.0.5",
     "liquidjs": "^10.29.0",
+    "preview-email": "^3.4.0",
     "resend": "6.28.0"
   }
 }
