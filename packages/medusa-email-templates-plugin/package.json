@@ -40,6 +40,7 @@
     "medusa-plugin-other",
     "medusa-plugin",
     "medusa-v2",
+    "medusa-plugin-integration",
     "medusa-plugin-notification",
     "email",
     "email-templates",
