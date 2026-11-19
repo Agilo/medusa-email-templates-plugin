@@ -14,11 +14,11 @@ Edit transactional emails and manage delivery from Medusa Admin. The plugin incl
 
 Medusa Cloud, Resend, and Mailgun are included in the plugin. One provider sends each email; the others keep their settings. Switch the active provider from Admin without changing your deployment or templates.
 
-| Provider | Setup in Admin | Availability |
-| --- | --- | --- |
-| Medusa Cloud | Choose **Use**. Credentials are managed by your Medusa Cloud project. | Requires an application running on Medusa Cloud with its email configuration injected. Unavailable in local development. |
-| Resend | Enter a sender address, an optional reply-to address, and an API credential. | Requires a Resend account and a key with sending access. |
-| Mailgun | Enter a sending domain, its US or EU region, a sender address, an optional reply-to address, and an API credential. | Requires a Mailgun account. A Domain Sending Key is sufficient; the plugin only calls the send endpoint. |
+| Provider     | Setup in Admin                                                                                                      | Availability                                                                                                             |
+| ------------ | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Medusa Cloud | Choose **Use**. Credentials are managed by your Medusa Cloud project.                                               | Requires an application running on Medusa Cloud with its email configuration injected. Unavailable in local development. |
+| Resend       | Enter a sender address, an optional reply-to address, and an API credential.                                        | Requires a Resend account and a key with sending access.                                                                 |
+| Mailgun      | Enter a sending domain, its US or EU region, a sender address, an optional reply-to address, and an API credential. | Requires a Mailgun account. A Domain Sending Key is sufficient; the plugin only calls the send endpoint.                 |
 
 ![Provider and template settings in Medusa Admin](assets/screenshots/email-settings-padded.png)
 
@@ -51,14 +51,14 @@ Templates use [Liquid](https://liquidjs.com) for dynamic content. The plugin val
 
 Each email has its own editable template and enable switch.
 
-| Email | Trigger | Template key |
-| --- | --- | --- |
-| Order confirmation, with items and totals | `order.placed` | `order-placed` |
-| Admin invitation | `invite.created` | `invite-created` |
-| Resent admin invitation | `invite.resent` | `invite-resent` |
-| Admin password reset | `auth.password_reset` for an admin user | `password-reset-user` |
-| Customer password reset | `auth.password_reset` for a customer | `password-reset-customer` |
-| Email verification code | `auth.verification_requested` when the entity is an email address | `email-verification` |
+| Email                                     | Trigger                                                           | Template key              |
+| ----------------------------------------- | ----------------------------------------------------------------- | ------------------------- |
+| Order confirmation, with items and totals | `order.placed`                                                    | `order-placed`            |
+| Admin invitation                          | `invite.created`                                                  | `invite-created`          |
+| Resent admin invitation                   | `invite.resent`                                                   | `invite-resent`           |
+| Admin password reset                      | `auth.password_reset` for an admin user                           | `password-reset-user`     |
+| Customer password reset                   | `auth.password_reset` for a customer                              | `password-reset-customer` |
+| Email verification code                   | `auth.verification_requested` when the entity is an email address | `email-verification`      |
 
 The verification template handles an existing verification request event; your application still owns the flow that requests and checks verification codes.
 
@@ -113,10 +113,10 @@ Open **Settings → Email** in Medusa Admin to configure delivery. Templates sta
 
 Resend and Mailgun support two credential sources. Choose one in the provider configuration drawer:
 
-| Source | How it works |
-| --- | --- |
+| Source               | How it works                                                                                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | Environment variable | Enter the variable name, such as `RESEND_API_KEY`. The plugin stores that name and reads the key from the server environment when sending. |
-| Stored API key | Enter the key in Admin. The plugin encrypts it with AES-256-GCM before storing it in the database. |
+| Stored API key       | Enter the key in Admin. The plugin encrypts it with AES-256-GCM before storing it in the database.                                         |
 
 ![Configuring provider credentials](assets/screenshots/provider-credentials-padded.png)
 
@@ -130,12 +130,12 @@ Template rendering escapes values in HTML output. Liquid templates cannot read f
 
 Set these options in the plugin entry in `medusa-config.ts` to match your storefront and Admin routes:
 
-| Option | Purpose | Default |
-| --- | --- | --- |
-| `storefront_url` | Base URL for customer links, such as `https://shop.example.com`. | Unset |
-| `storefront_reset_password_path` | Customer password reset page. | `/reset-password` |
-| `storefront_order_path` | Order details path; the order ID is appended. | `/orders` |
-| `admin_url` | Base Admin URL for invitations and admin password resets. | The application's backend URL and Admin path |
+| Option                           | Purpose                                                          | Default                                      |
+| -------------------------------- | ---------------------------------------------------------------- | -------------------------------------------- |
+| `storefront_url`                 | Base URL for customer links, such as `https://shop.example.com`. | Unset                                        |
+| `storefront_reset_password_path` | Customer password reset page.                                    | `/reset-password`                            |
+| `storefront_order_path`          | Order details path; the order ID is appended.                    | `/orders`                                    |
+| `admin_url`                      | Base Admin URL for invitations and admin password resets.        | The application's backend URL and Admin path |
 
 For example, a storefront with account pages can use:
 
