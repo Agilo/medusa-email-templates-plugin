@@ -4,7 +4,7 @@
 [![npm license](https://img.shields.io/npm/l/@agilo/medusa-email-templates-plugin)](https://github.com/Agilo/medusa-email-templates-plugin/blob/master/LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-24%2B-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 
-Edit transactional emails and manage delivery from Medusa Admin. The plugin includes a visual editor, ready-to-edit emails, and three built-in providers: Medusa Cloud, Resend, and Mailgun. Switch providers in Admin without redeploying your store.
+Edit transactional emails and manage delivery from Medusa Admin. The plugin includes a visual editor, ready-to-edit emails, three built-in delivery providers (Medusa Cloud, Resend, and Mailgun), and a local preview transport for development.
 
 ![Order confirmation email delivered to Gmail](https://raw.githubusercontent.com/Agilo/medusa-email-templates-plugin/master/assets/screenshots/email-in-gmail-padded.png)
 
@@ -12,20 +12,23 @@ Edit transactional emails and manage delivery from Medusa Admin. The plugin incl
 
 ## Choose a provider
 
-Medusa Cloud, Resend, and Mailgun are included in the plugin. One provider sends each email; the others keep their settings. Switch the active provider from Admin without changing your deployment or templates.
+Medusa Cloud, Resend, and Mailgun are included as delivery providers. One provider sends each email; the others keep their settings. In development, you can select Local Preview to write the rendered email to a local file instead.
 
-| Provider     | Setup in Admin                                                                                                      | Availability                                                                                                             |
-| ------------ | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Medusa Cloud | Choose **Use**. Credentials are managed by your Medusa Cloud project.                                               | Requires an application running on Medusa Cloud with its email configuration injected. Unavailable in local development. |
-| Resend       | Enter a sender address, an optional reply-to address, and an API credential.                                        | Requires a Resend account and a key with sending access.                                                                 |
-| Mailgun      | Enter a sending domain, its US or EU region, a sender address, an optional reply-to address, and an API credential. | Requires a Mailgun account. A Domain Sending Key is sufficient; the plugin only calls the send endpoint.                 |
+| Provider      | Setup in Admin                                                                                                      | Availability                                                                                                             |
+| ------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Medusa Cloud  | Choose **Use**. Credentials are managed by your Medusa Cloud project.                                               | Requires an application running on Medusa Cloud with its email configuration injected. Unavailable in local development. |
+| Resend        | Enter a sender address, an optional reply-to address, and an API credential.                                        | Requires a Resend account and a key with sending access.                                                                 |
+| Mailgun       | Enter a sending domain, its US or EU region, a sender address, an optional reply-to address, and an API credential. | Requires a Mailgun account. A Domain Sending Key is sufficient; the plugin only calls the send endpoint.                 |
+| Local Preview | Choose **Use** in development. No credentials are needed.                                                           | Available only when `NODE_ENV=development`. Sends are written as local HTML preview files instead of being delivered.    |
+
+With **Local Preview** selected, the plugin logs a `file://` URL for each email in the Medusa server output. Open the URL in a browser or with your operating system's file opener. The preview file is written to the system temporary directory. The transport does not launch a browser or iOS Simulator automatically and is unavailable outside development.
 
 ![Provider and template settings in Medusa Admin](https://raw.githubusercontent.com/Agilo/medusa-email-templates-plugin/master/assets/screenshots/email-settings-padded.png)
 
 To start sending:
 
 1. Open the provider's row menu and choose **Configure**. For Resend or Mailgun, fill in the sender and credential fields, then choose **Save & activate**.
-2. Use **Send test** from the row menu to check delivery to your own inbox.
+2. Use **Send test** from a delivery provider's row menu to check delivery to your own inbox. For Local Preview, **Send test** creates a preview file; its recipient is shown in the preview only.
 3. To switch to an available provider later, choose **Use** from its row menu.
 
 Medusa Cloud needs no API key entered in Admin. Because the plugin owns the email channel, its built-in Cloud integration handles delivery in place of Medusa's automatically registered Cloud provider.

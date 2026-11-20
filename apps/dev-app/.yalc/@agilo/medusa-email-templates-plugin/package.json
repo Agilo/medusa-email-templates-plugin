@@ -40,6 +40,7 @@
     "medusa-plugin-other",
     "medusa-plugin",
     "medusa-v2",
+    "medusa-plugin-integration",
     "medusa-plugin-notification",
     "email",
     "email-templates",
@@ -84,7 +85,8 @@
     "@tiptap/react": "^3.17.1",
     "html-to-text": "^9.0.5",
     "liquidjs": "^10.29.0",
+    "preview-email": "^3.4.0",
     "resend": "6.28.0"
   },
-  "yalcSig": "8c2ca822fb10949fde8fa9fe6ab7ff92"
+  "yalcSig": "4282a41730275df72f8112368117e954"
 }

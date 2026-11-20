@@ -13,13 +13,18 @@ type TestEmailDrawerProps = {
 const TestEmailDrawer = ({ transport, onClose }: TestEmailDrawerProps) => {
   const sendTest = useSendProviderTestEmail();
   const [recipient, setRecipient] = useState('');
+  const isLocalPreview = transport.id === 'local-preview';
 
   const send = () => {
     sendTest.mutate(
       { to: recipient, transport_id: transport.id },
       {
         onSuccess: () => {
-          toast.success(`Test email sent to ${recipient}.`);
+          toast.success(
+            isLocalPreview
+              ? 'Local preview created. Its URL is in the Medusa server output.'
+              : `Test email sent to ${recipient}.`,
+          );
           onClose();
         },
         onError: (error) => toast.error(getApiErrorMessage(error)),
@@ -33,14 +38,16 @@ const TestEmailDrawer = ({ transport, onClose }: TestEmailDrawerProps) => {
         <Drawer.Header>
           <Drawer.Title className="font-medium">Send test email</Drawer.Title>
           <Drawer.Description>
-            Sends a fixed message through {transport.label}.
+            {isLocalPreview
+              ? 'Creates a local preview of a fixed test message. Nothing is delivered.'
+              : `Sends a fixed message through ${transport.label}.`}
           </Drawer.Description>
         </Drawer.Header>
 
         <Drawer.Body className="flex flex-col gap-y-4">
           <div className="flex flex-col gap-y-2">
             <Label size="small" weight="plus" htmlFor="test-recipient">
-              Recipient
+              {isLocalPreview ? 'Recipient shown in preview' : 'Recipient'}
             </Label>
             <Input
               id="test-recipient"
@@ -50,8 +57,9 @@ const TestEmailDrawer = ({ transport, onClose }: TestEmailDrawerProps) => {
               placeholder="you@example.com"
             />
             <Text size="xsmall" className="text-ui-fg-subtle">
-              Sends through this transport&apos;s saved configuration, whether
-              or not it is the active one. Save any changes before testing.
+              {isLocalPreview
+                ? 'This address appears in the preview only. The HTML file URL is logged to the Medusa server output.'
+                : `Sends through this transport's saved configuration, whether or not it is the active one. Save any changes before testing.`}
             </Text>
           </div>
         </Drawer.Body>
@@ -67,7 +75,7 @@ const TestEmailDrawer = ({ transport, onClose }: TestEmailDrawerProps) => {
             disabled={!recipient || sendTest.isPending}
             onClick={send}
           >
-            Send
+            {isLocalPreview ? 'Create preview' : 'Send'}
           </Button>
         </Drawer.Footer>
       </Drawer.Content>

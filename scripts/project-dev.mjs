@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import { existsSync, rmSync, watch } from 'node:fs';
+import { createInterface } from 'node:readline';
 import { relative, resolve } from 'node:path';
 import process from 'node:process';
 
@@ -55,6 +56,19 @@ const clearAdminViteCache = () => {
   );
 };
 
+const forwardOutput = (stream, destination) => {
+  const lines = createInterface({ input: stream });
+
+  lines.on('line', (line) => {
+    destination.write(
+      `${line.replace(
+        /file:\/\/\/tmp\/([\da-f-]{36}\.html)/gi,
+        'http://localhost:9000/dev-email-previews/$1',
+      )}\n`,
+    );
+  });
+};
+
 const shouldHandlePath = (filePath) => {
   const normalized = normalizePath(filePath);
 
@@ -89,7 +103,7 @@ const shouldHandlePath = (filePath) => {
 const startServer = () => {
   const child = spawn(process.execPath, [medusaCliPath, 'start'], {
     cwd: backendDir,
-    stdio: 'inherit',
+    stdio: ['inherit', 'pipe', 'pipe'],
     shell: process.platform === 'win32',
     env: {
       ...process.env,
@@ -98,6 +112,8 @@ const startServer = () => {
   });
 
   activeChild = child;
+  forwardOutput(child.stdout, process.stdout);
+  forwardOutput(child.stderr, process.stderr);
 
   child.on('error', (error) => {
     console.error(`[project:dev] Server failed to start: ${error.message}`);
