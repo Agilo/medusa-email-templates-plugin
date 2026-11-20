@@ -14,12 +14,12 @@ Edit transactional emails and manage delivery from Medusa Admin. The plugin incl
 
 Medusa Cloud, Resend, and Mailgun are included as delivery providers. One provider sends each email; the others keep their settings. In development, you can select Local Preview to write the rendered email to a local file instead.
 
-| Provider     | Setup in Admin                                                                                                      | Availability                                                                                                             |
-| ------------ | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Medusa Cloud | Choose **Use**. Credentials are managed by your Medusa Cloud project.                                               | Requires an application running on Medusa Cloud with its email configuration injected. Unavailable in local development. |
-| Resend       | Enter a sender address, an optional reply-to address, and an API credential.                                        | Requires a Resend account and a key with sending access.                                                                 |
-| Mailgun      | Enter a sending domain, its US or EU region, a sender address, an optional reply-to address, and an API credential. | Requires a Mailgun account. A Domain Sending Key is sufficient; the plugin only calls the send endpoint.                 |
-| Local Preview | Choose **Use** in development. No credentials are needed.                        | Available only when `NODE_ENV=development`. Sends are written as local HTML preview files instead of being delivered. |
+| Provider      | Setup in Admin                                                                                                      | Availability                                                                                                             |
+| ------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Medusa Cloud  | Choose **Use**. Credentials are managed by your Medusa Cloud project.                                               | Requires an application running on Medusa Cloud with its email configuration injected. Unavailable in local development. |
+| Resend        | Enter a sender address, an optional reply-to address, and an API credential.                                        | Requires a Resend account and a key with sending access.                                                                 |
+| Mailgun       | Enter a sending domain, its US or EU region, a sender address, an optional reply-to address, and an API credential. | Requires a Mailgun account. A Domain Sending Key is sufficient; the plugin only calls the send endpoint.                 |
+| Local Preview | Choose **Use** in development. No credentials are needed.                                                           | Available only when `NODE_ENV=development`. Sends are written as local HTML preview files instead of being delivered.    |
 
 With **Local Preview** selected, the plugin logs a `file://` URL for each email in the Medusa server output. Open the URL in a browser or with your operating system's file opener. The preview file is written to the system temporary directory. The transport does not launch a browser or iOS Simulator automatically and is unavailable outside development.
 
