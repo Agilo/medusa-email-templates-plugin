@@ -21,7 +21,7 @@ __metadata:
 
 "@agilo/medusa-email-templates-plugin@file:.yalc/@agilo/medusa-email-templates-plugin::locator=dev-app%40workspace%3A.":
   version: 1.0.0-beta.0
-  resolution: "@agilo/medusa-email-templates-plugin@file:.yalc/@agilo/medusa-email-templates-plugin#.yalc/@agilo/medusa-email-templates-plugin::hash=d03b11&locator=dev-app%40workspace%3A."
+  resolution: "@agilo/medusa-email-templates-plugin@file:.yalc/@agilo/medusa-email-templates-plugin#.yalc/@agilo/medusa-email-templates-plugin::hash=8d22f4&locator=dev-app%40workspace%3A."
   dependencies:
     "@react-email/editor": "npm:1.7.7"
     "@tiptap/pm": "npm:^3.17.1"
@@ -37,7 +37,7 @@ __metadata:
     "@medusajs/js-sdk": ^2.22.7
     "@medusajs/medusa": ^2.22.7
     "@medusajs/ui": ^4.2.14
-  checksum: 10c0/020a37153b1dc971eaa931072ab422ce6f322d2672466e6f3aa4dcfa396329faeee58a415b72a6bb8f07a727107ce53cc6c7210b6180e3b34f177e20ee4aa88e
+  checksum: 10c0/b904268e60aca4c42a28a90964ef0daa695ccf8a77138da5070e8aee7f04aef576409fe2cd27e38919fb323ec8ce7f904eff7aa6a5d4a11ac3dc7d8f237983f6
   languageName: node
   linkType: hard
 
@@ -8864,12 +8864,12 @@ __metadata:
   linkType: hard
 
 "brace-expansion@npm:^1.1.7":
-  version: 1.1.18
-  resolution: "brace-expansion@npm:1.1.18"
+  version: 1.1.22
+  resolution: "brace-expansion@npm:1.1.22"
   dependencies:
     balanced-match: "npm:^1.0.0"
     concat-map: "npm:0.0.1"
-  checksum: 10c0/3432c18a9e2ebf94162d4effb62198bd0adea06a9f332b2c0188df5d5e30b1e51ea3c848b6608e47d0b857ebe1ea5b3888ed3326dd3c4f6f9645c94153cf9c14
+  checksum: 10c0/79efabb798348e385f3ec6a0b1cb86811bd164db7b1a25501067de5c436781c2c74cb3cdcf7f9c0f497a6219e7e0d9ee327341c74aa1eb1f178ba690e7202dea
   languageName: node
   linkType: hard
 
@@ -8882,21 +8882,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"brace-expansion@npm:^5.0.12":
+"brace-expansion@npm:^5.0.12, brace-expansion@npm:^5.0.8":
   version: 5.0.13
   resolution: "brace-expansion@npm:5.0.13"
   dependencies:
     balanced-match: "npm:^4.0.2"
   checksum: 10c0/80420a1d567db7fa3214e2d49cd28ff8aa89dbb9a889bf3e449372dd72cdcec5267b451a5ff6fcaec1dd8819a88fb3d682e01c63812a8220881e305852b07f60
-  languageName: node
-  linkType: hard
-
-"brace-expansion@npm:^5.0.8":
-  version: 5.0.9
-  resolution: "brace-expansion@npm:5.0.9"
-  dependencies:
-    balanced-match: "npm:^4.0.2"
-  checksum: 10c0/3dea38884a1c3c8b1c9c44a7402a0c76fca460f70cffb3127242b0b4cbf4472019e022ade021eec44838ff19f1dac2625dfd11dd459d7e1e055b0698a8d52fec
   languageName: node
   linkType: hard
 
